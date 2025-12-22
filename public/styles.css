@@ -152,11 +152,11 @@ h2 {
 }
 
 .brand-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 14px;
+  width: clamp(78px, 12vw, 108px);
+  height: clamp(78px, 12vw, 108px);
+  border-radius: 16px;
   background: rgba(0, 0, 0, 0.18);
-  padding: 8px;
+  padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.32));
   display: inline-block;
