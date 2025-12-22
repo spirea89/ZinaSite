@@ -79,8 +79,8 @@ body {
 }
 
 .logo-lockup {
-  margin: 22px auto 16px;
-  max-width: 760px;
+  margin: 18px auto 12px;
+  max-width: 620px;
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 20px;
@@ -152,8 +152,8 @@ h2 {
 }
 
 .brand-logo {
-  width: 96px;
-  height: 96px;
+  width: 72px;
+  height: 72px;
   border-radius: 14px;
   background: rgba(0, 0, 0, 0.18);
   padding: 8px;
