@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zina Admin</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="hero hero-small">
@@ -13,7 +13,7 @@
         <p class="eyebrow">Admin</p>
         <h1>Article Manager</h1>
         <p class="lead">Create, edit, and publish articles for ZusammenInAustria.</p>
-        <a class="button ghost" href="/">Back to Site</a>
+        <a class="button ghost" href="./">Back to Site</a>
       </div>
     </div>
   </header>
@@ -67,8 +67,16 @@
     const resetButton = document.getElementById('reset-form');
 
     async function fetchArticles() {
-      const response = await fetch('/api/admin/articles');
-      return response.json();
+      try {
+        const response = await fetch('api/admin/articles');
+        if (response.ok) {
+          return response.json();
+        }
+      } catch (error) {
+        console.warn('Admin API unavailable', error);
+      }
+
+      return fetch('./articles.json').then((res) => res.json()).catch(() => []);
     }
 
     function resetForm() {
@@ -131,7 +139,7 @@
         del.textContent = 'Delete';
         del.onclick = async () => {
           if (!confirm('Delete this article?')) return;
-          await fetch(`/api/articles/${article.id}`, { method: 'DELETE' });
+          await fetch(`api/articles/${article.id}`, { method: 'DELETE' });
           loadArticles();
         };
 
@@ -151,7 +159,7 @@
     async function saveArticle({ id, title, content, status }) {
       const payload = { title, content, status };
       const method = id ? 'PUT' : 'POST';
-      const url = id ? `/api/articles/${id}` : '/api/articles';
+      const url = id ? `api/articles/${id}` : 'api/articles';
 
       const response = await fetch(url, {
         method,
@@ -160,7 +168,7 @@
       });
 
       if (!response.ok) {
-        alert('Failed to save article. Please check the form.');
+        alert('Failed to save article. Please check the form or run the server locally.');
         return;
       }
 
