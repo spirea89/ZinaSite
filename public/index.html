@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZusammenInAustria (Zina)</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="hero hero-landing">
     <div class="flag-ribbon" aria-hidden="true"></div>
     <div class="top-nav">
       <div class="brand">
-        <img class="brand-logo" src="/logos/ZinA%20Logos-07.png" alt="Zusammen in Austria crest">
+        <img class="brand-logo" src="./logos/ZinA%20Logos-07.png" alt="Zusammen in Austria crest">
         <div class="brand-copy">
           <span class="brand-name">Zusammen in Austria</span>
           <span class="brand-tag">Asociația Românilor din Austria</span>
@@ -19,7 +19,7 @@
       </div>
       <div class="nav-actions">
         <a class="nav-link" href="#mission">Community</a>
-        <a class="nav-link" href="/admin.html">Admin</a>
+        <a class="nav-link" href="./admin.html">Admin</a>
       </div>
     </div>
     <div class="hero-content">
@@ -31,7 +31,7 @@
           tricolor woven into every gathering.
         </p>
         <div class="logo-lockup">
-          <img src="/logos/ZinA%20Logos-05.png" alt="Zusammen in Austria primary logo" loading="lazy" decoding="async">
+          <img src="./logos/ZinA%20Logos-05.png" alt="Zusammen in Austria primary logo" loading="lazy" decoding="async">
         </div>
         <form class="cta-form" aria-label="Join the Zina community">
           <label class="visually-hidden" for="cta-email">Email address</label>
@@ -142,8 +142,27 @@
 
     async function loadArticles() {
       try {
-        const response = await fetch('/api/articles?status=published');
-        const articles = await response.json();
+        let articles = [];
+
+        try {
+          const response = await fetch('api/articles?status=published');
+          if (response.ok) {
+            articles = await response.json();
+          }
+        } catch (error) {
+          console.warn('API unavailable, attempting static fallback', error);
+        }
+
+        if (!articles.length) {
+          try {
+            const fallbackResponse = await fetch('articles.json');
+            if (fallbackResponse.ok) {
+              articles = await fallbackResponse.json();
+            }
+          } catch (error) {
+            console.warn('Static fallback unavailable', error);
+          }
+        }
         const container = document.getElementById('articles');
         const emptyState = document.getElementById('empty-state');
 
