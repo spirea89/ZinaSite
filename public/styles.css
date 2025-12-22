@@ -1,14 +1,16 @@
 :root {
   color-scheme: light;
-  --bg: #f7f7fb;
+  --bg: #f6f8fb;
   --card: #ffffff;
-  --text: #1d1d1f;
-  --muted: #5f6368;
-  --accent: #1c7ed6;
-  --accent-strong: #1864ab;
+  --text: #0f172a;
+  --muted: #4b5563;
+  --accent: #0b4f9c; /* Romanian blue */
+  --accent-strong: #073b73;
+  --accent-yellow: #ffd60a;
+  --accent-red: #c1121f;
   --danger: #e03131;
-  --border: #e1e3e8;
-  --shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+  --border: #e5e7eb;
+  --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -18,22 +20,47 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(255, 214, 10, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 15%, rgba(193, 18, 31, 0.07), transparent 23%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 60%, #f8fafc 100%);
   color: var(--text);
 }
 
 .hero {
-  background: radial-gradient(circle at 10% 20%, #f0f4ff, #dbeafe 35%, #e5ecfb);
-  padding: 64px 20px;
+  position: relative;
+  background: linear-gradient(135deg, rgba(2, 62, 138, 0.96) 0%, rgba(11, 79, 156, 0.92) 38%, rgba(255, 214, 10, 0.9) 62%, rgba(193, 18, 31, 0.92) 100%);
+  padding: 72px 20px;
+  overflow: hidden;
 }
 
 .hero-small {
   padding: 40px 20px;
 }
 
+.flag-ribbon {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 214, 10, 0.3), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(193, 18, 31, 0.35), transparent 26%),
+    linear-gradient(120deg, rgba(2, 62, 138, 0.45) 0%, rgba(2, 62, 138, 0.1) 35%, rgba(255, 214, 10, 0.2) 60%, rgba(193, 18, 31, 0.3) 100%);
+  pointer-events: none;
+}
+
 .hero-content {
   max-width: 960px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-panel {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  padding: 26px 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
 .eyebrow {
@@ -66,6 +93,27 @@ h2 {
   padding: 0 20px 48px 20px;
 }
 
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(2, 62, 138, 0.12), rgba(255, 214, 10, 0.18));
+  color: var(--accent-strong);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pill::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-red) 0%, var(--accent-yellow) 65%, var(--accent) 100%);
+}
+
 .grid {
   display: grid;
   gap: 20px;
@@ -83,6 +131,16 @@ h2 {
   border-radius: 16px;
   padding: 20px;
   box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before, .panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(2, 62, 138, 0.04), rgba(255, 214, 10, 0.06) 50%, rgba(193, 18, 31, 0.04));
+  pointer-events: none;
 }
 
 .panel h2 {
@@ -95,20 +153,20 @@ h2 {
   justify-content: center;
   gap: 6px;
   padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: var(--accent);
-  color: white;
-  font-weight: 600;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(120deg, var(--accent) 0%, var(--accent-yellow) 50%, var(--accent-red) 100%);
+  color: #0b1220;
+  font-weight: 700;
   cursor: pointer;
   text-decoration: none;
-  transition: transform 120ms ease, box-shadow 120ms ease, background 160ms ease;
-  box-shadow: 0 12px 30px rgba(28, 126, 214, 0.24);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 160ms ease;
+  box-shadow: 0 16px 30px rgba(2, 62, 138, 0.3);
 }
 
 .button:hover {
   transform: translateY(-1px);
-  background: var(--accent-strong);
+  filter: brightness(1.02);
 }
 
 .button:active {
@@ -116,9 +174,9 @@ h2 {
 }
 
 .button.ghost {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.6);
   color: var(--accent-strong);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: none;
 }
 
@@ -126,6 +184,7 @@ h2 {
   background: var(--danger);
   box-shadow: 0 12px 30px rgba(224, 49, 49, 0.22);
   border-color: rgba(224, 49, 49, 0.16);
+  color: #fff;
 }
 
 form .actions {
@@ -166,6 +225,49 @@ textarea {
   color: var(--muted);
 }
 
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 18px 0 8px 0;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.stat {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgba(2, 62, 138, 0.12), rgba(255, 214, 10, 0.16));
+  border: 1px solid rgba(2, 62, 138, 0.18);
+}
+
+.stat-label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stat-value {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pillars .card {
+  min-height: 180px;
+}
+
+.highlight {
+  border: 1px solid rgba(2, 62, 138, 0.15);
+  box-shadow: 0 18px 60px rgba(2, 62, 138, 0.12);
+}
+
 .footer {
   text-align: center;
   padding: 24px 20px 36px 20px;
@@ -174,8 +276,8 @@ textarea {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f172a;
-    --card: #111827;
+    --bg: #0b1220;
+    --card: #0f172a;
     --text: #e5e7eb;
     --muted: #9ca3af;
     --accent: #60a5fa;
@@ -185,11 +287,21 @@ textarea {
   }
 
   .hero {
-    background: radial-gradient(circle at 10% 20%, #0b1022, #111827 50%, #0f172a);
+    background: linear-gradient(135deg, rgba(1, 22, 45, 0.95) 0%, rgba(2, 62, 138, 0.9) 35%, rgba(255, 214, 10, 0.25) 65%, rgba(193, 18, 31, 0.35) 100%);
   }
 
   input, textarea, select {
     background: #0b1022;
     color: var(--text);
+  }
+
+  .hero-panel {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .button.ghost {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5e7eb;
   }
 }
