@@ -11,7 +11,7 @@ const path = require('path');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DOCS_DIR = path.join(__dirname, 'docs');
 
-// Files to sync
+// Files to sync (matching what rsync would sync)
 const FILES_TO_SYNC = ['index.html', 'admin.html', 'styles.css'];
 
 function syncFiles() {
@@ -23,21 +23,38 @@ function syncFiles() {
     console.log('✅ Created docs/ directory');
   }
 
+  // Get all files in public directory
+  const publicFiles = fs.readdirSync(PUBLIC_DIR, { withFileTypes: true })
+    .filter(dirent => dirent.isFile())
+    .map(dirent => dirent.name);
+
+  // Remove files from docs that don't exist in public (like rsync --delete)
+  const docsFiles = fs.readdirSync(DOCS_DIR, { withFileTypes: true })
+    .filter(dirent => dirent.isFile())
+    .map(dirent => dirent.name);
+
+  docsFiles.forEach(file => {
+    if (!publicFiles.includes(file)) {
+      const filePath = path.join(DOCS_DIR, file);
+      fs.unlinkSync(filePath);
+      console.log(`🗑️  Removed: ${file} (not in public/)`);
+    }
+  });
+
   let syncedCount = 0;
   let errorCount = 0;
 
-  FILES_TO_SYNC.forEach(file => {
+  // Sync all files from public to docs
+  publicFiles.forEach(file => {
     const sourcePath = path.join(PUBLIC_DIR, file);
     const destPath = path.join(DOCS_DIR, file);
 
     try {
-      if (fs.existsSync(sourcePath)) {
-        fs.copyFileSync(sourcePath, destPath);
-        console.log(`✅ Synced: ${file}`);
-        syncedCount++;
-      } else {
-        console.warn(`⚠️  Source file not found: ${file}`);
-      }
+      // Read and write to ensure consistent line endings
+      const content = fs.readFileSync(sourcePath, 'utf8');
+      fs.writeFileSync(destPath, content, 'utf8');
+      console.log(`✅ Synced: ${file}`);
+      syncedCount++;
     } catch (error) {
       console.error(`❌ Error syncing ${file}:`, error.message);
       errorCount++;
