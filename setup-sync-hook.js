@@ -34,7 +34,7 @@ try {
   
   // Make it executable (Unix-like systems)
   if (process.platform !== 'win32') {
-    fs.chmodSync(PRE_COMMIT_HOOK, '755');
+    fs.chmodSync(PRE_COMMIT_HOOK, 0o755);
   }
 
   console.log('✅ Git pre-commit hook installed successfully!');
