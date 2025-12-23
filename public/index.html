@@ -1,34 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZusammenInAustria (Zina)</title>
+  <meta name="description" content="Comunitatea românilor din Viena - articole, evenimente și resurse pentru românii care locuiesc în Viena">
+  <title>ZusammenInAustria (Zina) - Comunitatea Românilor din Viena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">Zina</a>
+      <div class="nav-links">
+        <a href="#mission" class="nav-link">Despre noi</a>
+        <a href="#articles" class="nav-link">Articole</a>
+        <a href="/admin.html" class="nav-link admin-link">Admin</a>
+      </div>
+    </div>
+  </nav>
+
   <header class="hero">
     <div class="flag-ribbon" aria-hidden="true"></div>
     <div class="hero-content">
       <div class="hero-panel">
-        <p class="eyebrow">Romanian roots • Viennese home</p>
-        <h1>ZusammenInAustria (Zina)</h1>
+        <p class="eyebrow">Rădăcini românești • Acasă în Viena</p>
+        <h1>ZusammenInAustria</h1>
         <p class="lead">
-          Bringing Romanian expats together in Vienna through community, events, and support — with warmth that
-          feels like home.
+          Aducem comunitatea românilor din Viena împreună prin articole, evenimente și suport — cu căldura care te face să te simți ca acasă.
         </p>
         <div class="hero-actions">
-          <a class="button" href="#mission">Discover our work</a>
-          <a class="button ghost" href="/admin.html">Go to Admin</a>
+          <a class="button" href="#articles">Citește articole</a>
+          <a class="button ghost" href="#mission">Despre noi</a>
         </div>
         <div class="hero-stats">
           <div class="stat">
-            <span class="stat-label">Community Meetups</span>
-            <span class="stat-value">Monthly in Vienna</span>
+            <span class="stat-label">Comunitate</span>
+            <span class="stat-value">Români în Viena</span>
           </div>
           <div class="stat">
-            <span class="stat-label">Support & Resources</span>
-            <span class="stat-value">For newcomers & families</span>
+            <span class="stat-label">Evenimente</span>
+            <span class="stat-value">Lunar în Viena</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Suport</span>
+            <span class="stat-value">Pentru noi veniți</span>
           </div>
         </div>
       </div>
@@ -37,39 +55,50 @@
 
   <main class="content">
     <section id="mission" class="panel highlight">
-      <h2>Our Mission</h2>
-      <p>
-        Zina builds bridges between Romanian expats in Vienna and the broader Austrian community.
-        We organize cultural events, networking meetups, and resources to help newcomers feel at home.
-      </p>
+      <div class="section-header">
+        <h2>Misiunea noastră</h2>
+        <p class="section-description">
+          Zina construiește poduri între românii din Viena și comunitatea austriacă mai largă.
+          Organizăm evenimente culturale, întâlniri de networking și oferim resurse pentru a ajuta noii veniți să se simtă ca acasă.
+        </p>
+      </div>
       <div class="grid pillars">
         <article class="card pillar">
-          <div class="pill">🎉 Cultural Events</div>
-          <h3>Celebrate together</h3>
-          <p class="muted">Seasonal gatherings, traditional celebrations, and community dinners that carry the colors of Romania.</p>
+          <div class="pill">🎉 Evenimente culturale</div>
+          <h3>Sărbătorim împreună</h3>
+          <p class="muted">Întâlniri sezoniere, sărbători tradiționale și cinări comunitare care poartă culorile României.</p>
         </article>
         <article class="card pillar">
-          <div class="pill">🤝 Connection</div>
-          <h3>Expand your circle</h3>
-          <p class="muted">Networking meetups and mentorship to help newcomers build friendships and careers in Vienna.</p>
+          <div class="pill">🤝 Conexiune</div>
+          <h3>Îți extinzi cercul</h3>
+          <p class="muted">Întâlniri de networking și mentorat pentru a ajuta noii veniți să-și construiască prietenii și cariera în Viena.</p>
         </article>
         <article class="card pillar">
-          <div class="pill">🧭 Guidance</div>
-          <h3>Settle in smoothly</h3>
-          <p class="muted">Local tips, housing support, and language resources tailored for Romanian families and students.</p>
+          <div class="pill">🧭 Ghidare</div>
+          <h3>Stabilirea ușoară</h3>
+          <p class="muted">Sfaturi locale, suport pentru locuințe și resurse lingvistice adaptate pentru familiile și studenții români.</p>
         </article>
       </div>
     </section>
 
-    <section>
-      <h2>Latest Articles</h2>
-      <div id="articles" class="cards"></div>
-      <p id="empty-state" class="muted">No published articles yet.</p>
+    <section id="articles" class="articles-section">
+      <div class="section-header">
+        <h2>Articole recente</h2>
+        <p class="section-description">Descoperă ultimele știri și articole pentru comunitatea română din Viena</p>
+      </div>
+      <div id="articles-container" class="articles-grid"></div>
+      <p id="empty-state" class="empty-state">
+        <span class="empty-icon">📝</span>
+        <span>Nu există articole publicate încă.</span>
+      </p>
     </section>
   </main>
 
   <footer class="footer">
-    <p>© <span id="year"></span> ZusammenInAustria (Zina) • Vienna, Austria</p>
+    <div class="footer-content">
+      <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
+      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+    </div>
   </footer>
 
   <script>
@@ -79,43 +108,73 @@
       try {
         const response = await fetch('/api/articles?status=published');
         const articles = await response.json();
-        const container = document.getElementById('articles');
+        const container = document.getElementById('articles-container');
         const emptyState = document.getElementById('empty-state');
 
         container.innerHTML = '';
         if (!articles.length) {
-          emptyState.style.display = 'block';
+          emptyState.style.display = 'flex';
           return;
         }
 
         emptyState.style.display = 'none';
 
-        articles.forEach((article) => {
+        articles.forEach((article, index) => {
           const card = document.createElement('article');
-          card.className = 'card';
+          card.className = 'article-card';
+          card.style.animationDelay = `${index * 0.1}s`;
 
-          const title = document.createElement('h3');
-          title.textContent = article.title;
-
-          const meta = document.createElement('p');
-          meta.className = 'muted';
-          meta.textContent = new Date(article.updatedAt || article.createdAt).toLocaleString('en-GB', {
-            dateStyle: 'medium',
-            timeStyle: 'short'
+          const date = new Date(article.updatedAt || article.createdAt);
+          const formattedDate = date.toLocaleDateString('ro-RO', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           });
 
-          const body = document.createElement('p');
-          body.textContent = article.content;
+          card.innerHTML = `
+            <div class="article-card-header">
+              <div class="article-date">${formattedDate}</div>
+            </div>
+            <h3 class="article-title">${article.title}</h3>
+            <p class="article-excerpt">${article.content.length > 150 ? article.content.substring(0, 150) + '...' : article.content}</p>
+            <div class="article-footer">
+              <span class="article-read-more">Citește mai mult →</span>
+            </div>
+          `;
 
-          card.appendChild(title);
-          card.appendChild(meta);
-          card.appendChild(body);
           container.appendChild(card);
         });
       } catch (error) {
         console.error('Failed to load articles', error);
+        const emptyState = document.getElementById('empty-state');
+        emptyState.style.display = 'flex';
+        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea articolelor.</span>';
       }
     }
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Navbar scroll effect
+    let lastScroll = 0;
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      if (currentScroll > 100) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+      lastScroll = currentScroll;
+    });
 
     loadArticles();
   </script>
