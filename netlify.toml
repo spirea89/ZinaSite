@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build:pages"
+  publish = "docs"
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin/"
+  status = 301
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/index.html"
+  status = 200
+  force = true
+  conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/.netlify/identity"
+  status = 401
+  force = true
