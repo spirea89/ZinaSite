@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "sync-docs": "node sync-docs.js"
+    "sync-docs": "node sync-docs.js",
+    "setup-sync": "node setup-sync-hook.js"
   },
   "keywords": [],
   "author": "",
