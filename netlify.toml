@@ -3,9 +3,43 @@
   publish = "docs"
 
 [[redirects]]
+  from = "/admin/index.html"
+  to = "/admin/index.html"
+  status = 200
+  force = true
+  conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/admin/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/admin/"
+  to = "/admin/index.html"
+  status = 200
+  force = true
+  conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/admin/"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
   from = "/admin"
-  to = "/admin/"
-  status = 301
+  to = "/admin/index.html"
+  status = 200
+  force = true
+  conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/admin"
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/admin/*"
@@ -17,5 +51,5 @@
 [[redirects]]
   from = "/admin/*"
   to = "/"
-  status = 404
+  status = 302
   force = true
