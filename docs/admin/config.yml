@@ -1,0 +1,46 @@
+backend:
+  name: git-gateway
+  branch: main
+  commit_messages:
+    create: "Create {{collection}} “{{slug}}”"
+    update: "Update {{collection}} “{{slug}}”"
+    delete: "Delete {{collection}} “{{slug}}”"
+    uploadMedia: "Upload media “{{path}}”"
+    deleteMedia: "Delete media “{{path}}”"
+  site_domain: ""
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+publish_mode: editorial_workflow
+locale: en
+
+collections:
+  - name: "articles"
+    label: "Articles"
+    label_singular: "Article"
+    folder: "data/articles"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    summary: "{{title}} — {{author}} ({{date}})"
+    format: "frontmatter"
+    extension: "md"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Author", name: "author", widget: "string" }
+      - { label: "Summary", name: "summary", widget: "text" }
+      - { label: "Language", name: "lang", widget: "select", options: ["en", "ro", "de"], default: "en" }
+      - { label: "Status", name: "status", widget: "select", options: ["draft", "published"], default: "draft" }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+editorial_workflow:
+  status:
+    - { label: "Draft", value: "draft" }
+    - { label: "In Review", value: "review" }
+    - { label: "Published", value: "published" }
+
+slug:
+  encoding: "unicode"
+  clean_accents: true
+  sanitize_replacement: "-"
