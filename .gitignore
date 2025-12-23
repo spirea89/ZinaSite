@@ -1,1 +1,4 @@
 node_modules/
+
+# Git directory (should never be tracked)
+.git/
