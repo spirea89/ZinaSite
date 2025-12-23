@@ -1,3 +1,7 @@
+[build]
+  command = "npm run build:pages"
+  publish = "docs"
+
 [[redirects]]
   from = "/admin"
   to = "/admin/index.html"
