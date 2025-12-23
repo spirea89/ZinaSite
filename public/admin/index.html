@@ -65,5 +65,16 @@
       window.netlifyIdentity.init({ locale: 'en' });
     }
   </script>
+  <script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.on("init", (user) => {
+      if (!user) {
+        // Optional: open the login modal automatically
+        // window.netlifyIdentity.open();
+      }
+    });
+  }
+</script>
+
 </body>
 </html>
