@@ -46,7 +46,7 @@
 
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        window.location.replace("/admin.html");
+        window.location.replace("./admin.html");
       }
     });
 
@@ -56,7 +56,7 @@
 
       try {
         await login(email.value, password.value);
-        window.location.replace("/admin.html");
+        window.location.replace("./admin.html");
       } catch (err) {
         showError(err?.message || "Unable to sign in. Please try again.");
       }
