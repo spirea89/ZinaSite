@@ -1,0 +1,31 @@
+name: Sync docs with public
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'public/**'
+      - '.github/workflows/sync-docs.yml'
+  pull_request:
+    paths:
+      - 'public/**'
+      - '.github/workflows/sync-docs.yml'
+
+jobs:
+  verify-docs-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Sync docs directory
+        run: |
+          rsync -av --delete public/ docs/
+
+      - name: Check for differences
+        run: |
+          if ! git diff --quiet -- docs; then
+            echo "docs directory is out of sync with public. Please run: rsync -av --delete public/ docs/" >&2
+            git diff -- docs
+            exit 1
+          fi

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZusammenInAustria (Zina)</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="flag-ribbon" aria-hidden="true"></div>
+    <div class="hero-content">
+      <div class="hero-panel">
+        <p class="eyebrow">Romanian roots • Viennese home</p>
+        <h1>ZusammenInAustria (Zina)</h1>
+        <p class="lead">
+          Bringing Romanian expats together in Vienna through community, events, and support — with warmth that
+          feels like home.
+        </p>
+        <div class="hero-actions">
+          <a class="button" href="#mission">Discover our work</a>
+          <a class="button ghost" href="/admin.html">Go to Admin</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-label">Community Meetups</span>
+            <span class="stat-value">Monthly in Vienna</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Support & Resources</span>
+            <span class="stat-value">For newcomers & families</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <section id="mission" class="panel highlight">
+      <h2>Our Mission</h2>
+      <p>
+        Zina builds bridges between Romanian expats in Vienna and the broader Austrian community.
+        We organize cultural events, networking meetups, and resources to help newcomers feel at home.
+      </p>
+      <div class="grid pillars">
+        <article class="card pillar">
+          <div class="pill">🎉 Cultural Events</div>
+          <h3>Celebrate together</h3>
+          <p class="muted">Seasonal gatherings, traditional celebrations, and community dinners that carry the colors of Romania.</p>
+        </article>
+        <article class="card pillar">
+          <div class="pill">🤝 Connection</div>
+          <h3>Expand your circle</h3>
+          <p class="muted">Networking meetups and mentorship to help newcomers build friendships and careers in Vienna.</p>
+        </article>
+        <article class="card pillar">
+          <div class="pill">🧭 Guidance</div>
+          <h3>Settle in smoothly</h3>
+          <p class="muted">Local tips, housing support, and language resources tailored for Romanian families and students.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Latest Articles</h2>
+      <div id="articles" class="cards"></div>
+      <p id="empty-state" class="muted">No published articles yet.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© <span id="year"></span> ZusammenInAustria (Zina) • Vienna, Austria</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    async function loadArticles() {
+      try {
+        const response = await fetch('/api/articles?status=published');
+        const articles = await response.json();
+        const container = document.getElementById('articles');
+        const emptyState = document.getElementById('empty-state');
+
+        container.innerHTML = '';
+        if (!articles.length) {
+          emptyState.style.display = 'block';
+          return;
+        }
+
+        emptyState.style.display = 'none';
+
+        articles.forEach((article) => {
+          const card = document.createElement('article');
+          card.className = 'card';
+
+          const title = document.createElement('h3');
+          title.textContent = article.title;
+
+          const meta = document.createElement('p');
+          meta.className = 'muted';
+          meta.textContent = new Date(article.updatedAt || article.createdAt).toLocaleString('en-GB', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          });
+
+          const body = document.createElement('p');
+          body.textContent = article.content;
+
+          card.appendChild(title);
+          card.appendChild(meta);
+          card.appendChild(body);
+          container.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Failed to load articles', error);
+      }
+    }
+
+    loadArticles();
+  </script>
+</body>
+</html>
