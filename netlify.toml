@@ -2,21 +2,16 @@
   command = "npm run build:pages"
   publish = "docs"
 
+# Canonicalize /admin to /admin/
 [[redirects]]
   from = "/admin"
   to = "/admin/"
   status = 301
-  force = true
 
+# Always serve the Decap CMS app for anything under /admin/
+# (Authentication happens inside the CMS UI via Netlify Identity)
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
   status = 200
-  force = true
-  conditions = {Role = ["admin"]}
-
-[[redirects]]
-  from = "/admin/*"
-  to = "/.netlify/identity?redirect=/admin/"
-  status = 302
   force = true
