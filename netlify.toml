@@ -2,33 +2,12 @@
   command = "npm run build:pages"
   publish = "docs"
 
-# --- Protect BOTH /admin/ and /admin.html ---
-# (force=true ensures redirects apply even if a file exists)
-
 [[redirects]]
   from = "/admin"
   to = "/admin/"
   status = 301
-  force = true
 
-# If someone tries the legacy path directly
-[[redirects]]
-  from = "/admin.html"
-  to = "/"
-  status = 302
-  force = true
-
-# Only users with Identity role "admin" may load Decap CMS
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
   status = 200
-  force = true
-  conditions = { Role = ["admin"] }
-
-# Everyone else gets kicked out
-[[redirects]]
-  from = "/admin/*"
-  to = "/"
-  status = 302
-  force = true
