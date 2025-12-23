@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZusammenInAustria (Zina)</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="hero hero-landing">
+    <div class="flag-ribbon" aria-hidden="true"></div>
+    <div class="top-nav">
+      <div class="brand">
+        <img class="brand-logo" src="./logos/ZinA%20Logos-07.png" alt="Zusammen in Austria crest">
+        <div class="brand-copy">
+          <span class="brand-name">Zusammen in Austria</span>
+          <span class="brand-tag">Asociația Românilor din Austria</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a class="nav-link" href="#mission">Community</a>
+        <a class="nav-link" href="./admin.html">Admin</a>
+      </div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-copy">
+        <p class="eyebrow">Romanian warmth • Viennese nights</p>
+        <h1>Welcome abroad, bine ai venit!</h1>
+        <p class="lead">
+          Enjoy the international experience with fellow Romanian minds in Austria — lights, laughter, and the
+          tricolor woven into every gathering.
+        </p>
+        <div class="logo-lockup">
+          <img src="./logos/ZinA%20Logos-05.png" alt="Zusammen in Austria primary logo" loading="lazy" decoding="async">
+        </div>
+        <form class="cta-form" aria-label="Join the Zina community">
+          <label class="visually-hidden" for="cta-email">Email address</label>
+          <input id="cta-email" name="email" type="email" placeholder="Enter your email address..." required>
+          <button type="submit" class="button">Join now</button>
+        </form>
+        <p class="cta-note">We share cozy events, Romanian traditions, and helpful guidance for life in Vienna.</p>
+        <div class="hero-meta">
+          <div class="trust-badge" aria-hidden="true">
+            <span class="badge-ring">
+              <span class="badge-star">✺</span>
+            </span>
+            <div class="badge-copy">
+              <span class="badge-label">Romanian heritage</span>
+              <span class="badge-detail">curated gatherings</span>
+            </div>
+          </div>
+          <ul class="hero-bullets">
+            <li><span class="check" aria-hidden="true">✔</span>Connect with other expats in your city</li>
+            <li><span class="check" aria-hidden="true">✔</span>Join exciting events with Romanian flair</li>
+            <li><span class="check" aria-hidden="true">✔</span>Get tips & tradition-packed guidance for Vienna</li>
+          </ul>
+        </div>
+        <div class="hero-chips">
+          <span class="chip">🌿 Romanian motifs</span>
+          <span class="chip">🎉 Viennese soirées</span>
+          <span class="chip">🤝 Community-first</span>
+        </div>
+      </div>
+    </div>
+    <div class="motif-band" aria-hidden="true"></div>
+  </header>
+
+  <main class="content">
+    <section class="panel trust-panel">
+      <div class="trust-grid">
+        <div>
+          <h2>Why Romanian expats join Zina</h2>
+          <ul class="benefit-list">
+            <li><span class="check" aria-hidden="true">✔</span> Connect with other expats in your city and feel at home faster.</li>
+            <li><span class="check" aria-hidden="true">✔</span> Join exciting events — from Sânziene-inspired evenings to Viennese coffee meetups.</li>
+            <li><span class="check" aria-hidden="true">✔</span> Get tips, information, and Romanian-friendly resources for Vienna life.</li>
+          </ul>
+        </div>
+        <div class="trust-seal">
+          <div class="seal-ring">
+            <div class="seal-inner">
+              <span class="seal-icon" aria-hidden="true">❂</span>
+              <span class="seal-text">Community of Trust</span>
+              <span class="seal-sub">Approved Romanian members only</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="mission" class="panel highlight">
+      <h2>Our Mission</h2>
+      <p>
+        Zina builds bridges between Romanian expats in Vienna and the broader Austrian community.
+        We organize cultural events, networking meetups, and resources to help newcomers feel at home.
+      </p>
+      <div class="grid pillars">
+        <article class="card pillar">
+          <div class="pill">🎉 Cultural Events</div>
+          <h3>Celebrate together</h3>
+          <p class="muted">Seasonal gatherings, traditional celebrations, and community dinners that carry the colors of Romania.</p>
+        </article>
+        <article class="card pillar">
+          <div class="pill">🤝 Connection</div>
+          <h3>Expand your circle</h3>
+          <p class="muted">Networking meetups and mentorship to help newcomers build friendships and careers in Vienna.</p>
+        </article>
+        <article class="card pillar">
+          <div class="pill">🧭 Guidance</div>
+          <h3>Settle in smoothly</h3>
+          <p class="muted">Local tips, housing support, and language resources tailored for Romanian families and students.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Latest Articles</h2>
+      <div id="articles" class="cards"></div>
+      <p id="empty-state" class="muted">No published articles yet.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© <span id="year"></span> ZusammenInAustria (Zina) • Vienna, Austria</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const ctaForm = document.querySelector('.cta-form');
+    const ctaNote = document.querySelector('.cta-note');
+
+    ctaForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const email = document.getElementById('cta-email')?.value.trim();
+      ctaNote.textContent = email
+        ? `Mulțumim! We'll share our next Romanian-infused meetup details with ${email}.`
+        : 'Mulțumim! You are on our list for upcoming Romanian gatherings.';
+      ctaForm.reset();
+      ctaForm.classList.add('submitted');
+    });
+
+    async function loadArticles() {
+      try {
+        let articles = [];
+
+        try {
+          const response = await fetch('api/articles?status=published');
+          if (response.ok) {
+            articles = await response.json();
+          }
+        } catch (error) {
+          console.warn('API unavailable, attempting static fallback', error);
+        }
+
+        if (!articles.length) {
+          try {
+            const fallbackResponse = await fetch('articles.json');
+            if (fallbackResponse.ok) {
+              articles = await fallbackResponse.json();
+            }
+          } catch (error) {
+            console.warn('Static fallback unavailable', error);
+          }
+        }
+        const container = document.getElementById('articles');
+        const emptyState = document.getElementById('empty-state');
+
+        container.innerHTML = '';
+        if (!articles.length) {
+          emptyState.style.display = 'block';
+          return;
+        }
+
+        emptyState.style.display = 'none';
+
+        articles.forEach((article) => {
+          const card = document.createElement('article');
+          card.className = 'card';
+
+          const title = document.createElement('h3');
+          title.textContent = article.title;
+
+          const meta = document.createElement('p');
+          meta.className = 'muted';
+          meta.textContent = new Date(article.updatedAt || article.createdAt).toLocaleString('en-GB', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          });
+
+          const body = document.createElement('p');
+          body.textContent = article.content;
+
+          card.appendChild(title);
+          card.appendChild(meta);
+          card.appendChild(body);
+          container.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Failed to load articles', error);
+      }
+    }
+
+    loadArticles();
+  </script>
+</body>
+</html>
