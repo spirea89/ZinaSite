@@ -60,8 +60,6 @@
   </footer>
 
   <script type="module">
-    import { supabase } from './js/supabase.js';
-
     const form = document.getElementById('article-form');
     const titleInput = document.getElementById('title');
     const contentInput = document.getElementById('content');
@@ -70,17 +68,6 @@
     const adminArticles = document.getElementById('admin-articles');
     const adminEmpty = document.getElementById('admin-empty');
     const resetButton = document.getElementById('reset-form');
-
-    function normalizeArticle(row) {
-      return {
-        id: row.id,
-        title: row.title,
-        content: row.content,
-        status: row.status,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      };
-    }
 
     function resetForm() {
       form.reset();
@@ -160,54 +147,59 @@
     }
 
     async function fetchArticles() {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      return apiRequest('/api/admin/articles');
+    }
 
-      if (error) {
-        throw error;
+    async function apiRequest(url, options = {}) {
+      const response = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options,
+      });
+
+      let data = null;
+
+      if (response.headers.get('content-type')?.includes('application/json')) {
+        data = await response.json();
       }
 
-      return (data || []).map(normalizeArticle);
+      if (!response.ok) {
+        const message = data?.error || response.statusText || 'Request failed.';
+        throw new Error(message);
+      }
+
+      return data;
     }
 
     async function saveArticle({ id, title, content, status }) {
       const payload = { title, content, status };
 
-      let response;
+      try {
+        if (id) {
+          await apiRequest(`/api/articles/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+          });
+        } else {
+          await apiRequest('/api/articles', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+          });
+        }
 
-      if (id) {
-        response = await supabase
-          .from('articles')
-          .update({ ...payload, updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .select()
-          .single();
-      } else {
-        response = await supabase
-          .from('articles')
-          .insert([{ ...payload, updated_at: new Date().toISOString() }])
-          .select()
-          .single();
+        resetForm();
+        loadArticles();
+      } catch (error) {
+        console.error('Save error:', error);
+        alert('Failed to save article. Please check the form or run the server locally.');
       }
-
-      if (response.error) {
-        console.error('Supabase save error:', response.error);
-        alert('Failed to save article. Please check the form or Supabase settings.');
-        return;
-      }
-
-      resetForm();
-      loadArticles();
     }
 
     async function deleteArticle(id) {
-      const { error } = await supabase.from('articles').delete().eq('id', id);
-
-      if (error) {
-        console.error('Supabase delete error:', error);
-        alert('Failed to delete article from Supabase.');
+      try {
+        await apiRequest(`/api/articles/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      } catch (error) {
+        console.error('Failed to delete article', error);
+        alert('Failed to delete article. Please run the server locally.');
       }
     }
 
@@ -231,8 +223,8 @@
         const articles = await fetchArticles();
         renderArticles(articles);
       } catch (error) {
-        console.error('Failed to load articles from Supabase', error);
-        adminArticles.innerHTML = '<p class="muted">Unable to load Supabase articles. Check your connection.</p>';
+        console.error('Failed to load articles from API', error);
+        adminArticles.innerHTML = '<p class="muted">Unable to load articles. Please run the server locally.</p>';
       }
     }
 
