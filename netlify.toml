@@ -3,42 +3,9 @@
   publish = "docs"
 
 [[redirects]]
-  from = "/admin/index.html"
-  to = "/admin/index.html"
-  status = 200
-  force = true
-  conditions = {Role = ["admin"]}
-
-[[redirects]]
-  from = "/admin/index.html"
-  to = "/"
-  status = 302
-  force = true
-
-[[redirects]]
-  from = "/admin/"
-  to = "/admin/index.html"
-  status = 200
-  force = true
-  conditions = {Role = ["admin"]}
-
-[[redirects]]
-  from = "/admin/"
-  to = "/"
-  status = 302
-  force = true
-
-[[redirects]]
   from = "/admin"
-  to = "/admin/index.html"
-  status = 200
-  force = true
-  conditions = {Role = ["admin"]}
-
-[[redirects]]
-  from = "/admin"
-  to = "/"
-  status = 302
+  to = "/admin/"
+  status = 301
   force = true
 
 [[redirects]]
@@ -50,6 +17,6 @@
 
 [[redirects]]
   from = "/admin/*"
-  to = "/"
+  to = "/.netlify/identity?redirect=/admin/"
   status = 302
   force = true
