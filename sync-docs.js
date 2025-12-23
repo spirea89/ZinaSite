@@ -50,9 +50,15 @@ function syncFiles() {
     const destPath = path.join(DOCS_DIR, file);
 
     try {
-      // Read and write to ensure consistent line endings
+      // Read file content
       const content = fs.readFileSync(sourcePath, 'utf8');
-      fs.writeFileSync(destPath, content, 'utf8');
+      
+      // Normalize line endings to LF (Unix style) to match rsync behavior
+      // This ensures files are identical on all platforms
+      const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      
+      // Write with normalized line endings
+      fs.writeFileSync(destPath, normalizedContent, 'utf8');
       console.log(`✅ Synced: ${file}`);
       syncedCount++;
     } catch (error) {
