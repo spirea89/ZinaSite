@@ -11,6 +11,10 @@ npm start
 
 The site will be available at http://localhost:3000. Use `/admin.html` to create, edit, save drafts, and publish articles.
 
+## Supabase setup
+
+You can connect the API to Supabase for persistent article storage. Create a Supabase project, add an `articles` table, and set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in a local `.env` file. Detailed steps live in [`SUPABASE.md`](SUPABASE.md).
+
 ## Netlify Identity & Decap CMS
 
 - The admin UI is available at `/admin/` (Decap CMS) and requires Netlify Identity login for invited users (no GitHub accounts needed).
