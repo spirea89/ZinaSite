@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zina Admin</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header class="hero hero-small">
@@ -13,10 +13,7 @@
         <p class="eyebrow">Admin</p>
         <h1>Article Manager</h1>
         <p class="lead">Create, edit, and publish articles for ZusammenInAustria.</p>
-        <div class="actions">
-          <a class="button ghost" href="./">Back to Site</a>
-          <button id="logout-button" class="button ghost">Log out</button>
-        </div>
+        <a class="button ghost" href="/">Back to Site</a>
       </div>
     </div>
   </header>
@@ -59,7 +56,7 @@
     <p>Need help? Reach us at zina.vienna@example.org</p>
   </footer>
 
-  <script type="module">
+  <script>
     const form = document.getElementById('article-form');
     const titleInput = document.getElementById('title');
     const contentInput = document.getElementById('content');
@@ -68,6 +65,11 @@
     const adminArticles = document.getElementById('admin-articles');
     const adminEmpty = document.getElementById('admin-empty');
     const resetButton = document.getElementById('reset-form');
+
+    async function fetchArticles() {
+      const response = await fetch('/api/admin/articles');
+      return response.json();
+    }
 
     function resetForm() {
       form.reset();
@@ -129,7 +131,7 @@
         del.textContent = 'Delete';
         del.onclick = async () => {
           if (!confirm('Delete this article?')) return;
-          await deleteArticle(article.id);
+          await fetch(`/api/articles/${article.id}`, { method: 'DELETE' });
           loadArticles();
         };
 
@@ -146,61 +148,24 @@
       });
     }
 
-    async function fetchArticles() {
-      return apiRequest('/api/admin/articles');
-    }
-
-    async function apiRequest(url, options = {}) {
-      const response = await fetch(url, {
-        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-        ...options,
-      });
-
-      let data = null;
-
-      if (response.headers.get('content-type')?.includes('application/json')) {
-        data = await response.json();
-      }
-
-      if (!response.ok) {
-        const message = data?.error || response.statusText || 'Request failed.';
-        throw new Error(message);
-      }
-
-      return data;
-    }
-
     async function saveArticle({ id, title, content, status }) {
       const payload = { title, content, status };
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/articles/${id}` : '/api/articles';
 
-      try {
-        if (id) {
-          await apiRequest(`/api/articles/${encodeURIComponent(id)}`, {
-            method: 'PUT',
-            body: JSON.stringify(payload),
-          });
-        } else {
-          await apiRequest('/api/articles', {
-            method: 'POST',
-            body: JSON.stringify(payload),
-          });
-        }
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-        resetForm();
-        loadArticles();
-      } catch (error) {
-        console.error('Save error:', error);
-        alert('Failed to save article. Please check the form or run the server locally.');
+      if (!response.ok) {
+        alert('Failed to save article. Please check the form.');
+        return;
       }
-    }
 
-    async function deleteArticle(id) {
-      try {
-        await apiRequest(`/api/articles/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      } catch (error) {
-        console.error('Failed to delete article', error);
-        alert('Failed to delete article. Please run the server locally.');
-      }
+      resetForm();
+      loadArticles();
     }
 
     form.addEventListener('submit', async (event) => {
@@ -216,16 +181,8 @@
     resetButton.addEventListener('click', resetForm);
 
     async function loadArticles() {
-      adminArticles.innerHTML = '<p class="muted">Loading articles…</p>';
-      adminEmpty.style.display = 'none';
-
-      try {
-        const articles = await fetchArticles();
-        renderArticles(articles);
-      } catch (error) {
-        console.error('Failed to load articles from API', error);
-        adminArticles.innerHTML = '<p class="muted">Unable to load articles. Please run the server locally.</p>';
-      }
+      const articles = await fetchArticles();
+      renderArticles(articles);
     }
 
     loadArticles();
