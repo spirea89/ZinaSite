@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Zina</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="content center">
+  <main class="panel stack" style="max-width: 420px; width: 100%;">
+    <header class="stack">
+      <p class="eyebrow">Admin Access</p>
+      <h1>Sign in</h1>
+      <p class="muted">Use your Supabase email and password to continue.</p>
+    </header>
+
+    <form id="login-form" class="stack" autocomplete="on">
+      <label class="stack">
+        <span>Email</span>
+        <input id="email" name="email" type="email" required autocomplete="email">
+      </label>
+
+      <label class="stack">
+        <span>Password</span>
+        <input id="password" name="password" type="password" required autocomplete="current-password">
+      </label>
+
+      <button type="submit" class="button">Log in</button>
+      <p id="error" class="muted" role="alert" aria-live="assertive" style="display: none;"></p>
+    </form>
+  </main>
+
+  <script type="module">
+    import { supabase } from "./js/supabase.js";
+    import { login } from "./js/auth.js";
+
+    const form = document.getElementById("login-form");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const errorEl = document.getElementById("error");
+
+    const showError = (message) => {
+      errorEl.textContent = message;
+      errorEl.style.display = "block";
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        window.location.replace("/admin.html");
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorEl.style.display = "none";
+
+      try {
+        await login(email.value, password.value);
+        window.location.replace("/admin.html");
+      } catch (err) {
+        showError(err?.message || "Unable to sign in. Please try again.");
+      }
+    });
+  </script>
+</body>
+</html>
