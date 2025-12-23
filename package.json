@@ -4,7 +4,8 @@
   "description": "Basic website and admin page for ZusammenInAustria (Zina)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "sync-docs": "rm -rf docs && mkdir -p docs && cp -r public/* docs && cp -r logos docs/"
   },
   "keywords": [],
   "author": "",
