@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "sync-docs": "rm -rf docs && mkdir -p docs && cp -r public/* docs && cp -r logos docs/"
+    "build:pages": "rm -rf docs && mkdir -p docs && cp -R public/* docs/"
   },
   "keywords": [],
   "author": "",

@@ -6,7 +6,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_PATH = path.join(__dirname, 'data', 'articles.json');
 
-app.use('/logos', express.static(path.join(__dirname, 'logos')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '1mb' }));
 
