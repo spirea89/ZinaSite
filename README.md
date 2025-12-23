@@ -15,12 +15,10 @@ The site will be available at http://localhost:3000. Use `/admin.html` to create
 
 You can connect the API to Supabase for persistent article storage. Create a Supabase project, add an `articles` table, and set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in a local `.env` file. Detailed steps live in [`SUPABASE.md`](SUPABASE.md).
 
-## Netlify Identity & Decap CMS
+## Admin experience
 
-- The admin UI is available at `/admin/` (Decap CMS) and requires Netlify Identity login for invited users (no GitHub accounts needed).
-- Content is stored as Markdown in `data/articles/` with frontmatter fields for title, date, author, summary, lang, status, and body.
+- The admin UI is available at `/admin.html` and talks to Supabase (or the local JSON fallback) via the Express API.
 - Media uploads are saved to `public/uploads/` (exposed at `/uploads`).
-- Deploy with Netlify using `netlify.toml` (build: `npm run build:pages`, publish: `docs`). Redirects protect `/admin/` so only authenticated users with the `admin` role can access.
 
 ## GitHub Pages workflow
 
