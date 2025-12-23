@@ -14,7 +14,7 @@ node_modules/
 *.pptx
 
 # Allow committed brand assets
-!logos/*.png
+!public/logos/*.png
 !docs/logos/*.png
 
 # Archives and compressed packages
