@@ -13,6 +13,10 @@ node_modules/
 *.xlsx
 *.pptx
 
+# Allow committed brand assets
+!logos/*.png
+!docs/logos/*.png
+
 # Archives and compressed packages
 *.zip
 *.tar
