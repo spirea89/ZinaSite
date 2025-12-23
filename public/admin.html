@@ -56,7 +56,9 @@
     <p>Need help? Reach us at zina.vienna@example.org</p>
   </footer>
 
-  <script>
+  <script type="module">
+    import { supabase } from './js/supabase.js';
+
     const form = document.getElementById('article-form');
     const titleInput = document.getElementById('title');
     const contentInput = document.getElementById('content');
@@ -66,17 +68,15 @@
     const adminEmpty = document.getElementById('admin-empty');
     const resetButton = document.getElementById('reset-form');
 
-    async function fetchArticles() {
-      try {
-        const response = await fetch('api/admin/articles');
-        if (response.ok) {
-          return response.json();
-        }
-      } catch (error) {
-        console.warn('Admin API unavailable', error);
-      }
-
-      return fetch('./articles.json').then((res) => res.json()).catch(() => []);
+    function normalizeArticle(row) {
+      return {
+        id: row.id,
+        title: row.title,
+        content: row.content,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
     }
 
     function resetForm() {
@@ -139,7 +139,7 @@
         del.textContent = 'Delete';
         del.onclick = async () => {
           if (!confirm('Delete this article?')) return;
-          await fetch(`api/articles/${article.id}`, { method: 'DELETE' });
+          await deleteArticle(article.id);
           loadArticles();
         };
 
@@ -156,24 +156,56 @@
       });
     }
 
+    async function fetchArticles() {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data || []).map(normalizeArticle);
+    }
+
     async function saveArticle({ id, title, content, status }) {
       const payload = { title, content, status };
-      const method = id ? 'PUT' : 'POST';
-      const url = id ? `api/articles/${id}` : 'api/articles';
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      let response;
 
-      if (!response.ok) {
-        alert('Failed to save article. Please check the form or run the server locally.');
+      if (id) {
+        response = await supabase
+          .from('articles')
+          .update({ ...payload, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+      } else {
+        response = await supabase
+          .from('articles')
+          .insert([{ ...payload, updated_at: new Date().toISOString() }])
+          .select()
+          .single();
+      }
+
+      if (response.error) {
+        console.error('Supabase save error:', response.error);
+        alert('Failed to save article. Please check the form or Supabase settings.');
         return;
       }
 
       resetForm();
       loadArticles();
+    }
+
+    async function deleteArticle(id) {
+      const { error } = await supabase.from('articles').delete().eq('id', id);
+
+      if (error) {
+        console.error('Supabase delete error:', error);
+        alert('Failed to delete article from Supabase.');
+      }
     }
 
     form.addEventListener('submit', async (event) => {
@@ -189,8 +221,16 @@
     resetButton.addEventListener('click', resetForm);
 
     async function loadArticles() {
-      const articles = await fetchArticles();
-      renderArticles(articles);
+      adminArticles.innerHTML = '<p class="muted">Loading articles…</p>';
+      adminEmpty.style.display = 'none';
+
+      try {
+        const articles = await fetchArticles();
+        renderArticles(articles);
+      } catch (error) {
+        console.error('Failed to load articles from Supabase', error);
+        adminArticles.innerHTML = '<p class="muted">Unable to load Supabase articles. Check your connection.</p>';
+      }
     }
 
     loadArticles();
