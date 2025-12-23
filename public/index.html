@@ -131,16 +131,36 @@
             day: 'numeric'
           });
 
-          card.innerHTML = `
-            <div class="article-card-header">
-              <div class="article-date">${formattedDate}</div>
-            </div>
-            <h3 class="article-title">${article.title}</h3>
-            <p class="article-excerpt">${article.content.length > 150 ? article.content.substring(0, 150) + '...' : article.content}</p>
-            <div class="article-footer">
-              <span class="article-read-more">Citește mai mult →</span>
-            </div>
-          `;
+          // Create elements safely to prevent XSS
+          const header = document.createElement('div');
+          header.className = 'article-card-header';
+          
+          const dateDiv = document.createElement('div');
+          dateDiv.className = 'article-date';
+          dateDiv.textContent = formattedDate;
+          header.appendChild(dateDiv);
+
+          const title = document.createElement('h3');
+          title.className = 'article-title';
+          title.textContent = article.title;
+
+          const excerpt = document.createElement('p');
+          excerpt.className = 'article-excerpt';
+          const contentText = article.content.length > 150 ? article.content.substring(0, 150) + '...' : article.content;
+          excerpt.textContent = contentText;
+
+          const footer = document.createElement('div');
+          footer.className = 'article-footer';
+          
+          const readMore = document.createElement('span');
+          readMore.className = 'article-read-more';
+          readMore.textContent = 'Citește mai mult →';
+          footer.appendChild(readMore);
+
+          card.appendChild(header);
+          card.appendChild(title);
+          card.appendChild(excerpt);
+          card.appendChild(footer);
 
           container.appendChild(card);
         });
@@ -148,7 +168,14 @@
         console.error('Failed to load articles', error);
         const emptyState = document.getElementById('empty-state');
         emptyState.style.display = 'flex';
-        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea articolelor.</span>';
+        const icon = document.createElement('span');
+        icon.className = 'empty-icon';
+        icon.textContent = '⚠️';
+        const message = document.createElement('span');
+        message.textContent = 'Eroare la încărcarea articolelor.';
+        emptyState.innerHTML = '';
+        emptyState.appendChild(icon);
+        emptyState.appendChild(message);
       }
     }
 
