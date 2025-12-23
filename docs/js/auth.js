@@ -1,9 +1,11 @@
 import { supabase } from "./supabase.js";
 
-const REDIRECT_DEFAULT = "/login.html";
+const DEFAULT_REDIRECT_PATH = "./login.html";
 
-const redirectToLogin = (redirectTo = REDIRECT_DEFAULT) => {
-  window.location.replace(redirectTo);
+const resolveUrl = (path) => new URL(path, window.location.href).toString();
+
+const redirectToLogin = (redirectTo = DEFAULT_REDIRECT_PATH) => {
+  window.location.replace(resolveUrl(redirectTo));
 };
 
 export async function login(email, password) {
@@ -27,12 +29,12 @@ export async function logout({ redirectTo } = {}) {
   }
 
   if (redirectTo) {
-    window.location.replace(redirectTo);
+    window.location.replace(resolveUrl(redirectTo));
   }
 }
 
 export async function requireAuth(options = {}) {
-  const { redirectTo = REDIRECT_DEFAULT } = options;
+  const { redirectTo = DEFAULT_REDIRECT_PATH } = options;
 
   const {
     data: { session },
