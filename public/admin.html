@@ -1,59 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zina Admin</title>
+  <title>Zina Admin - Gestionare Articole</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">Zina</a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Înapoi la site</a>
+      </div>
+    </div>
+  </nav>
+
   <header class="hero hero-small">
     <div class="hero-content">
       <div class="hero-panel">
         <p class="eyebrow">Admin</p>
-        <h1>Article Manager</h1>
-        <p class="lead">Create, edit, and publish articles for ZusammenInAustria.</p>
-        <a class="button ghost" href="/">Back to Site</a>
+        <h1>Gestionare Articole</h1>
+        <p class="lead">Creează, editează și publică articole pentru ZusammenInAustria.</p>
+        <a class="button ghost" href="/">Înapoi la site</a>
       </div>
     </div>
   </header>
 
-  <main class="content grid">
-    <section class="panel">
-      <h2>Create or Update Article</h2>
-      <form id="article-form" class="stack">
-        <input type="hidden" id="article-id">
-        <label class="stack">
-          <span>Title</span>
-          <input id="title" name="title" type="text" required>
-        </label>
-        <label class="stack">
-          <span>Content</span>
-          <textarea id="content" name="content" rows="6" required></textarea>
-        </label>
-        <label class="stack">
-          <span>Status</span>
-          <select id="status" name="status" required>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-        </label>
-        <div class="actions">
-          <button type="submit" class="button">Save Article</button>
-          <button type="button" id="reset-form" class="button ghost">Reset</button>
-        </div>
-      </form>
-    </section>
+  <main class="content">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
+      <section class="panel">
+        <h2>Creează sau actualizează articol</h2>
+        <form id="article-form" class="stack">
+          <input type="hidden" id="article-id">
+          <label class="stack">
+            <span>Titlu</span>
+            <input id="title" name="title" type="text" required placeholder="Introduceți titlul articolului">
+          </label>
+          <label class="stack">
+            <span>Conținut</span>
+            <textarea id="content" name="content" rows="8" required placeholder="Scrieți conținutul articolului aici..."></textarea>
+          </label>
+          <label class="stack">
+            <span>Status</span>
+            <select id="status" name="status" required>
+              <option value="draft">Ciornă</option>
+              <option value="published">Publicat</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button type="submit" class="button">Salvează articol</button>
+            <button type="button" id="reset-form" class="button ghost">Resetează</button>
+          </div>
+        </form>
+      </section>
 
-    <section class="panel">
-      <h2>All Articles</h2>
-      <div id="admin-articles" class="cards"></div>
-      <p id="admin-empty" class="muted">No articles yet.</p>
-    </section>
+      <section class="panel">
+        <h2>Toate articolele</h2>
+        <div id="admin-articles" class="cards"></div>
+        <p id="admin-empty" class="empty-state">
+          <span class="empty-icon">📝</span>
+          <span>Nu există articole încă.</span>
+        </p>
+      </section>
+    </div>
   </main>
 
   <footer class="footer">
-    <p>Need help? Reach us at zina.vienna@example.org</p>
+    <div class="footer-content">
+      <p>Ai nevoie de ajutor? Contactează-ne la zina.vienna@example.org</p>
+    </div>
   </footer>
 
   <script>
@@ -80,7 +99,7 @@
     function renderArticles(articles) {
       adminArticles.innerHTML = '';
       if (!articles.length) {
-        adminEmpty.style.display = 'block';
+        adminEmpty.style.display = 'flex';
         return;
       }
 
@@ -95,7 +114,8 @@
 
         const meta = document.createElement('p');
         meta.className = 'muted';
-        meta.textContent = `${article.status.toUpperCase()} • ${new Date(article.updatedAt || article.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}`;
+        const statusText = article.status === 'published' ? 'Publicat' : 'Ciornă';
+        meta.textContent = `${statusText} • ${new Date(article.updatedAt || article.createdAt).toLocaleDateString('ro-RO', { dateStyle: 'medium' })}`;
 
         const body = document.createElement('p');
         body.textContent = article.content;
@@ -105,18 +125,19 @@
 
         const edit = document.createElement('button');
         edit.className = 'button ghost';
-        edit.textContent = 'Edit';
+        edit.textContent = 'Editează';
         edit.onclick = () => {
           idInput.value = article.id;
           titleInput.value = article.title;
           contentInput.value = article.content;
           statusInput.value = article.status;
           titleInput.focus();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         const publish = document.createElement('button');
         publish.className = 'button';
-        publish.textContent = article.status === 'published' ? 'Save as Draft' : 'Publish';
+        publish.textContent = article.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
         publish.onclick = async () => {
           await saveArticle({
             id: article.id,
@@ -128,9 +149,9 @@
 
         const del = document.createElement('button');
         del.className = 'button danger';
-        del.textContent = 'Delete';
+        del.textContent = 'Șterge';
         del.onclick = async () => {
-          if (!confirm('Delete this article?')) return;
+          if (!confirm('Sigur vrei să ștergi acest articol?')) return;
           await fetch(`/api/articles/${article.id}`, { method: 'DELETE' });
           loadArticles();
         };
@@ -160,7 +181,7 @@
       });
 
       if (!response.ok) {
-        alert('Failed to save article. Please check the form.');
+        alert('Eroare la salvarea articolului. Verificați formularul.');
         return;
       }
 
