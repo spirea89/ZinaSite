@@ -1,1 +1,64 @@
+# Dependency directories
 node_modules/
+
+# Binary and non-text files (images, documents)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.pdf
+*.docx
+*.xlsx
+*.pptx
+
+# Archives and compressed packages
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+
+# Executables and compiled artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+*.class
+*.wasm
+
+# Databases and binary data
+*.db
+*.sqlite
+*.bin
+*.dat
+
+# Generated and build outputs
+dist/
+build/
+out/
+.next/
+.cache/
+coverage/
+tmp/
+.turbo/
+
+# OS-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Trash-*
+.nfs*
+
+# Editor and tooling settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.bak
