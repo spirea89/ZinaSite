@@ -8,28 +8,32 @@ let supabaseInitialized = false;
 const SUPABASE_URL = 'https://nveksidxddivsqywsrjb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8';
 
-// Detect environment
+// Detect environment - more robust detection
 const isGitHubPages = window.location.hostname.includes('github.io') || 
-                      window.location.hostname.includes('github.com');
+                      window.location.hostname.includes('github.com') ||
+                      window.location.pathname.includes('/docs/'); // Also check pathname
 
 // Initialize Supabase client
 async function initializeSupabase() {
   if (supabaseInitialized) return;
   
   if (isGitHubPages) {
-    // Wait for Supabase to be available
+    // Wait for Supabase to be available (it's loaded via CDN in the HTML)
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
+    while (typeof window.supabase === 'undefined' && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    
     if (typeof window.supabase !== 'undefined') {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       useSupabaseDirectly = true;
       supabaseInitialized = true;
+      console.log('Supabase client initialized for GitHub Pages');
     } else {
-      // Wait a bit and try again (Supabase script might still be loading)
-      await new Promise(resolve => setTimeout(resolve, 100));
-      if (typeof window.supabase !== 'undefined') {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        useSupabaseDirectly = true;
-        supabaseInitialized = true;
-      }
+      console.warn('Supabase not available, falling back to API (if available)');
     }
   }
 }
@@ -57,7 +61,11 @@ const DataService = {
   async getArticles(status = null) {
     await this.ensureInitialized();
     
-    if (useSupabaseDirectly && supabaseClient) {
+    // On GitHub Pages, must use Supabase (no API available)
+    if (isGitHubPages) {
+      if (!supabaseClient) {
+        throw new Error('Supabase client not initialized. Please check your connection.');
+      }
       try {
         let query = supabaseClient
           .from('articles')
@@ -75,20 +83,24 @@ const DataService = {
         console.error('Error fetching articles from Supabase:', error);
         throw error;
       }
-    } else {
-      // Use API endpoint (local development)
-      const url = status ? `/api/articles?status=${status}` : '/api/articles';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch articles');
-      return response.json();
     }
+    
+    // Use API endpoint (local development only)
+    const url = status ? `/api/articles?status=${status}` : '/api/articles';
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch articles');
+    return response.json();
   },
 
   // Get all articles (for admin)
   async getAllArticles() {
     await this.ensureInitialized();
     
-    if (useSupabaseDirectly && supabaseClient) {
+    // On GitHub Pages, must use Supabase (no API available)
+    if (isGitHubPages) {
+      if (!supabaseClient) {
+        throw new Error('Supabase client not initialized. Please check your connection.');
+      }
       try {
         const { data, error } = await supabaseClient
           .from('articles')
@@ -101,18 +113,23 @@ const DataService = {
         console.error('Error fetching all articles from Supabase:', error);
         throw error;
       }
-    } else {
-      const response = await fetch('/api/admin/articles');
-      if (!response.ok) throw new Error('Failed to fetch articles');
-      return response.json();
     }
+    
+    // Use API endpoint (local development only)
+    const response = await fetch('/api/admin/articles');
+    if (!response.ok) throw new Error('Failed to fetch articles');
+    return response.json();
   },
 
   // Create article
   async createArticle(article) {
     await this.ensureInitialized();
     
-    if (useSupabaseDirectly && supabaseClient) {
+    // On GitHub Pages, must use Supabase (no API available)
+    if (isGitHubPages) {
+      if (!supabaseClient) {
+        throw new Error('Supabase client not initialized. Please check your connection.');
+      }
       try {
         const { data, error } = await supabaseClient
           .from('articles')
@@ -132,22 +149,27 @@ const DataService = {
         console.error('Error creating article in Supabase:', error);
         throw error;
       }
-    } else {
-      const response = await fetch('/api/articles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(article)
-      });
-      if (!response.ok) throw new Error('Failed to create article');
-      return response.json();
     }
+    
+    // Use API endpoint (local development only)
+    const response = await fetch('/api/articles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(article)
+    });
+    if (!response.ok) throw new Error('Failed to create article');
+    return response.json();
   },
 
   // Update article
   async updateArticle(id, article) {
     await this.ensureInitialized();
     
-    if (useSupabaseDirectly && supabaseClient) {
+    // On GitHub Pages, must use Supabase (no API available)
+    if (isGitHubPages) {
+      if (!supabaseClient) {
+        throw new Error('Supabase client not initialized. Please check your connection.');
+      }
       try {
         const { data, error } = await supabaseClient
           .from('articles')
@@ -167,22 +189,27 @@ const DataService = {
         console.error('Error updating article in Supabase:', error);
         throw error;
       }
-    } else {
-      const response = await fetch(`/api/articles/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(article)
-      });
-      if (!response.ok) throw new Error('Failed to update article');
-      return response.json();
     }
+    
+    // Use API endpoint (local development only)
+    const response = await fetch(`/api/articles/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(article)
+    });
+    if (!response.ok) throw new Error('Failed to update article');
+    return response.json();
   },
 
   // Delete article
   async deleteArticle(id) {
     await this.ensureInitialized();
     
-    if (useSupabaseDirectly && supabaseClient) {
+    // On GitHub Pages, must use Supabase (no API available)
+    if (isGitHubPages) {
+      if (!supabaseClient) {
+        throw new Error('Supabase client not initialized. Please check your connection.');
+      }
       try {
         const { error } = await supabaseClient
           .from('articles')
@@ -195,13 +222,14 @@ const DataService = {
         console.error('Error deleting article from Supabase:', error);
         throw error;
       }
-    } else {
-      const response = await fetch(`/api/articles/${id}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) throw new Error('Failed to delete article');
-      return true;
     }
+    
+    // Use API endpoint (local development only)
+    const response = await fetch(`/api/articles/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete article');
+    return true;
   }
 };
 
