@@ -139,12 +139,18 @@
             day: 'numeric'
           });
 
+          // Strip HTML tags for excerpt preview
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = article.content || '';
+          const textContent = tempDiv.textContent || tempDiv.innerText || '';
+          const excerpt = textContent.length > 150 ? textContent.substring(0, 150) + '...' : textContent;
+
           card.innerHTML = `
             <div class="article-card-header">
               <div class="article-date">${formattedDate}</div>
             </div>
             <h3 class="article-title">${article.title}</h3>
-            <p class="article-excerpt">${article.content.length > 150 ? article.content.substring(0, 150) + '...' : article.content}</p>
+            <p class="article-excerpt">${excerpt}</p>
             <div class="article-footer">
               <span class="article-read-more">Citește mai mult →</span>
             </div>

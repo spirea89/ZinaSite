@@ -9,7 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <!-- Quill.js Rich Text Editor -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -73,7 +76,8 @@
           </label>
           <label class="stack">
             <span>Conținut</span>
-            <textarea id="content" name="content" rows="8" required placeholder="Scrieți conținutul articolului aici..."></textarea>
+            <div id="editor-container" style="min-height: 300px; background: white; border: 1px solid var(--border); border-radius: var(--radius-md);"></div>
+            <textarea id="content" name="content" style="display: none;" required></textarea>
           </label>
           <label class="stack">
             <span>Status</span>
@@ -128,9 +132,85 @@
     const adminArticles = document.getElementById('admin-articles');
     const adminEmpty = document.getElementById('admin-empty');
     const resetButton = document.getElementById('reset-form');
+    const editorContainer = document.getElementById('editor-container');
 
     let currentUser = null;
     let authChecked = false;
+    let quill = null;
+
+    // Initialize Quill editor
+    function initQuill() {
+      if (quill) return quill;
+
+      quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+          toolbar: {
+            container: [
+              [{ 'header': [1, 2, 3, false] }],
+              ['bold', 'italic', 'underline', 'strike'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'color': [] }, { 'background': [] }],
+              [{ 'align': [] }],
+              ['link', 'image', 'video'],
+              ['clean']
+            ],
+            handlers: {
+              'image': imageHandler,
+              'video': videoHandler
+            }
+          }
+        },
+        placeholder: 'Scrieți conținutul articolului aici...'
+      });
+
+      // Update hidden textarea on content change
+      quill.on('text-change', () => {
+        contentInput.value = quill.root.innerHTML;
+      });
+
+      return quill;
+    }
+
+    // Handle image insertion
+    function imageHandler() {
+      const url = prompt('Introduceți URL-ul imaginii:');
+      if (url) {
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', url, 'user');
+      }
+    }
+
+    // Handle video insertion
+    function videoHandler() {
+      const url = prompt('Introduceți URL-ul videoclipului (YouTube, Vimeo, sau orice URL video):');
+      if (url) {
+        let embedHtml = '';
+        
+        // Convert YouTube/Vimeo URLs to embed format
+        if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+          const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+          if (videoId) {
+            embedHtml = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+          }
+        } else if (url.includes('vimeo.com/')) {
+          const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
+          if (videoId) {
+            embedHtml = `<iframe src="https://player.vimeo.com/video/${videoId}" width="560" height="315" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+          }
+        } else {
+          // For other video URLs, try to use as direct video tag or iframe
+          embedHtml = `<video controls width="560" style="max-width: 100%; height: auto;"><source src="${url}" type="video/mp4">Browser-ul tău nu suportă tag-ul video.</video>`;
+        }
+        
+        if (embedHtml) {
+          const range = quill.getSelection(true);
+          const delta = quill.clipboard.convert({ html: embedHtml });
+          quill.updateContents(delta, 'user');
+          quill.setSelection(range.index + 1);
+        }
+      }
+    }
 
     // Wait for Supabase to load, then check authentication
     async function waitForSupabaseAndCheckAuth() {
@@ -189,6 +269,10 @@
       adminContent.style.display = 'block';
       if (currentUser) {
         userInfo.textContent = `Conectat ca: ${currentUser.email}`;
+      }
+      // Initialize Quill editor when admin panel is shown
+      if (!quill) {
+        initQuill();
       }
       loadArticles();
     }
@@ -249,6 +333,10 @@
       form.reset();
       idInput.value = '';
       statusInput.value = 'draft';
+      if (quill) {
+        quill.setContents([]);
+        contentInput.value = '';
+      }
     }
 
     function renderArticles(articles) {
@@ -272,8 +360,13 @@
         const statusText = article.status === 'published' ? 'Publicat' : 'Ciornă';
         meta.textContent = `${statusText} • ${new Date(article.updatedAt || article.createdAt).toLocaleDateString('ro-RO', { dateStyle: 'medium' })}`;
 
-        const body = document.createElement('p');
-        body.textContent = article.content;
+        const body = document.createElement('div');
+        body.className = 'article-preview';
+        // Strip HTML tags for preview (first 200 chars of text only)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = article.content || '';
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        body.textContent = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
 
         const buttons = document.createElement('div');
         buttons.className = 'actions space-between';
@@ -284,8 +377,30 @@
         edit.onclick = () => {
           idInput.value = article.id;
           titleInput.value = article.title;
-          contentInput.value = article.content;
           statusInput.value = article.status;
+          
+          // Set Quill content (handle both HTML and plain text)
+          if (quill) {
+            if (article.content) {
+              // Check if content is HTML
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = article.content;
+              const hasHtmlTags = tempDiv.children.length > 0 || tempDiv.innerHTML !== article.content;
+              
+              if (hasHtmlTags) {
+                quill.root.innerHTML = article.content;
+              } else {
+                quill.setText(article.content);
+              }
+              contentInput.value = quill.root.innerHTML;
+            } else {
+              quill.setContents([]);
+              contentInput.value = '';
+            }
+          } else {
+            contentInput.value = article.content || '';
+          }
+          
           titleInput.focus();
           window.scrollTo({ top: 0, behavior: 'smooth' });
         };
@@ -326,10 +441,18 @@
 
     async function saveArticle({ id, title, content, status }) {
       try {
+        // Get content from Quill if available, otherwise from textarea
+        let articleContent = content;
+        if (quill && !content) {
+          articleContent = quill.root.innerHTML;
+        } else if (quill && contentInput.value) {
+          articleContent = quill.root.innerHTML;
+        }
+        
         if (id) {
-          await DataService.updateArticle(id, { title, content, status });
+          await DataService.updateArticle(id, { title, content: articleContent, status });
         } else {
-          await DataService.createArticle({ title, content, status });
+          await DataService.createArticle({ title, content: articleContent, status });
         }
         resetForm();
         loadArticles();
@@ -341,6 +464,12 @@
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      
+      // Ensure Quill content is synced to textarea
+      if (quill) {
+        contentInput.value = quill.root.innerHTML;
+      }
+      
       await saveArticle({
         id: idInput.value || undefined,
         title: titleInput.value,
