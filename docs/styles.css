@@ -111,9 +111,9 @@ body {
 }
 
 .logo-img {
-  height: 2.5rem;
+  height: 3rem;
   width: auto;
-  max-width: 120px;
+  max-width: 150px;
   object-fit: contain;
 }
 
@@ -313,10 +313,12 @@ body {
 }
 
 .hero-logo-img {
-  max-width: min(300px, 50vw);
+  max-width: min(400px, 60vw);
   height: auto;
   width: 100%;
   object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 @keyframes fadeInUp {
@@ -803,12 +805,12 @@ textarea {
   }
 
   .hero-logo-img {
-    max-width: min(200px, 40vw);
+    max-width: min(280px, 50vw);
   }
 
   .logo-img {
-    height: 2rem;
-    max-width: 100px;
+    height: 2.5rem;
+    max-width: 120px;
   }
 
   .content {
