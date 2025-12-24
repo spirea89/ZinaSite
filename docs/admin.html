@@ -154,12 +154,9 @@
       if (authChecked) return;
       
       try {
-        // Initialize auth client first
-        const client = getAuthClient();
-        if (!client) {
-          console.error('Failed to initialize Supabase client');
-          showLoginModal();
-          return;
+        // Wait a bit for auth-service to be fully loaded
+        if (typeof AuthService === 'undefined') {
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         currentUser = await AuthService.getCurrentUser();
@@ -204,6 +201,8 @@
         const result = await AuthService.signIn(email, password);
         if (result.user) {
           currentUser = result.user;
+          // Wait a moment for session to be fully established
+          await new Promise(resolve => setTimeout(resolve, 200));
           showAdminPanel();
         }
       } catch (error) {
@@ -350,11 +349,25 @@
 
     async function loadArticles() {
       try {
+        // Make sure we're using the authenticated client
+        // Wait a moment to ensure auth session is established
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const articles = await fetchArticles();
         renderArticles(articles);
       } catch (error) {
         console.error('Error loading articles:', error);
-        alert('Eroare la încărcarea articolelor. Te rugăm să te reautentifici.');
+        console.error('Error details:', error.message, error);
+        
+        // Show more specific error message
+        let errorMsg = 'Eroare la încărcarea articolelor.';
+        if (error.message) {
+          errorMsg += ` ${error.message}`;
+        }
+        if (error.message?.includes('permission') || error.message?.includes('policy')) {
+          errorMsg += ' Verifică dacă ești autentificat și ai permisiuni.';
+        }
+        alert(errorMsg);
       }
     }
 

@@ -1,13 +1,25 @@
 // Authentication service using Supabase Auth
 // Works on both GitHub Pages and local development
 
-const SUPABASE_URL = 'https://nveksidxddivsqywsrjb.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8';
+// Use shared config if available, otherwise define it
+const SUPABASE_URL = window.__SUPABASE_CONFIG?.url || 'https://nveksidxddivsqywsrjb.supabase.co';
+const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG?.anonKey || 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8';
+
+// Share config with other scripts (this runs first, so it sets the config)
+if (!window.__SUPABASE_CONFIG) {
+  window.__SUPABASE_CONFIG = { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY };
+}
 
 let authClient = null;
 
 // Initialize Supabase auth client (shared instance with data-service)
 function getAuthClient() {
+  // Always use the shared client if it exists (maintains session consistency)
+  if (window.__supabaseClient) {
+    authClient = window.__supabaseClient;
+    return authClient;
+  }
+  
   if (!authClient) {
     // Check if Supabase is available
     if (typeof window.supabase === 'undefined') {
@@ -17,9 +29,7 @@ function getAuthClient() {
     authClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     // Share the same client instance with data-service for session sharing
-    if (typeof window.__supabaseClient === 'undefined') {
-      window.__supabaseClient = authClient;
-    }
+    window.__supabaseClient = authClient;
   }
   return authClient;
 }

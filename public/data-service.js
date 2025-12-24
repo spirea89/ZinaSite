@@ -5,26 +5,45 @@ let useSupabaseDirectly = false;
 let supabaseInitialized = false;
 
 // Supabase configuration (safe to expose - this is the anon/public key)
-const SUPABASE_URL = 'https://nveksidxddivsqywsrjb.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8';
+// Use shared config if available, otherwise define it
+const SUPABASE_URL = window.__SUPABASE_CONFIG?.url || 'https://nveksidxddivsqywsrjb.supabase.co';
+const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG?.anonKey || 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8';
+
+// Share config with other scripts
+if (!window.__SUPABASE_CONFIG) {
+  window.__SUPABASE_CONFIG = { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY };
+}
 
 // Detect environment - more robust detection
+// Always use Supabase directly if available (for auth support)
 const isGitHubPages = window.location.hostname.includes('github.io') || 
                       window.location.hostname.includes('github.com') ||
                       window.location.pathname.includes('/docs/'); // Also check pathname
 
+// For admin page, always prefer Supabase (needed for authentication)
+// Check if we're on admin page
+const isAdminPage = window.location.pathname.includes('admin.html') || 
+                    window.location.pathname.includes('admin');
+
 // Get Supabase client (shared instance, maintains auth session)
 function getSupabaseClient() {
-  // Try to use shared client from auth-service if available
+  // Always use the shared client from auth-service if available (this has the auth session)
   if (window.__supabaseClient) {
     return window.__supabaseClient;
   }
   
+  // Fallback: create client if auth-service hasn't initialized yet
   if (!supabaseClient && typeof window.supabase !== 'undefined') {
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.__supabaseClient = supabaseClient; // Share with auth-service
+    // Don't override if auth-service has already created one
+    if (!window.__supabaseClient) {
+      window.__supabaseClient = supabaseClient;
+    } else {
+      // Use the one from auth-service instead
+      supabaseClient = window.__supabaseClient;
+    }
   }
-  return supabaseClient;
+  return supabaseClient || window.__supabaseClient;
 }
 
 // Initialize Supabase client
@@ -75,6 +94,7 @@ const DataService = {
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
+    // For admin operations, also use Supabase (needed for auth)
     if (isGitHubPages || useSupabaseDirectly) {
       const client = getSupabaseClient();
       if (!client) {
@@ -110,19 +130,35 @@ const DataService = {
   async getAllArticles() {
     await this.ensureInitialized();
     
-    // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages || useSupabaseDirectly) {
+    // On GitHub Pages or admin page, use Supabase (required for authentication)
+    if (isGitHubPages || useSupabaseDirectly || isAdminPage) {
       const client = getSupabaseClient();
       if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
       }
+      
+      // Verify we have an authenticated session
+      try {
+        const { data: { session } } = await client.auth.getSession();
+        if (!session) {
+          throw new Error('Not authenticated. Please log in again.');
+        }
+        console.log('Using authenticated session for getAllArticles');
+      } catch (sessionError) {
+        console.error('Session check error:', sessionError);
+        throw new Error('Authentication session not found. Please log in again.');
+      }
+      
       try {
         const { data, error } = await client
           .from('articles')
           .select('*')
           .order('created_at', { ascending: false });
         
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase query error:', error);
+          throw error;
+        }
         return data.map(formatArticle);
       } catch (error) {
         console.error('Error fetching all articles from Supabase:', error);
@@ -140,8 +176,8 @@ const DataService = {
   async createArticle(article) {
     await this.ensureInitialized();
     
-    // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages || useSupabaseDirectly) {
+    // On GitHub Pages or admin page, must use Supabase (required for authentication)
+    if (isGitHubPages || useSupabaseDirectly || isAdminPage) {
       const client = getSupabaseClient();
       if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
@@ -181,8 +217,8 @@ const DataService = {
   async updateArticle(id, article) {
     await this.ensureInitialized();
     
-    // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages || useSupabaseDirectly) {
+    // On GitHub Pages or admin page, must use Supabase (required for authentication)
+    if (isGitHubPages || useSupabaseDirectly || isAdminPage) {
       const client = getSupabaseClient();
       if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
@@ -222,8 +258,8 @@ const DataService = {
   async deleteArticle(id) {
     await this.ensureInitialized();
     
-    // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages || useSupabaseDirectly) {
+    // On GitHub Pages or admin page, must use Supabase (required for authentication)
+    if (isGitHubPages || useSupabaseDirectly || isAdminPage) {
       const client = getSupabaseClient();
       if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
