@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Articol - ZusammenInAustria (Zina)">
+  <title>Articol - ZusammenInAustria (Zina)</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logos/ZinA%20Logos-07.png" alt="ZusammenInAustria" class="logo-img">
+        <span class="logo-text">Zina</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html#mission" class="nav-link">Despre noi</a>
+        <a href="index.html#articles" class="nav-link">Articole</a>
+        <a href="admin.html" class="nav-link admin-link">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content" style="padding-top: 8rem;">
+    <div id="loading-state" class="empty-state">
+      <span class="empty-icon">⏳</span>
+      <span>Se încarcă articolul...</span>
+    </div>
+
+    <div id="error-state" class="empty-state" style="display: none;">
+      <span class="empty-icon">⚠️</span>
+      <span>Articolul nu a fost găsit.</span>
+      <a href="index.html" class="button" style="margin-top: 1rem;">Înapoi la articole</a>
+    </div>
+
+    <article id="article-content" style="display: none;">
+      <div class="article-header">
+        <a href="index.html" class="button ghost" style="margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+          ← Înapoi la articole
+        </a>
+        <div class="article-meta">
+          <span id="article-date" class="article-date"></span>
+        </div>
+        <h1 id="article-title" class="article-detail-title"></h1>
+      </div>
+      <div id="article-body" class="article-content"></div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
+      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+    </div>
+  </footer>
+
+  <script src="data-service.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Get article ID from URL parameters
+    function getArticleId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    async function loadArticle() {
+      const articleId = getArticleId();
+      const loadingState = document.getElementById('loading-state');
+      const errorState = document.getElementById('error-state');
+      const articleContent = document.getElementById('article-content');
+
+      if (!articleId) {
+        loadingState.style.display = 'none';
+        errorState.style.display = 'flex';
+        return;
+      }
+
+      try {
+        // Get all published articles and find the one with matching ID
+        const articles = await DataService.getArticles('published');
+        const article = articles.find(a => a.id === articleId);
+
+        if (!article) {
+          loadingState.style.display = 'none';
+          errorState.style.display = 'flex';
+          return;
+        }
+
+        // Display article
+        const date = new Date(article.updatedAt || article.createdAt);
+        const formattedDate = date.toLocaleDateString('ro-RO', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        document.getElementById('article-title').textContent = article.title;
+        document.getElementById('article-date').textContent = formattedDate;
+        document.getElementById('article-body').innerHTML = article.content || '';
+
+        // Update page title
+        document.title = `${article.title} - ZusammenInAustria (Zina)`;
+
+        // Update meta description
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = article.content || '';
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        const description = textContent.length > 160 ? textContent.substring(0, 160) + '...' : textContent;
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) {
+          metaDescription.setAttribute('content', description);
+        }
+
+        loadingState.style.display = 'none';
+        articleContent.style.display = 'block';
+      } catch (error) {
+        console.error('Failed to load article', error);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'flex';
+      }
+    }
+
+    // Navbar scroll effect
+    let lastScroll = 0;
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      if (currentScroll > 100) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+      lastScroll = currentScroll;
+    });
+
+    loadArticle();
+  </script>
+</body>
+</html>
+

@@ -152,9 +152,18 @@
             <h3 class="article-title">${article.title}</h3>
             <p class="article-excerpt">${excerpt}</p>
             <div class="article-footer">
-              <span class="article-read-more">Citește mai mult →</span>
+              <a href="article.html?id=${article.id}" class="article-read-more">Citește mai mult →</a>
             </div>
           `;
+
+          // Make entire card clickable
+          card.addEventListener('click', (e) => {
+            // Don't navigate if clicking on a link or button
+            if (e.target.tagName === 'A' || e.target.closest('a')) {
+              return;
+            }
+            window.location.href = `article.html?id=${article.id}`;
+          });
 
           container.appendChild(card);
         });

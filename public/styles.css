@@ -812,6 +812,43 @@ h3 {
   margin: 0.5rem 0;
 }
 
+/* Article detail page styling */
+.article-header {
+  margin-bottom: 3rem;
+}
+
+.article-meta {
+  margin-bottom: 1rem;
+}
+
+.article-detail-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 2rem 0;
+  color: var(--text);
+}
+
+.article-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: var(--card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .article-content {
+    padding: 1.5rem;
+  }
+  
+  .article-detail-title {
+    font-size: 2rem;
+  }
+}
+
 /* Quill editor styling */
 #editor-container .ql-container {
   font-size: 1rem;
@@ -879,6 +916,12 @@ h3 {
   font-size: 0.95rem;
   transition: transform var(--transition-fast);
   display: inline-block;
+  text-decoration: none;
+}
+
+.article-read-more:hover {
+  color: var(--accent-hover);
+  transform: translateX(4px);
 }
 
 .article-card:hover .article-read-more {
