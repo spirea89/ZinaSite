@@ -220,8 +220,19 @@
       lastScroll = currentScroll;
     });
 
-    loadArticles();
-    loadEvents();
+    // Wait for DataService to be available before loading
+    if (typeof DataService !== 'undefined') {
+      loadArticles();
+      loadEvents();
+    } else {
+      // Wait a bit for scripts to load
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          loadArticles();
+          loadEvents();
+        }, 100);
+      });
+    }
   </script>
   <script>
     // Calendar functionality
@@ -266,8 +277,19 @@
     }
 
     function getEventsForDate(date) {
+      if (!events || events.length === 0) {
+        return [];
+      }
       return events.filter(event => {
+        if (!event.startDate) {
+          console.warn('Event missing startDate:', event);
+          return false;
+        }
         const eventDate = new Date(event.startDate);
+        if (isNaN(eventDate.getTime())) {
+          console.warn('Invalid event date:', event.startDate, event);
+          return false;
+        }
         return isSameDay(eventDate, date);
       });
     }
@@ -450,10 +472,21 @@
 
     async function loadEvents() {
       try {
+        console.log('Loading events...');
         events = await DataService.getEvents('published');
+        console.log('Events loaded:', events);
+        
+        if (!events || events.length === 0) {
+          console.log('No published events found');
+          const emptyState = document.getElementById('events-empty');
+          emptyState.style.display = 'flex';
+          renderCalendar(); // Still render calendar even with no events
+          return;
+        }
         
         // Sort events by date
         events.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        console.log('Events sorted:', events);
         
         renderCalendar();
         renderEventsList();
@@ -461,7 +494,9 @@
         console.error('Failed to load events', error);
         const emptyState = document.getElementById('events-empty');
         emptyState.style.display = 'flex';
-        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea evenimentelor.</span>';
+        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea evenimentelor: ' + (error.message || 'Eroare necunoscută') + '</span>';
+        // Still render calendar even on error
+        renderCalendar();
       }
     }
 
@@ -475,6 +510,9 @@
       currentDate.setMonth(currentDate.getMonth() + 1);
       renderCalendar();
     });
+
+    // Initial calendar render (even before events load)
+    renderCalendar();
   </script>
 </body>
 </html>
