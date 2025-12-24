@@ -220,16 +220,15 @@
       lastScroll = currentScroll;
     });
 
-    // Wait for DataService to be available before loading
+    // Wait for DataService to be available before loading articles
+    // Events will be loaded after the calendar script loads
     if (typeof DataService !== 'undefined') {
       loadArticles();
-      loadEvents();
     } else {
       // Wait a bit for scripts to load
       window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           loadArticles();
-          loadEvents();
         }, 100);
       });
     }
@@ -543,6 +542,31 @@
 
     // Initial calendar render (even before events load)
     renderCalendar();
+    
+    // Load events after calendar is set up
+    // Wait for DataService to be available
+    async function initEvents() {
+      if (typeof DataService !== 'undefined') {
+        await loadEvents();
+      } else {
+        // Wait a bit for DataService to load
+        let attempts = 0;
+        const maxAttempts = 50;
+        const checkDataService = setInterval(() => {
+          attempts++;
+          if (typeof DataService !== 'undefined') {
+            clearInterval(checkDataService);
+            loadEvents();
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkDataService);
+            console.error('DataService not available after waiting');
+          }
+        }, 100);
+      }
+    }
+    
+    // Start loading events
+    initEvents();
   </script>
 </body>
 </html>
