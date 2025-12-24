@@ -1,14 +1,17 @@
 // Authentication service using Supabase Auth
 // Works on both GitHub Pages and local development
 
-// Use shared config if available, otherwise define it
-const SUPABASE_URL = window.__SUPABASE_CONFIG?.url || 'https://nveksidxddivsqywsrjb.supabase.co';
-const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG?.anonKey || 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8';
-
-// Share config with other scripts (this runs first, so it sets the config)
+// Define Supabase config once (this script loads first)
 if (!window.__SUPABASE_CONFIG) {
-  window.__SUPABASE_CONFIG = { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY };
+  window.__SUPABASE_CONFIG = {
+    url: 'https://nveksidxddivsqywsrjb.supabase.co',
+    anonKey: 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8'
+  };
 }
+
+// Use the shared config
+const SUPABASE_URL = window.__SUPABASE_CONFIG.url;
+const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG.anonKey;
 
 let authClient = null;
 

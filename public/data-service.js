@@ -5,13 +5,17 @@ let useSupabaseDirectly = false;
 let supabaseInitialized = false;
 
 // Supabase configuration (safe to expose - this is the anon/public key)
-// Use shared config if available, otherwise define it
-const SUPABASE_URL = window.__SUPABASE_CONFIG?.url || 'https://nveksidxddivsqywsrjb.supabase.co';
-const SUPABASE_ANON_KEY = window.__SUPABASE_CONFIG?.anonKey || 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8';
-
-// Share config with other scripts
-if (!window.__SUPABASE_CONFIG) {
-  window.__SUPABASE_CONFIG = { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY };
+// Read from shared config set by auth-service.js (which loads first)
+// Fallback values in case auth-service hasn't loaded yet
+function getSupabaseConfig() {
+  if (window.__SUPABASE_CONFIG) {
+    return window.__SUPABASE_CONFIG;
+  }
+  // Fallback if config not yet set
+  return {
+    url: 'https://nveksidxddivsqywsrjb.supabase.co',
+    anonKey: 'sb_publishable_SUQ2hBY4_Q_0KY78GwNKqg_fmi8KXc8'
+  };
 }
 
 // Detect environment - more robust detection
@@ -34,7 +38,8 @@ function getSupabaseClient() {
   
   // Fallback: create client if auth-service hasn't initialized yet
   if (!supabaseClient && typeof window.supabase !== 'undefined') {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const config = getSupabaseConfig();
+    supabaseClient = window.supabase.createClient(config.url, config.anonKey);
     // Don't override if auth-service has already created one
     if (!window.__supabaseClient) {
       window.__supabaseClient = supabaseClient;
@@ -61,7 +66,16 @@ async function initializeSupabase() {
   }
   
   if (typeof window.supabase !== 'undefined') {
-    supabaseClient = getSupabaseClient();
+    const config = getSupabaseConfig();
+    if (!supabaseClient) {
+      supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+      // Share with auth-service if not already set
+      if (!window.__supabaseClient) {
+        window.__supabaseClient = supabaseClient;
+      } else {
+        supabaseClient = window.__supabaseClient;
+      }
+    }
     useSupabaseDirectly = true;
     supabaseInitialized = true;
     console.log('Supabase client initialized');
