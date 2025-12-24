@@ -103,15 +103,27 @@ body {
 }
 
 .nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  transition: transform var(--transition-fast);
+}
+
+.logo-img {
+  height: 2rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.logo-text {
   font-size: 1.5rem;
   font-weight: 800;
   color: var(--accent);
-  text-decoration: none;
   background: linear-gradient(135deg, var(--primary-blue), var(--primary-yellow), var(--primary-red));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  transition: transform var(--transition-fast);
 }
 
 .nav-logo:hover {
@@ -221,6 +233,18 @@ body {
   box-shadow: var(--shadow-xl);
   max-width: 800px;
   animation: fadeInUp 0.8s ease-out;
+}
+
+.hero-logo {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.hero-logo-img {
+  max-width: 200px;
+  height: auto;
+  width: 100%;
+  object-fit: contain;
 }
 
 @keyframes fadeInUp {
@@ -704,6 +728,14 @@ textarea {
 
   .hero-panel {
     padding: 2rem;
+  }
+
+  .hero-logo-img {
+    max-width: 150px;
+  }
+
+  .logo-img {
+    height: 1.5rem;
   }
 
   .content {
