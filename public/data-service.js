@@ -36,19 +36,8 @@ function getSupabaseClient() {
     return window.__supabaseClient;
   }
   
-  // Fallback: create client if auth-service hasn't initialized yet
-  if (!supabaseClient && typeof window.supabase !== 'undefined') {
-    const config = getSupabaseConfig();
-    supabaseClient = window.supabase.createClient(config.url, config.anonKey);
-    // Don't override if auth-service has already created one
-    if (!window.__supabaseClient) {
-      window.__supabaseClient = supabaseClient;
-    } else {
-      // Use the one from auth-service instead
-      supabaseClient = window.__supabaseClient;
-    }
-  }
-  return supabaseClient || window.__supabaseClient;
+  // Use local client as fallback
+  return supabaseClient;
 }
 
 // Initialize Supabase client
@@ -66,16 +55,19 @@ async function initializeSupabase() {
   }
   
   if (typeof window.supabase !== 'undefined') {
-    const config = getSupabaseConfig();
-    if (!supabaseClient) {
-      supabaseClient = window.supabase.createClient(config.url, config.anonKey);
-      // Share with auth-service if not already set
-      if (!window.__supabaseClient) {
-        window.__supabaseClient = supabaseClient;
-      } else {
-        supabaseClient = window.__supabaseClient;
-      }
+    // Always use the shared client from auth-service if it exists
+    if (window.__supabaseClient) {
+      supabaseClient = window.__supabaseClient;
+      useSupabaseDirectly = true;
+      supabaseInitialized = true;
+      console.log('Supabase client initialized (using shared instance from auth-service)');
+      return;
     }
+    
+    // Only create if auth-service hasn't created one yet
+    const config = getSupabaseConfig();
+    supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+    window.__supabaseClient = supabaseClient; // Share with auth-service
     useSupabaseDirectly = true;
     supabaseInitialized = true;
     console.log('Supabase client initialized');

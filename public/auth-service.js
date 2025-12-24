@@ -23,16 +23,17 @@ function getAuthClient() {
     return authClient;
   }
   
+  // Only create if it doesn't exist (prevents multiple instances)
   if (!authClient) {
     // Check if Supabase is available
     if (typeof window.supabase === 'undefined') {
       console.warn('Supabase library not loaded yet');
       return null;
     }
+    // Create the client and immediately share it
     authClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    // Share the same client instance with data-service for session sharing
-    window.__supabaseClient = authClient;
+    window.__supabaseClient = authClient; // Share with data-service immediately
+    console.log('Supabase auth client created and shared');
   }
   return authClient;
 }
