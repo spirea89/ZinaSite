@@ -111,8 +111,9 @@ body {
 }
 
 .logo-img {
-  height: 2rem;
+  height: 2.5rem;
   width: auto;
+  max-width: 120px;
   object-fit: contain;
 }
 
@@ -237,11 +238,11 @@ body {
 
 .hero-logo {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .hero-logo-img {
-  max-width: 200px;
+  max-width: min(300px, 50vw);
   height: auto;
   width: 100%;
   object-fit: contain;
@@ -731,11 +732,12 @@ textarea {
   }
 
   .hero-logo-img {
-    max-width: 150px;
+    max-width: min(200px, 40vw);
   }
 
   .logo-img {
-    height: 1.5rem;
+    height: 2rem;
+    max-width: 100px;
   }
 
   .content {
