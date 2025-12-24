@@ -66,7 +66,7 @@
 
   <main class="content" id="admin-content" style="display: none;">
     <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
-      <section class="panel">
+      <section class="panel panel-with-editor">
         <h2>Creează sau actualizează articol</h2>
         <form id="article-form" class="stack">
           <input type="hidden" id="article-id">
@@ -76,7 +76,7 @@
           </label>
           <label class="stack">
             <span>Conținut</span>
-            <div id="editor-container" style="min-height: 300px; background: white; border: 1px solid var(--border); border-radius: var(--radius-md);"></div>
+            <div id="editor-container" style="min-height: 300px; background: white; border: 1px solid var(--border); border-radius: var(--radius-md); position: relative; z-index: 1;"></div>
             <textarea id="content" name="content" style="display: none;" required></textarea>
           </label>
           <label class="stack">
@@ -183,24 +183,32 @@
 
     // Handle video insertion
     function videoHandler() {
-      const url = prompt('Introduceți URL-ul videoclipului (YouTube, Vimeo, etc.):');
+      const url = prompt('Introduceți URL-ul videoclipului (YouTube, Vimeo, sau orice URL video):');
       if (url) {
-        // Convert YouTube/Vimeo URLs to embed format if needed
-        let embedUrl = url;
+        let embedHtml = '';
+        
+        // Convert YouTube/Vimeo URLs to embed format
         if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
           const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
           if (videoId) {
-            embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            embedHtml = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
           }
         } else if (url.includes('vimeo.com/')) {
           const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
           if (videoId) {
-            embedUrl = `https://player.vimeo.com/video/${videoId}`;
+            embedHtml = `<iframe src="https://player.vimeo.com/video/${videoId}" width="560" height="315" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
           }
+        } else {
+          // For other video URLs, try to use as direct video tag or iframe
+          embedHtml = `<video controls width="560" style="max-width: 100%; height: auto;"><source src="${url}" type="video/mp4">Browser-ul tău nu suportă tag-ul video.</video>`;
         }
         
-        const range = quill.getSelection(true);
-        quill.insertEmbed(range.index, 'video', embedUrl, 'user');
+        if (embedHtml) {
+          const range = quill.getSelection(true);
+          const delta = quill.clipboard.convert({ html: embedHtml });
+          quill.updateContents(delta, 'user');
+          quill.setSelection(range.index + 1);
+        }
       }
     }
 

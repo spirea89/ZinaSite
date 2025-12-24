@@ -526,6 +526,11 @@ h3 {
   overflow: hidden;
 }
 
+/* Panel with editor needs visible overflow for dropdowns */
+.panel:has(#editor-container) {
+  overflow: visible;
+}
+
 .card::before, .panel::before {
   content: '';
   position: absolute;
@@ -833,6 +838,33 @@ h3 {
 #editor-container .ql-container {
   border-bottom-left-radius: var(--radius-md);
   border-bottom-right-radius: var(--radius-md);
+}
+
+/* Fix Quill dropdown visibility - ensure dropdowns are not clipped */
+.panel-with-editor {
+  overflow: visible !important;
+}
+
+/* Ensure Quill dropdowns appear above other elements */
+.ql-toolbar .ql-picker-options,
+.ql-toolbar .ql-picker-label {
+  z-index: 10001;
+}
+
+.ql-snow .ql-picker-options {
+  z-index: 10001 !important;
+  background: white;
+  box-shadow: var(--shadow-lg);
+}
+
+.ql-snow .ql-picker {
+  z-index: 10001;
+}
+
+/* Ensure color picker dropdowns are visible */
+.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  display: block;
+  z-index: 10001 !important;
 }
 
 .article-footer {
