@@ -1484,6 +1484,24 @@ textarea {
   gap: 0.5rem;
 }
 
+.location-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  border-bottom: 1px solid transparent;
+}
+
+.location-link:hover {
+  color: var(--accent-hover);
+  border-bottom-color: var(--accent-hover);
+  text-decoration: none;
+}
+
+.location-link:active {
+  color: var(--primary-blue);
+}
+
 /* Responsive Calendar */
 @media (max-width: 768px) {
   .calendar {

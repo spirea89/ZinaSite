@@ -445,6 +445,13 @@
       const dateStr = formatDate(eventDate);
       const timeStr = formatTime(eventDate);
       
+      // Create Google Maps link if location exists
+      let locationHtml = '';
+      if (event.location) {
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
+        locationHtml = `<span class="event-location">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="location-link">${event.location}</a></span>`;
+      }
+      
       card.innerHTML = `
         <div class="event-date">
           <div class="event-day">${eventDate.getDate()}</div>
@@ -455,7 +462,7 @@
           ${event.description ? `<p class="event-description">${event.description}</p>` : ''}
           <div class="event-meta">
             <span class="event-time">🕐 ${dateStr} la ${timeStr}</span>
-            ${event.location ? `<span class="event-location">📍 ${event.location}</span>` : ''}
+            ${locationHtml}
           </div>
         </div>
       `;
