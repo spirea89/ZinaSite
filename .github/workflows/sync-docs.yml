@@ -10,22 +10,29 @@ on:
     paths:
       - 'public/**'
       - '.github/workflows/sync-docs.yml'
+  workflow_dispatch:
 
 jobs:
-  verify-docs-sync:
+  sync-docs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync docs directory
         run: |
           rsync -av --delete public/ docs/
 
-      - name: Check for differences
+      - name: Check for changes and commit
         run: |
           if ! git diff --quiet -- docs; then
-            echo "docs directory is out of sync with public. Please run: rsync -av --delete public/ docs/" >&2
-            git diff -- docs
-            exit 1
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add docs/
+            git commit -m "Sync docs/ directory with public/ [skip ci]" || exit 0
+            git push
+          else
+            echo "No changes to sync"
           fi
