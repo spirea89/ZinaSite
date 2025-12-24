@@ -290,7 +290,11 @@
           console.warn('Invalid event date:', event.startDate, event);
           return false;
         }
-        return isSameDay(eventDate, date);
+        const same = isSameDay(eventDate, date);
+        if (same) {
+          console.log('Found event for date:', date.toISOString().split('T')[0], 'Event:', event.title, 'Event date:', eventDate.toISOString().split('T')[0]);
+        }
+        return same;
       });
     }
 
@@ -336,12 +340,18 @@
       }
       
       // Days of the month
+      let eventsFoundInMonth = 0;
       for (let day = 1; day <= daysInMonth; day++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'calendar-day';
         
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
         const dayEvents = getEventsForDate(date);
+        
+        if (dayEvents.length > 0) {
+          eventsFoundInMonth += dayEvents.length;
+        }
+        
         const isToday = isSameDay(date, today);
         const isPastDate = isPast(date);
         
@@ -374,6 +384,8 @@
         
         grid.appendChild(dayCell);
       }
+      
+      console.log(`📆 Calendar rendered for ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}, found ${eventsFoundInMonth} events in this month`);
       
       calendar.appendChild(grid);
     }
@@ -472,26 +484,44 @@
 
     async function loadEvents() {
       try {
-        console.log('Loading events...');
+        console.log('🔄 Loading events...');
         events = await DataService.getEvents('published');
-        console.log('Events loaded:', events);
+        console.log('✅ Events loaded from DataService:', events);
+        console.log('📊 Number of events:', events?.length || 0);
         
         if (!events || events.length === 0) {
-          console.log('No published events found');
+          console.warn('⚠️ No published events found');
           const emptyState = document.getElementById('events-empty');
           emptyState.style.display = 'flex';
           renderCalendar(); // Still render calendar even with no events
           return;
         }
         
+        // Log each event's details
+        events.forEach((event, index) => {
+          console.log(`Event ${index + 1}:`, {
+            title: event.title,
+            startDate: event.startDate,
+            parsedDate: new Date(event.startDate).toISOString(),
+            status: event.status
+          });
+        });
+        
         // Sort events by date
         events.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-        console.log('Events sorted:', events);
+        console.log('📅 Events sorted by date:', events.map(e => ({ title: e.title, date: e.startDate })));
         
+        console.log('🎨 Rendering calendar with', events.length, 'events');
         renderCalendar();
         renderEventsList();
+        console.log('✅ Calendar and events list rendered');
       } catch (error) {
-        console.error('Failed to load events', error);
+        console.error('❌ Failed to load events', error);
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         const emptyState = document.getElementById('events-empty');
         emptyState.style.display = 'flex';
         emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea evenimentelor: ' + (error.message || 'Eroare necunoscută') + '</span>';
