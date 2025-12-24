@@ -9,9 +9,10 @@ let authClient = null;
 // Initialize Supabase auth client (shared instance with data-service)
 function getAuthClient() {
   if (!authClient) {
-    // Wait for Supabase to be available
+    // Check if Supabase is available
     if (typeof window.supabase === 'undefined') {
-      throw new Error('Supabase library not loaded');
+      console.warn('Supabase library not loaded yet');
+      return null;
     }
     authClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
@@ -29,6 +30,9 @@ const AuthService = {
   async getSession() {
     try {
       const client = getAuthClient();
+      if (!client) {
+        return null;
+      }
       const { data: { session }, error } = await client.auth.getSession();
       if (error) throw error;
       return session;
@@ -48,6 +52,9 @@ const AuthService = {
   async signIn(email, password) {
     try {
       const client = getAuthClient();
+      if (!client) {
+        throw new Error('Supabase client not initialized');
+      }
       const { data, error } = await client.auth.signInWithPassword({
         email,
         password
@@ -64,6 +71,9 @@ const AuthService = {
   async signOut() {
     try {
       const client = getAuthClient();
+      if (!client) {
+        throw new Error('Supabase client not initialized');
+      }
       const { error } = await client.auth.signOut();
       if (error) throw error;
       return true;
@@ -76,6 +86,10 @@ const AuthService = {
   // Listen to auth state changes
   onAuthStateChange(callback) {
     const client = getAuthClient();
+    if (!client) {
+      console.warn('Supabase client not initialized, cannot listen to auth changes');
+      return { data: { subscription: null }, unsubscribe: () => {} };
+    }
     return client.auth.onAuthStateChange(callback);
   }
 };
