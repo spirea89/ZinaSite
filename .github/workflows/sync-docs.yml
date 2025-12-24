@@ -1,38 +1,31 @@
-name: Sync docs with public
+name: Deploy GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'public/**'
-      - '.github/workflows/sync-docs.yml'
-  pull_request:
-    paths:
-      - 'public/**'
-      - '.github/workflows/sync-docs.yml'
+    branches:
+      - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
-  sync-docs:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          node-version: 20
+          cache: npm
 
-      - name: Sync docs directory
-        run: |
-          rsync -av --delete public/ docs/
-
-      - name: Check for changes and commit
-        run: |
-          if ! git diff --quiet -- docs; then
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add docs/
-            git commit -m "Sync docs/ directory with public/ [skip ci]" || exit 0
-            git push
-          else
-            echo "No changes to sync"
-          fi
+      - name: Install dependencies
