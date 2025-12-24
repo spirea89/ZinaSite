@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -75,6 +76,7 @@
     </div>
   </footer>
 
+  <script src="/data-service.js"></script>
   <script>
     const form = document.getElementById('article-form');
     const titleInput = document.getElementById('title');
@@ -86,8 +88,7 @@
     const resetButton = document.getElementById('reset-form');
 
     async function fetchArticles() {
-      const response = await fetch('/api/admin/articles');
-      return response.json();
+      return await DataService.getAllArticles();
     }
 
     function resetForm() {
@@ -152,7 +153,7 @@
         del.textContent = 'Șterge';
         del.onclick = async () => {
           if (!confirm('Sigur vrei să ștergi acest articol?')) return;
-          await fetch(`/api/articles/${article.id}`, { method: 'DELETE' });
+          await DataService.deleteArticle(article.id);
           loadArticles();
         };
 
@@ -170,23 +171,18 @@
     }
 
     async function saveArticle({ id, title, content, status }) {
-      const payload = { title, content, status };
-      const method = id ? 'PUT' : 'POST';
-      const url = id ? `/api/articles/${id}` : '/api/articles';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
+      try {
+        if (id) {
+          await DataService.updateArticle(id, { title, content, status });
+        } else {
+          await DataService.createArticle({ title, content, status });
+        }
+        resetForm();
+        loadArticles();
+      } catch (error) {
+        console.error('Error saving article:', error);
         alert('Eroare la salvarea articolului. Verificați formularul.');
-        return;
       }
-
-      resetForm();
-      loadArticles();
     }
 
     form.addEventListener('submit', async (event) => {
