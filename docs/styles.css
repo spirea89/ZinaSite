@@ -730,6 +730,14 @@ textarea {
     padding: 2rem;
   }
 
+  .hero-logo-img {
+    max-width: 150px;
+  }
+
+  .logo-img {
+    height: 1.5rem;
+  }
+
   .content {
     padding: 3rem 1.5rem;
   }
