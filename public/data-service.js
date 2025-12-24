@@ -312,6 +312,7 @@ const DataService = {
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
+    // Also use Supabase on localhost if available (for consistency)
     if (isGitHubPages || useSupabaseDirectly) {
       const client = getSupabaseClient();
       if (!client) {
@@ -328,8 +329,17 @@ const DataService = {
         }
         
         const { data, error } = await query;
-        if (error) throw error;
-        return data.map(formatEvent);
+        if (error) {
+          console.error('Supabase query error:', error);
+          // If table doesn't exist, return empty array instead of throwing
+          if (error.code === '42P01' || error.message?.includes('does not exist')) {
+            console.warn('Events table does not exist yet. Please run the SQL schema.');
+            return [];
+          }
+          throw error;
+        }
+        console.log('Events fetched from Supabase:', data?.length || 0, 'events');
+        return (data || []).map(formatEvent);
       } catch (error) {
         console.error('Error fetching events from Supabase:', error);
         throw error;
@@ -337,10 +347,20 @@ const DataService = {
     }
     
     // Use API endpoint (local development only)
-    const url = status ? `/api/events?status=${status}` : '/api/events';
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch events');
-    return response.json();
+    try {
+      const url = status ? `/api/events?status=${status}` : '/api/events';
+      const response = await fetch(url);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch events: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+      console.log('Events fetched from API:', data?.length || 0, 'events');
+      return data;
+    } catch (error) {
+      console.error('Error fetching events from API:', error);
+      throw error;
+    }
   },
 
   // Get all events (for admin)
