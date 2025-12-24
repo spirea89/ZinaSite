@@ -20,18 +20,44 @@
     </div>
   </nav>
 
-  <header class="hero hero-small">
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h2>Autentificare Admin</h2>
+      <p class="muted">Te rugăm să te autentifici pentru a accesa panoul de administrare.</p>
+      <form id="login-form" class="stack">
+        <label class="stack">
+          <span>Email</span>
+          <input type="email" id="login-email" required placeholder="email@example.com" autocomplete="email">
+        </label>
+        <label class="stack">
+          <span>Parolă</span>
+          <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+        </label>
+        <div id="login-error" class="error-message" style="display: none;"></div>
+        <div class="actions">
+          <button type="submit" class="button">Autentificare</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <header class="hero hero-small" id="admin-header" style="display: none;">
     <div class="hero-content">
       <div class="hero-panel">
         <p class="eyebrow">Admin</p>
         <h1>Gestionare Articole</h1>
         <p class="lead">Creează, editează și publică articole pentru ZusammenInAustria.</p>
-        <a class="button ghost" href="index.html">Înapoi la site</a>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <span id="user-info" class="muted"></span>
+          <button id="logout-btn" class="button ghost">Deconectare</button>
+          <a class="button ghost" href="index.html">Înapoi la site</a>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="content">
+  <main class="content" id="admin-content" style="display: none;">
     <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
       <section class="panel">
         <h2>Creează sau actualizează articol</h2>
@@ -77,7 +103,19 @@
   </footer>
 
   <script src="data-service.js"></script>
+  <script src="auth-service.js"></script>
   <script>
+    // UI Elements
+    const loginModal = document.getElementById('login-modal');
+    const loginForm = document.getElementById('login-form');
+    const loginEmail = document.getElementById('login-email');
+    const loginPassword = document.getElementById('login-password');
+    const loginError = document.getElementById('login-error');
+    const adminHeader = document.getElementById('admin-header');
+    const adminContent = document.getElementById('admin-content');
+    const userInfo = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
+
     const form = document.getElementById('article-form');
     const titleInput = document.getElementById('title');
     const contentInput = document.getElementById('content');
@@ -86,6 +124,85 @@
     const adminArticles = document.getElementById('admin-articles');
     const adminEmpty = document.getElementById('admin-empty');
     const resetButton = document.getElementById('reset-form');
+
+    let currentUser = null;
+
+    // Check authentication on page load
+    async function checkAuth() {
+      try {
+        currentUser = await AuthService.getCurrentUser();
+        if (currentUser) {
+          showAdminPanel();
+        } else {
+          showLoginModal();
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        showLoginModal();
+      }
+    }
+
+    function showLoginModal() {
+      loginModal.style.display = 'flex';
+      adminHeader.style.display = 'none';
+      adminContent.style.display = 'none';
+    }
+
+    function showAdminPanel() {
+      loginModal.style.display = 'none';
+      adminHeader.style.display = 'block';
+      adminContent.style.display = 'block';
+      if (currentUser) {
+        userInfo.textContent = `Conectat ca: ${currentUser.email}`;
+      }
+      loadArticles();
+    }
+
+    // Login form handler
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.style.display = 'none';
+      
+      const email = loginEmail.value;
+      const password = loginPassword.value;
+
+      try {
+        const result = await AuthService.signIn(email, password);
+        if (result.user) {
+          currentUser = result.user;
+          showAdminPanel();
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        loginError.textContent = error.message || 'Email sau parolă incorectă.';
+        loginError.style.display = 'block';
+      }
+    });
+
+    // Logout handler
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await AuthService.signOut();
+        currentUser = null;
+        showLoginModal();
+        loginEmail.value = '';
+        loginPassword.value = '';
+      } catch (error) {
+        console.error('Logout error:', error);
+        alert('Eroare la deconectare. Te rugăm să reîncerci pagina.');
+      }
+    });
+
+    // Listen for auth state changes
+    AuthService.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        currentUser = null;
+        showLoginModal();
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        currentUser = session.user;
+        showAdminPanel();
+      }
+    });
 
     async function fetchArticles() {
       return await DataService.getAllArticles();
@@ -198,11 +315,17 @@
     resetButton.addEventListener('click', resetForm);
 
     async function loadArticles() {
-      const articles = await fetchArticles();
-      renderArticles(articles);
+      try {
+        const articles = await fetchArticles();
+        renderArticles(articles);
+      } catch (error) {
+        console.error('Error loading articles:', error);
+        alert('Eroare la încărcarea articolelor. Te rugăm să te reautentifici.');
+      }
     }
 
-    loadArticles();
+    // Initialize: Check auth on page load
+    checkAuth();
   </script>
 </body>
 </html>

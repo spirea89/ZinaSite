@@ -13,28 +13,41 @@ const isGitHubPages = window.location.hostname.includes('github.io') ||
                       window.location.hostname.includes('github.com') ||
                       window.location.pathname.includes('/docs/'); // Also check pathname
 
+// Get Supabase client (shared instance, maintains auth session)
+function getSupabaseClient() {
+  // Try to use shared client from auth-service if available
+  if (window.__supabaseClient) {
+    return window.__supabaseClient;
+  }
+  
+  if (!supabaseClient && typeof window.supabase !== 'undefined') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.__supabaseClient = supabaseClient; // Share with auth-service
+  }
+  return supabaseClient;
+}
+
 // Initialize Supabase client
 async function initializeSupabase() {
   if (supabaseInitialized) return;
   
-  if (isGitHubPages) {
-    // Wait for Supabase to be available (it's loaded via CDN in the HTML)
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
-    
-    while (typeof window.supabase === 'undefined' && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
-    
-    if (typeof window.supabase !== 'undefined') {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      useSupabaseDirectly = true;
-      supabaseInitialized = true;
-      console.log('Supabase client initialized for GitHub Pages');
-    } else {
-      console.warn('Supabase not available, falling back to API (if available)');
-    }
+  // Always initialize Supabase if available (needed for auth on GitHub Pages)
+  // Wait for Supabase to be available (it's loaded via CDN in the HTML)
+  let attempts = 0;
+  const maxAttempts = 50; // 5 seconds max wait
+  
+  while (typeof window.supabase === 'undefined' && attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    attempts++;
+  }
+  
+  if (typeof window.supabase !== 'undefined') {
+    supabaseClient = getSupabaseClient();
+    useSupabaseDirectly = true;
+    supabaseInitialized = true;
+    console.log('Supabase client initialized');
+  } else if (isGitHubPages) {
+    console.warn('Supabase not available, falling back to API (if available)');
   }
 }
 
@@ -62,12 +75,13 @@ const DataService = {
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages) {
-      if (!supabaseClient) {
+    if (isGitHubPages || useSupabaseDirectly) {
+      const client = getSupabaseClient();
+      if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
       }
       try {
-        let query = supabaseClient
+        let query = client
           .from('articles')
           .select('*')
           .order('created_at', { ascending: false });
@@ -97,12 +111,13 @@ const DataService = {
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages) {
-      if (!supabaseClient) {
+    if (isGitHubPages || useSupabaseDirectly) {
+      const client = getSupabaseClient();
+      if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
       }
       try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await client
           .from('articles')
           .select('*')
           .order('created_at', { ascending: false });
@@ -126,12 +141,13 @@ const DataService = {
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages) {
-      if (!supabaseClient) {
+    if (isGitHubPages || useSupabaseDirectly) {
+      const client = getSupabaseClient();
+      if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
       }
       try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await client
           .from('articles')
           .insert({
             title: article.title,
@@ -166,12 +182,13 @@ const DataService = {
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages) {
-      if (!supabaseClient) {
+    if (isGitHubPages || useSupabaseDirectly) {
+      const client = getSupabaseClient();
+      if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
       }
       try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await client
           .from('articles')
           .update({
             title: article.title,
@@ -206,12 +223,13 @@ const DataService = {
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
-    if (isGitHubPages) {
-      if (!supabaseClient) {
+    if (isGitHubPages || useSupabaseDirectly) {
+      const client = getSupabaseClient();
+      if (!client) {
         throw new Error('Supabase client not initialized. Please check your connection.');
       }
       try {
-        const { error } = await supabaseClient
+        const { error } = await client
           .from('articles')
           .delete()
           .eq('id', id);

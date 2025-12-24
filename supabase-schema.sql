@@ -19,22 +19,47 @@ CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);
 -- Enable Row Level Security (RLS)
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (to allow re-running this script)
+DROP POLICY IF EXISTS "Allow anonymous read access to published articles" ON articles;
+DROP POLICY IF EXISTS "Allow authenticated users to read all articles" ON articles;
+DROP POLICY IF EXISTS "Allow authenticated users to insert articles" ON articles;
+DROP POLICY IF EXISTS "Allow authenticated users to update articles" ON articles;
+DROP POLICY IF EXISTS "Allow authenticated users to delete articles" ON articles;
+
 -- Create a policy that allows anonymous read access to published articles
 CREATE POLICY "Allow anonymous read access to published articles"
   ON articles
   FOR SELECT
   USING (status = 'published');
 
--- Create a policy that allows all operations for authenticated users
--- Note: You may want to restrict this further based on your authentication needs
-CREATE POLICY "Allow all operations for service role"
-  ON articles
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+-- Drop the old policy if it exists
+DROP POLICY IF EXISTS "Allow all operations for service role" ON articles;
 
--- Note: The above policy allows all operations. For production, you should:
--- 1. Set up authentication
--- 2. Create more restrictive policies
--- 3. Use the service role key on the server side (not the anon key)
+-- Create a policy that allows authenticated users to read all articles (including drafts)
+CREATE POLICY "Allow authenticated users to read all articles"
+  ON articles
+  FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+-- Create a policy that allows authenticated users to insert articles
+CREATE POLICY "Allow authenticated users to insert articles"
+  ON articles
+  FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- Create a policy that allows authenticated users to update articles
+CREATE POLICY "Allow authenticated users to update articles"
+  ON articles
+  FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- Create a policy that allows authenticated users to delete articles
+CREATE POLICY "Allow authenticated users to delete articles"
+  ON articles
+  FOR DELETE
+  USING (auth.role() = 'authenticated');
+
+-- Note: These policies require users to be authenticated (logged in) via Supabase Auth
+-- to perform any write operations or read draft articles.
 
