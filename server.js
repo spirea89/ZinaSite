@@ -185,6 +185,202 @@ app.delete('/api/articles/:id', async (req, res) => {
   }
 });
 
+// Events API endpoints
+app.get('/api/events', async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = supabase.from('events').select('*').order('start_date', { ascending: true });
+    
+    if (status) {
+      query = query.eq('status', status);
+    }
+    
+    const { data: events, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching events:', error);
+      return res.status(500).json({ error: 'Failed to fetch events.' });
+    }
+    
+    // Map database columns to API format
+    const formattedEvents = events.map(event => ({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      startDate: event.start_date,
+      endDate: event.end_date,
+      location: event.location,
+      status: event.status,
+      createdAt: event.created_at,
+      updatedAt: event.updated_at,
+    }));
+    
+    res.json(formattedEvents);
+  } catch (error) {
+    console.error('Error in /api/events:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+app.get('/api/admin/events', async (req, res) => {
+  try {
+    const { data: events, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('start_date', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching events:', error);
+      return res.status(500).json({ error: 'Failed to fetch events.' });
+    }
+    
+    // Map database columns to API format
+    const formattedEvents = events.map(event => ({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      startDate: event.start_date,
+      endDate: event.end_date,
+      location: event.location,
+      status: event.status,
+      createdAt: event.created_at,
+      updatedAt: event.updated_at,
+    }));
+    
+    res.json(formattedEvents);
+  } catch (error) {
+    console.error('Error in /api/admin/events:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+app.post('/api/events', async (req, res) => {
+  try {
+    const { title, description, startDate, endDate, location, status } = req.body || {};
+
+    if (!title || !startDate || !status || !['draft', 'published'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid event payload.' });
+    }
+
+    const now = new Date().toISOString();
+    const { data: event, error } = await supabase
+      .from('events')
+      .insert({
+        title,
+        description: description || null,
+        start_date: startDate,
+        end_date: endDate || null,
+        location: location || null,
+        status,
+        created_at: now,
+        updated_at: now,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating event:', error);
+      return res.status(500).json({ error: 'Failed to create event.' });
+    }
+
+    // Map database columns to API format
+    const formattedEvent = {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      startDate: event.start_date,
+      endDate: event.end_date,
+      location: event.location,
+      status: event.status,
+      createdAt: event.created_at,
+      updatedAt: event.updated_at,
+    };
+
+    res.status(201).json(formattedEvent);
+  } catch (error) {
+    console.error('Error in POST /api/events:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+app.put('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, startDate, endDate, location, status } = req.body || {};
+
+    if (!title || !startDate || !status || !['draft', 'published'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid event payload.' });
+    }
+
+    const updatedAt = new Date().toISOString();
+    const { data: event, error } = await supabase
+      .from('events')
+      .update({
+        title,
+        description: description || null,
+        start_date: startDate,
+        end_date: endDate || null,
+        location: location || null,
+        status,
+        updated_at: updatedAt,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Event not found.' });
+      }
+      console.error('Error updating event:', error);
+      return res.status(500).json({ error: 'Failed to update event.' });
+    }
+
+    // Map database columns to API format
+    const formattedEvent = {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      startDate: event.start_date,
+      endDate: event.end_date,
+      location: event.location,
+      status: event.status,
+      createdAt: event.created_at,
+      updatedAt: event.updated_at,
+    };
+
+    res.json(formattedEvent);
+  } catch (error) {
+    console.error('Error in PUT /api/events/:id:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Error deleting event:', error);
+      return res.status(500).json({ error: 'Failed to delete event.' });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'Event not found.' });
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error in DELETE /api/events/:id:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

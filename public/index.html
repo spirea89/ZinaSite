@@ -22,6 +22,7 @@
       <div class="nav-links">
         <a href="#mission" class="nav-link">Despre noi</a>
         <a href="#articles" class="nav-link">Articole</a>
+        <a href="#events" class="nav-link">Evenimente</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
       </div>
     </div>
@@ -99,6 +100,26 @@
         <span class="empty-icon">📝</span>
         <span>Nu există articole publicate încă.</span>
       </p>
+    </section>
+
+    <section id="events" class="events-section">
+      <div class="section-header">
+        <h2>Evenimente</h2>
+        <p class="section-description">Vezi evenimentele trecute și viitoare ale comunității românilor din Viena</p>
+      </div>
+      <div class="calendar-container">
+        <div class="calendar-controls">
+          <button id="prev-month" class="button ghost">←</button>
+          <h3 id="current-month-year"></h3>
+          <button id="next-month" class="button ghost">→</button>
+        </div>
+        <div id="calendar" class="calendar"></div>
+        <div id="events-list" class="events-list"></div>
+        <p id="events-empty" class="empty-state">
+          <span class="empty-icon">📅</span>
+          <span>Nu există evenimente publicate încă.</span>
+        </p>
+      </div>
     </section>
   </main>
 
@@ -200,6 +221,260 @@
     });
 
     loadArticles();
+    loadEvents();
+  </script>
+  <script>
+    // Calendar functionality
+    let currentDate = new Date();
+    let events = [];
+
+    function formatDate(date) {
+      return date.toLocaleDateString('ro-RO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString('ro-RO', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function getDaysInMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    }
+
+    function getFirstDayOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    }
+
+    function isSameDay(date1, date2) {
+      return date1.getFullYear() === date2.getFullYear() &&
+             date1.getMonth() === date2.getMonth() &&
+             date1.getDate() === date2.getDate();
+    }
+
+    function isPast(date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const eventDate = new Date(date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate < today;
+    }
+
+    function getEventsForDate(date) {
+      return events.filter(event => {
+        const eventDate = new Date(event.startDate);
+        return isSameDay(eventDate, date);
+      });
+    }
+
+    function renderCalendar() {
+      const calendar = document.getElementById('calendar');
+      const monthYear = document.getElementById('current-month-year');
+      
+      const monthNames = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',
+                          'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+      
+      monthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      
+      calendar.innerHTML = '';
+      
+      // Calendar header
+      const weekdays = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+      const header = document.createElement('div');
+      header.className = 'calendar-header';
+      weekdays.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'calendar-day-header';
+        dayHeader.textContent = day;
+        header.appendChild(dayHeader);
+      });
+      calendar.appendChild(header);
+      
+      // Calendar grid
+      const grid = document.createElement('div');
+      grid.className = 'calendar-grid';
+      
+      const daysInMonth = getDaysInMonth(currentDate);
+      const firstDay = getFirstDayOfMonth(currentDate);
+      const today = new Date();
+      
+      // Adjust for Monday as first day (0 = Sunday, 1 = Monday, etc.)
+      const firstDayIndex = firstDay === 0 ? 6 : firstDay - 1;
+      
+      // Empty cells for days before month starts
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day empty';
+        grid.appendChild(emptyCell);
+      }
+      
+      // Days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'calendar-day';
+        
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        const dayEvents = getEventsForDate(date);
+        const isToday = isSameDay(date, today);
+        const isPastDate = isPast(date);
+        
+        if (isToday) {
+          dayCell.classList.add('today');
+        }
+        if (isPastDate) {
+          dayCell.classList.add('past');
+        }
+        
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = day;
+        dayCell.appendChild(dayNumber);
+        
+        if (dayEvents.length > 0) {
+          const eventsIndicator = document.createElement('div');
+          eventsIndicator.className = 'events-indicator';
+          eventsIndicator.textContent = dayEvents.length;
+          eventsIndicator.title = dayEvents.map(e => e.title).join(', ');
+          dayCell.appendChild(eventsIndicator);
+          dayCell.classList.add('has-events');
+        }
+        
+        dayCell.addEventListener('click', () => {
+          if (dayEvents.length > 0) {
+            showEventsForDate(date, dayEvents);
+          }
+        });
+        
+        grid.appendChild(dayCell);
+      }
+      
+      calendar.appendChild(grid);
+    }
+
+    function renderEventsList() {
+      const eventsList = document.getElementById('events-list');
+      const emptyState = document.getElementById('events-empty');
+      
+      if (events.length === 0) {
+        eventsList.style.display = 'none';
+        emptyState.style.display = 'flex';
+        return;
+      }
+      
+      eventsList.style.display = 'block';
+      emptyState.style.display = 'none';
+      eventsList.innerHTML = '';
+      
+      const now = new Date();
+      const upcomingEvents = events.filter(e => new Date(e.startDate) >= now);
+      const pastEvents = events.filter(e => new Date(e.startDate) < now);
+      
+      if (upcomingEvents.length > 0) {
+        const upcomingSection = document.createElement('div');
+        upcomingSection.className = 'events-section-group';
+        const upcomingTitle = document.createElement('h3');
+        upcomingTitle.textContent = 'Evenimente viitoare';
+        upcomingSection.appendChild(upcomingTitle);
+        
+        upcomingEvents.forEach(event => {
+          upcomingSection.appendChild(createEventCard(event, false));
+        });
+        
+        eventsList.appendChild(upcomingSection);
+      }
+      
+      if (pastEvents.length > 0) {
+        const pastSection = document.createElement('div');
+        pastSection.className = 'events-section-group';
+        const pastTitle = document.createElement('h3');
+        pastTitle.textContent = 'Evenimente trecute';
+        pastSection.appendChild(pastTitle);
+        
+        pastEvents.forEach(event => {
+          pastSection.appendChild(createEventCard(event, true));
+        });
+        
+        eventsList.appendChild(pastSection);
+      }
+    }
+
+    function createEventCard(event, isPast) {
+      const card = document.createElement('article');
+      card.className = `event-card ${isPast ? 'past-event' : ''}`;
+      card.dataset.date = event.startDate;
+      
+      const eventDate = new Date(event.startDate);
+      const dateStr = formatDate(eventDate);
+      const timeStr = formatTime(eventDate);
+      
+      card.innerHTML = `
+        <div class="event-date">
+          <div class="event-day">${eventDate.getDate()}</div>
+          <div class="event-month">${eventDate.toLocaleDateString('ro-RO', { month: 'short' })}</div>
+        </div>
+        <div class="event-content">
+          <h3 class="event-title">${event.title}</h3>
+          ${event.description ? `<p class="event-description">${event.description}</p>` : ''}
+          <div class="event-meta">
+            <span class="event-time">🕐 ${dateStr} la ${timeStr}</span>
+            ${event.location ? `<span class="event-location">📍 ${event.location}</span>` : ''}
+          </div>
+        </div>
+      `;
+      
+      return card;
+    }
+
+    function showEventsForDate(date, dayEvents) {
+      // Scroll to events list and highlight
+      const eventsList = document.getElementById('events-list');
+      eventsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
+      // Highlight matching events (optional visual feedback)
+      setTimeout(() => {
+        const cards = eventsList.querySelectorAll('.event-card');
+        cards.forEach(card => {
+          const eventDate = new Date(card.dataset.date || '');
+          if (isSameDay(eventDate, date)) {
+            card.classList.add('highlighted');
+            setTimeout(() => card.classList.remove('highlighted'), 2000);
+          }
+        });
+      }, 500);
+    }
+
+    async function loadEvents() {
+      try {
+        events = await DataService.getEvents('published');
+        
+        // Sort events by date
+        events.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        
+        renderCalendar();
+        renderEventsList();
+      } catch (error) {
+        console.error('Failed to load events', error);
+        const emptyState = document.getElementById('events-empty');
+        emptyState.style.display = 'flex';
+        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea evenimentelor.</span>';
+      }
+    }
+
+    // Calendar navigation
+    document.getElementById('prev-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+
+    document.getElementById('next-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
   </script>
 </body>
 </html>
