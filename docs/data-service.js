@@ -147,6 +147,40 @@ const DataService = {
     return response.json();
   },
 
+  // Get articles with pagination. Returns { items, total }.
+  async getArticlesPage(status = 'published', page = 1, pageSize = 9) {
+    await this.ensureInitialized();
+    const p = Math.max(1, parseInt(page, 10) || 1);
+    const size = Math.min(24, Math.max(1, parseInt(pageSize, 10) || 9));
+
+    if (isGitHubPages || useSupabaseDirectly) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Supabase client not initialized.');
+      try {
+        const from = (p - 1) * size;
+        const to = from + size - 1;
+        let query = client
+          .from('articles')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, to);
+        if (status) query = query.eq('status', status);
+        const { data, error, count } = await query;
+        if (error) throw error;
+        return { items: (data || []).map(formatArticle), total: count ?? 0 };
+      } catch (error) {
+        console.error('Error fetching articles page:', error);
+        throw error;
+      }
+    }
+
+    const all = await this.getArticles(status);
+    const total = all.length;
+    const start = (p - 1) * size;
+    const items = all.slice(start, start + size);
+    return { items, total };
+  },
+
   // Get all articles (for admin)
   async getAllArticles() {
     await this.ensureInitialized();
@@ -361,6 +395,45 @@ const DataService = {
       console.error('Error fetching events from API:', error);
       throw error;
     }
+  },
+
+  // Get events with pagination. Returns { items, total }. Ordered by start_date asc.
+  async getEventsPage(status = 'published', page = 1, pageSize = 9) {
+    await this.ensureInitialized();
+    const p = Math.max(1, parseInt(page, 10) || 1);
+    const size = Math.min(24, Math.max(1, parseInt(pageSize, 10) || 9));
+
+    if (isGitHubPages || useSupabaseDirectly) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Supabase client not initialized.');
+      try {
+        const from = (p - 1) * size;
+        const to = from + size - 1;
+        let query = client
+          .from('events')
+          .select('*', { count: 'exact' })
+          .order('start_date', { ascending: true })
+          .range(from, to);
+        if (status) query = query.eq('status', status);
+        const { data, error, count } = await query;
+        if (error) {
+          if (error.code === '42P01' || error.message?.includes('does not exist')) {
+            return { items: [], total: 0 };
+          }
+          throw error;
+        }
+        return { items: (data || []).map(formatEvent), total: count ?? 0 };
+      } catch (error) {
+        console.error('Error fetching events page:', error);
+        throw error;
+      }
+    }
+
+    const all = await this.getEvents(status);
+    const total = all.length;
+    const start = (p - 1) * size;
+    const items = all.slice(start, start + size);
+    return { items, total };
   },
 
   // Get all events (for admin)

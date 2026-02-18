@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Evenimente ale comunității românilor din Viena - ZusammenInAustria (Zina)">
+  <title>Evenimente - ZusammenInAustria (Zina)</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logos/ZinA%20Logos-07.png" alt="ZusammenInAustria" class="logo-img">
+        <span class="logo-text">Zina</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html#mission" class="nav-link">Despre noi</a>
+        <a href="articles.html" class="nav-link">Articole</a>
+        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="admin.html" class="nav-link admin-link">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content page-content">
+    <section class="events-section">
+      <div class="section-header">
+        <h1>Evenimente</h1>
+        <p class="section-description">Vezi evenimentele trecute și viitoare ale comunității românilor din Viena</p>
+      </div>
+      <div class="calendar-container">
+        <div class="calendar-controls">
+          <button id="prev-month" class="button ghost">←</button>
+          <h3 id="current-month-year"></h3>
+          <button id="next-month" class="button ghost">→</button>
+        </div>
+        <div id="calendar" class="calendar"></div>
+      </div>
+      <div id="events-list" class="events-list"></div>
+      <p id="events-empty" class="empty-state">
+        <span class="empty-icon">📅</span>
+        <span>Nu există evenimente publicate încă.</span>
+      </p>
+      <div id="pagination-wrap" class="pagination-wrap" style="display: none;"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
+      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+    </div>
+  </footer>
+
+  <script src="data-service.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const PAGE_SIZE = 9;
+    let allEvents = [];
+    let currentDate = new Date();
+
+    function getPageFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return Math.max(1, parseInt(params.get('page'), 10) || 1);
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('ro-RO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString('ro-RO', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function getDaysInMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    }
+
+    function getFirstDayOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    }
+
+    function isSameDay(date1, date2) {
+      return date1.getFullYear() === date2.getFullYear() &&
+             date1.getMonth() === date2.getMonth() &&
+             date1.getDate() === date2.getDate();
+    }
+
+    function isPast(date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d < today;
+    }
+
+    function getEventsForDate(date) {
+      if (!allEvents || allEvents.length === 0) return [];
+      return allEvents.filter(e => {
+        if (!e.startDate) return false;
+        const eventDate = new Date(e.startDate);
+        return !isNaN(eventDate.getTime()) && isSameDay(eventDate, date);
+      });
+    }
+
+    function renderCalendar() {
+      const calendar = document.getElementById('calendar');
+      const monthYear = document.getElementById('current-month-year');
+      const monthNames = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',
+        'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+      monthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      calendar.innerHTML = '';
+
+      const weekdays = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+      const header = document.createElement('div');
+      header.className = 'calendar-header';
+      weekdays.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'calendar-day-header';
+        dayHeader.textContent = day;
+        header.appendChild(dayHeader);
+      });
+      calendar.appendChild(header);
+
+      const grid = document.createElement('div');
+      grid.className = 'calendar-grid';
+      const daysInMonth = getDaysInMonth(currentDate);
+      const firstDay = getFirstDayOfMonth(currentDate);
+      const firstDayIndex = firstDay === 0 ? 6 : firstDay - 1;
+      const today = new Date();
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day empty';
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        const dayEvents = getEventsForDate(date);
+        const dayCell = document.createElement('div');
+        dayCell.className = 'calendar-day';
+        if (isSameDay(date, today)) dayCell.classList.add('today');
+        if (isPast(date)) dayCell.classList.add('past');
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = day;
+        dayCell.appendChild(dayNumber);
+        if (dayEvents.length > 0) {
+          const eventsIndicator = document.createElement('div');
+          eventsIndicator.className = 'events-indicator';
+          eventsIndicator.textContent = dayEvents.length;
+          eventsIndicator.title = dayEvents.map(e => e.title).join(', ');
+          dayCell.appendChild(eventsIndicator);
+          dayCell.classList.add('has-events');
+        }
+        dayCell.addEventListener('click', () => {
+          if (dayEvents.length > 0) {
+            const eventsList = document.getElementById('events-list');
+            eventsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+        grid.appendChild(dayCell);
+      }
+      calendar.appendChild(grid);
+    }
+
+    function createEventCard(event, isPastEvent) {
+      const card = document.createElement('article');
+      card.className = `event-card ${isPastEvent ? 'past-event' : ''}`;
+      card.dataset.date = event.startDate;
+      const eventDate = new Date(event.startDate);
+      const dateStr = formatDate(eventDate);
+      const timeStr = formatTime(eventDate);
+      let locationHtml = '';
+      if (event.location) {
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
+        locationHtml = `<span class="event-location">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="location-link">${event.location}</a></span>`;
+      }
+      card.innerHTML = `
+        <div class="event-date">
+          <div class="event-day">${eventDate.getDate()}</div>
+          <div class="event-month">${eventDate.toLocaleDateString('ro-RO', { month: 'short' })}</div>
+        </div>
+        <div class="event-content">
+          <h3 class="event-title">${event.title}</h3>
+          ${event.description ? `<p class="event-description">${event.description}</p>` : ''}
+          <div class="event-meta">
+            <span class="event-time">🕐 ${dateStr} la ${timeStr}</span>
+            ${locationHtml}
+          </div>
+        </div>
+      `;
+      return card;
+    }
+
+    function renderPagination(total, page) {
+      const wrap = document.getElementById('pagination-wrap');
+      const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      if (totalPages <= 1) {
+        wrap.style.display = 'none';
+        return;
+      }
+      wrap.style.display = 'flex';
+      let html = '<nav class="pagination" aria-label="Paginare">';
+      if (page > 1) {
+        const prevUrl = page === 2 ? 'events.html' : `events.html?page=${page - 1}`;
+        html += `<a href="${prevUrl}" class="prev">← Anterior</a>`;
+      }
+      html += '<span class="pagination-info">Pagina ' + page + ' din ' + totalPages + '</span>';
+      if (page < totalPages) {
+        html += `<a href="events.html?page=${page + 1}" class="next">Următor →</a>`;
+      }
+      html += '</nav>';
+      wrap.innerHTML = html;
+    }
+
+    async function loadEventsPage(page) {
+      const eventsList = document.getElementById('events-list');
+      const emptyState = document.getElementById('events-empty');
+      const paginationWrap = document.getElementById('pagination-wrap');
+
+      eventsList.innerHTML = '';
+      eventsList.style.display = 'none';
+      emptyState.style.display = 'none';
+      paginationWrap.style.display = 'none';
+
+      try {
+        const { items, total } = await DataService.getEventsPage('published', page, PAGE_SIZE);
+        if (!items.length) {
+          emptyState.style.display = 'flex';
+          return;
+        }
+        eventsList.style.display = 'block';
+        const now = new Date();
+        items.forEach(event => {
+          const isPastEvent = new Date(event.startDate) < now;
+          eventsList.appendChild(createEventCard(event, isPastEvent));
+        });
+        renderPagination(total, page);
+      } catch (error) {
+        console.error('Failed to load events', error);
+        emptyState.style.display = 'flex';
+        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea evenimentelor.</span>';
+      }
+    }
+
+    async function init() {
+      if (typeof DataService === 'undefined') {
+        setTimeout(init, 100);
+        return;
+      }
+      try {
+        allEvents = await DataService.getEvents('published');
+        if (allEvents && allEvents.length) allEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      } catch (e) {
+        console.warn('Could not load all events for calendar', e);
+      }
+      renderCalendar();
+      const page = getPageFromUrl();
+      await loadEventsPage(page);
+    }
+
+    document.getElementById('prev-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+    document.getElementById('next-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    init();
+
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.pageYOffset > 100);
+    });
+  </script>
+</body>
+</html>
