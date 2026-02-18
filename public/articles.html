@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Articole pentru comunitatea română din Viena - ZusammenInAustria (Zina)">
+  <title>Articole - ZusammenInAustria (Zina)</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logos/ZinA%20Logos-07.png" alt="ZusammenInAustria" class="logo-img">
+        <span class="logo-text">Zina</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html#mission" class="nav-link">Despre noi</a>
+        <a href="articles.html" class="nav-link">Articole</a>
+        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="admin.html" class="nav-link admin-link">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content page-content">
+    <section class="articles-section">
+      <div class="section-header">
+        <h1>Articole</h1>
+        <p class="section-description">Știri, sfaturi și resurse pentru comunitatea română din Viena</p>
+      </div>
+      <div id="articles-container" class="articles-grid"></div>
+      <p id="empty-state" class="empty-state">
+        <span class="empty-icon">📝</span>
+        <span>Nu există articole publicate încă.</span>
+      </p>
+      <div id="pagination-wrap" class="pagination-wrap" style="display: none;"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
+      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+    </div>
+  </footer>
+
+  <script src="data-service.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const PAGE_SIZE = 9;
+    let currentPage = 1;
+    let totalItems = 0;
+
+    function getPageFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return Math.max(1, parseInt(params.get('page'), 10) || 1);
+    }
+
+    function buildArticleCard(article, index) {
+      const card = document.createElement('article');
+      card.className = 'article-card';
+      card.style.animationDelay = `${index * 0.05}s`;
+
+      const date = new Date(article.updatedAt || article.createdAt);
+      const formattedDate = date.toLocaleDateString('ro-RO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = article.content || '';
+      const textContent = tempDiv.textContent || tempDiv.innerText || '';
+      const excerpt = textContent.length > 150 ? textContent.substring(0, 150) + '...' : textContent;
+
+      card.innerHTML = `
+        <div class="article-card-header">
+          <div class="article-date">${formattedDate}</div>
+        </div>
+        <h3 class="article-title">${article.title}</h3>
+        <p class="article-excerpt">${excerpt}</p>
+        <div class="article-footer">
+          <a href="article.html?id=${article.id}" class="article-read-more">Citește mai mult →</a>
+        </div>
+      `;
+
+      card.addEventListener('click', (e) => {
+        if (e.target.tagName === 'A' || e.target.closest('a')) return;
+        window.location.href = `article.html?id=${article.id}`;
+      });
+
+      return card;
+    }
+
+    function renderPagination(total, page) {
+      const wrap = document.getElementById('pagination-wrap');
+      const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      if (totalPages <= 1) {
+        wrap.style.display = 'none';
+        return;
+      }
+
+      wrap.style.display = 'flex';
+      const start = (page - 1) * PAGE_SIZE + 1;
+      const end = Math.min(page * PAGE_SIZE, total);
+
+      let html = '<nav class="pagination" aria-label="Paginare">';
+      if (page > 1) {
+        const prevUrl = page === 2 ? 'articles.html' : `articles.html?page=${page - 1}`;
+        html += `<a href="${prevUrl}" class="prev">← Anterior</a>`;
+      }
+      html += '<span class="pagination-info">Pagina ' + page + ' din ' + totalPages + '</span>';
+      if (page < totalPages) {
+        html += `<a href="articles.html?page=${page + 1}" class="next">Următor →</a>`;
+      }
+      html += '</nav>';
+      wrap.innerHTML = html;
+    }
+
+    async function loadPage(page) {
+      currentPage = page;
+      const container = document.getElementById('articles-container');
+      const emptyState = document.getElementById('empty-state');
+      const paginationWrap = document.getElementById('pagination-wrap');
+
+      container.innerHTML = '<p class="empty-state"><span class="empty-icon">⏳</span><span>Se încarcă...</span></p>';
+      emptyState.style.display = 'none';
+      paginationWrap.style.display = 'none';
+
+      try {
+        const { items, total } = await DataService.getArticlesPage('published', page, PAGE_SIZE);
+        totalItems = total;
+        container.innerHTML = '';
+
+        if (!items.length) {
+          emptyState.style.display = 'flex';
+          return;
+        }
+
+        items.forEach((article, index) => {
+          container.appendChild(buildArticleCard(article, index));
+        });
+
+        renderPagination(total, page);
+
+        if (window.history && window.history.replaceState) {
+          const url = page === 1 ? 'articles.html' : `articles.html?page=${page}`;
+          window.history.replaceState({ page }, '', url);
+        }
+      } catch (error) {
+        console.error('Failed to load articles', error);
+        container.innerHTML = '';
+        emptyState.style.display = 'flex';
+        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea articolelor.</span>';
+      }
+    }
+
+    currentPage = getPageFromUrl();
+    if (typeof DataService !== 'undefined') {
+      loadPage(currentPage);
+    } else {
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => loadPage(currentPage), 100);
+      });
+    }
+
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.pageYOffset > 100);
+    });
+  </script>
+</body>
+</html>

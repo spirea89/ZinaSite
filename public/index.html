@@ -21,8 +21,8 @@
       </a>
       <div class="nav-links">
         <a href="#mission" class="nav-link">Despre noi</a>
-        <a href="#articles" class="nav-link">Articole</a>
-        <a href="#events" class="nav-link">Evenimente</a>
+        <a href="articles.html" class="nav-link">Articole</a>
+        <a href="events.html" class="nav-link">Evenimente</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
       </div>
     </div>
@@ -41,7 +41,7 @@
           Aducem comunitatea românilor din Viena împreună prin articole, evenimente și suport — cu căldura care te face să te simți ca acasă.
         </p>
         <div class="hero-actions">
-          <a class="button" href="#articles">Citește articole</a>
+          <a class="button" href="articles.html">Citește articole</a>
           <a class="button ghost" href="#mission">Despre noi</a>
         </div>
         <div class="hero-stats">
@@ -90,35 +90,24 @@
       </div>
     </section>
 
-    <section id="articles" class="articles-section">
+    <section class="panel cta-section">
       <div class="section-header">
-        <h2>Articole recente</h2>
-        <p class="section-description">Descoperă ultimele știri și articole pentru comunitatea română din Viena</p>
+        <h2>Descoperă mai mult</h2>
+        <p class="section-description">Articole pentru comunitate și evenimente în Viena</p>
       </div>
-      <div id="articles-container" class="articles-grid"></div>
-      <p id="empty-state" class="empty-state">
-        <span class="empty-icon">📝</span>
-        <span>Nu există articole publicate încă.</span>
-      </p>
-    </section>
-
-    <section id="events" class="events-section">
-      <div class="section-header">
-        <h2>Evenimente</h2>
-        <p class="section-description">Vezi evenimentele trecute și viitoare ale comunității românilor din Viena</p>
-      </div>
-      <div class="calendar-container">
-        <div class="calendar-controls">
-          <button id="prev-month" class="button ghost">←</button>
-          <h3 id="current-month-year"></h3>
-          <button id="next-month" class="button ghost">→</button>
-        </div>
-        <div id="calendar" class="calendar"></div>
-        <div id="events-list" class="events-list"></div>
-        <p id="events-empty" class="empty-state">
-          <span class="empty-icon">📅</span>
-          <span>Nu există evenimente publicate încă.</span>
-        </p>
+      <div class="cta-grid">
+        <a href="articles.html" class="cta-card">
+          <span class="cta-icon">📝</span>
+          <h3>Articole</h3>
+          <p class="muted">Știri, sfaturi și resurse pentru românii din Viena</p>
+          <span class="cta-link">Vezi articole →</span>
+        </a>
+        <a href="events.html" class="cta-card">
+          <span class="cta-icon">📅</span>
+          <h3>Evenimente</h3>
+          <p class="muted">Întâlniri, sărbători și evenimente ale comunității</p>
+          <span class="cta-link">Vezi evenimente →</span>
+        </a>
       </div>
     </section>
   </main>
@@ -130,450 +119,21 @@
     </div>
   </footer>
 
-  <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    async function loadArticles() {
-      try {
-        const articles = await DataService.getArticles('published');
-        const container = document.getElementById('articles-container');
-        const emptyState = document.getElementById('empty-state');
-
-        container.innerHTML = '';
-        if (!articles.length) {
-          emptyState.style.display = 'flex';
-          return;
-        }
-
-        emptyState.style.display = 'none';
-
-        articles.forEach((article, index) => {
-          const card = document.createElement('article');
-          card.className = 'article-card';
-          card.style.animationDelay = `${index * 0.1}s`;
-
-          const date = new Date(article.updatedAt || article.createdAt);
-          const formattedDate = date.toLocaleDateString('ro-RO', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          });
-
-          // Strip HTML tags for excerpt preview
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = article.content || '';
-          const textContent = tempDiv.textContent || tempDiv.innerText || '';
-          const excerpt = textContent.length > 150 ? textContent.substring(0, 150) + '...' : textContent;
-
-          card.innerHTML = `
-            <div class="article-card-header">
-              <div class="article-date">${formattedDate}</div>
-            </div>
-            <h3 class="article-title">${article.title}</h3>
-            <p class="article-excerpt">${excerpt}</p>
-            <div class="article-footer">
-              <a href="article.html?id=${article.id}" class="article-read-more">Citește mai mult →</a>
-            </div>
-          `;
-
-          // Make entire card clickable
-          card.addEventListener('click', (e) => {
-            // Don't navigate if clicking on a link or button
-            if (e.target.tagName === 'A' || e.target.closest('a')) {
-              return;
-            }
-            window.location.href = `article.html?id=${article.id}`;
-          });
-
-          container.appendChild(card);
-        });
-      } catch (error) {
-        console.error('Failed to load articles', error);
-        const emptyState = document.getElementById('empty-state');
-        emptyState.style.display = 'flex';
-        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea articolelor.</span>';
-      }
-    }
-
-    // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
 
-    // Navbar scroll effect
-    let lastScroll = 0;
     const navbar = document.querySelector('.navbar');
     window.addEventListener('scroll', () => {
-      const currentScroll = window.pageYOffset;
-      if (currentScroll > 100) {
-        navbar.classList.add('scrolled');
-      } else {
-        navbar.classList.remove('scrolled');
-      }
-      lastScroll = currentScroll;
+      navbar.classList.toggle('scrolled', window.pageYOffset > 100);
     });
-
-    // Wait for DataService to be available before loading articles
-    // Events will be loaded after the calendar script loads
-    if (typeof DataService !== 'undefined') {
-      loadArticles();
-    } else {
-      // Wait a bit for scripts to load
-      window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          loadArticles();
-        }, 100);
-      });
-    }
-  </script>
-  <script>
-    // Calendar functionality
-    let currentDate = new Date();
-    let events = [];
-
-    function formatDate(date) {
-      return date.toLocaleDateString('ro-RO', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    }
-
-    function formatTime(date) {
-      return date.toLocaleTimeString('ro-RO', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    function getDaysInMonth(date) {
-      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    }
-
-    function getFirstDayOfMonth(date) {
-      return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    }
-
-    function isSameDay(date1, date2) {
-      return date1.getFullYear() === date2.getFullYear() &&
-             date1.getMonth() === date2.getMonth() &&
-             date1.getDate() === date2.getDate();
-    }
-
-    function isPast(date) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const eventDate = new Date(date);
-      eventDate.setHours(0, 0, 0, 0);
-      return eventDate < today;
-    }
-
-    function getEventsForDate(date) {
-      if (!events || events.length === 0) {
-        return [];
-      }
-      return events.filter(event => {
-        if (!event.startDate) {
-          console.warn('Event missing startDate:', event);
-          return false;
-        }
-        const eventDate = new Date(event.startDate);
-        if (isNaN(eventDate.getTime())) {
-          console.warn('Invalid event date:', event.startDate, event);
-          return false;
-        }
-        const same = isSameDay(eventDate, date);
-        if (same) {
-          console.log('Found event for date:', date.toISOString().split('T')[0], 'Event:', event.title, 'Event date:', eventDate.toISOString().split('T')[0]);
-        }
-        return same;
-      });
-    }
-
-    function renderCalendar() {
-      const calendar = document.getElementById('calendar');
-      const monthYear = document.getElementById('current-month-year');
-      
-      const monthNames = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',
-                          'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
-      
-      monthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-      
-      calendar.innerHTML = '';
-      
-      // Calendar header
-      const weekdays = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
-      const header = document.createElement('div');
-      header.className = 'calendar-header';
-      weekdays.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'calendar-day-header';
-        dayHeader.textContent = day;
-        header.appendChild(dayHeader);
-      });
-      calendar.appendChild(header);
-      
-      // Calendar grid
-      const grid = document.createElement('div');
-      grid.className = 'calendar-grid';
-      
-      const daysInMonth = getDaysInMonth(currentDate);
-      const firstDay = getFirstDayOfMonth(currentDate);
-      const today = new Date();
-      
-      // Adjust for Monday as first day (0 = Sunday, 1 = Monday, etc.)
-      const firstDayIndex = firstDay === 0 ? 6 : firstDay - 1;
-      
-      // Empty cells for days before month starts
-      for (let i = 0; i < firstDayIndex; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.className = 'calendar-day empty';
-        grid.appendChild(emptyCell);
-      }
-      
-      // Days of the month
-      let eventsFoundInMonth = 0;
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dayCell = document.createElement('div');
-        dayCell.className = 'calendar-day';
-        
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-        const dayEvents = getEventsForDate(date);
-        
-        if (dayEvents.length > 0) {
-          eventsFoundInMonth += dayEvents.length;
-        }
-        
-        const isToday = isSameDay(date, today);
-        const isPastDate = isPast(date);
-        
-        if (isToday) {
-          dayCell.classList.add('today');
-        }
-        if (isPastDate) {
-          dayCell.classList.add('past');
-        }
-        
-        const dayNumber = document.createElement('div');
-        dayNumber.className = 'day-number';
-        dayNumber.textContent = day;
-        dayCell.appendChild(dayNumber);
-        
-        if (dayEvents.length > 0) {
-          const eventsIndicator = document.createElement('div');
-          eventsIndicator.className = 'events-indicator';
-          eventsIndicator.textContent = dayEvents.length;
-          eventsIndicator.title = dayEvents.map(e => e.title).join(', ');
-          dayCell.appendChild(eventsIndicator);
-          dayCell.classList.add('has-events');
-        }
-        
-        dayCell.addEventListener('click', () => {
-          if (dayEvents.length > 0) {
-            showEventsForDate(date, dayEvents);
-          }
-        });
-        
-        grid.appendChild(dayCell);
-      }
-      
-      console.log(`📆 Calendar rendered for ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}, found ${eventsFoundInMonth} events in this month`);
-      
-      calendar.appendChild(grid);
-    }
-
-    function renderEventsList() {
-      const eventsList = document.getElementById('events-list');
-      const emptyState = document.getElementById('events-empty');
-      
-      if (events.length === 0) {
-        eventsList.style.display = 'none';
-        emptyState.style.display = 'flex';
-        return;
-      }
-      
-      eventsList.style.display = 'block';
-      emptyState.style.display = 'none';
-      eventsList.innerHTML = '';
-      
-      const now = new Date();
-      const upcomingEvents = events.filter(e => new Date(e.startDate) >= now);
-      const pastEvents = events.filter(e => new Date(e.startDate) < now);
-      
-      if (upcomingEvents.length > 0) {
-        const upcomingSection = document.createElement('div');
-        upcomingSection.className = 'events-section-group';
-        const upcomingTitle = document.createElement('h3');
-        upcomingTitle.textContent = 'Evenimente viitoare';
-        upcomingSection.appendChild(upcomingTitle);
-        
-        upcomingEvents.forEach(event => {
-          upcomingSection.appendChild(createEventCard(event, false));
-        });
-        
-        eventsList.appendChild(upcomingSection);
-      }
-      
-      if (pastEvents.length > 0) {
-        const pastSection = document.createElement('div');
-        pastSection.className = 'events-section-group';
-        const pastTitle = document.createElement('h3');
-        pastTitle.textContent = 'Evenimente trecute';
-        pastSection.appendChild(pastTitle);
-        
-        pastEvents.forEach(event => {
-          pastSection.appendChild(createEventCard(event, true));
-        });
-        
-        eventsList.appendChild(pastSection);
-      }
-    }
-
-    function createEventCard(event, isPast) {
-      const card = document.createElement('article');
-      card.className = `event-card ${isPast ? 'past-event' : ''}`;
-      card.dataset.date = event.startDate;
-      
-      const eventDate = new Date(event.startDate);
-      const dateStr = formatDate(eventDate);
-      const timeStr = formatTime(eventDate);
-      
-      // Create Google Maps link if location exists
-      let locationHtml = '';
-      if (event.location) {
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
-        locationHtml = `<span class="event-location">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="location-link">${event.location}</a></span>`;
-      }
-      
-      card.innerHTML = `
-        <div class="event-date">
-          <div class="event-day">${eventDate.getDate()}</div>
-          <div class="event-month">${eventDate.toLocaleDateString('ro-RO', { month: 'short' })}</div>
-        </div>
-        <div class="event-content">
-          <h3 class="event-title">${event.title}</h3>
-          ${event.description ? `<p class="event-description">${event.description}</p>` : ''}
-          <div class="event-meta">
-            <span class="event-time">🕐 ${dateStr} la ${timeStr}</span>
-            ${locationHtml}
-          </div>
-        </div>
-      `;
-      
-      return card;
-    }
-
-    function showEventsForDate(date, dayEvents) {
-      // Scroll to events list and highlight
-      const eventsList = document.getElementById('events-list');
-      eventsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      
-      // Highlight matching events (optional visual feedback)
-      setTimeout(() => {
-        const cards = eventsList.querySelectorAll('.event-card');
-        cards.forEach(card => {
-          const eventDate = new Date(card.dataset.date || '');
-          if (isSameDay(eventDate, date)) {
-            card.classList.add('highlighted');
-            setTimeout(() => card.classList.remove('highlighted'), 2000);
-          }
-        });
-      }, 500);
-    }
-
-    async function loadEvents() {
-      try {
-        console.log('🔄 Loading events...');
-        events = await DataService.getEvents('published');
-        console.log('✅ Events loaded from DataService:', events);
-        console.log('📊 Number of events:', events?.length || 0);
-        
-        if (!events || events.length === 0) {
-          console.warn('⚠️ No published events found');
-          const emptyState = document.getElementById('events-empty');
-          emptyState.style.display = 'flex';
-          renderCalendar(); // Still render calendar even with no events
-          return;
-        }
-        
-        // Log each event's details
-        events.forEach((event, index) => {
-          console.log(`Event ${index + 1}:`, {
-            title: event.title,
-            startDate: event.startDate,
-            parsedDate: new Date(event.startDate).toISOString(),
-            status: event.status
-          });
-        });
-        
-        // Sort events by date
-        events.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-        console.log('📅 Events sorted by date:', events.map(e => ({ title: e.title, date: e.startDate })));
-        
-        console.log('🎨 Rendering calendar with', events.length, 'events');
-        renderCalendar();
-        renderEventsList();
-        console.log('✅ Calendar and events list rendered');
-      } catch (error) {
-        console.error('❌ Failed to load events', error);
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-        const emptyState = document.getElementById('events-empty');
-        emptyState.style.display = 'flex';
-        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea evenimentelor: ' + (error.message || 'Eroare necunoscută') + '</span>';
-        // Still render calendar even on error
-        renderCalendar();
-      }
-    }
-
-    // Calendar navigation
-    document.getElementById('prev-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() - 1);
-      renderCalendar();
-    });
-
-    document.getElementById('next-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-      renderCalendar();
-    });
-
-    // Initial calendar render (even before events load)
-    renderCalendar();
-    
-    // Load events after calendar is set up
-    // Wait for DataService to be available
-    async function initEvents() {
-      if (typeof DataService !== 'undefined') {
-        await loadEvents();
-      } else {
-        // Wait a bit for DataService to load
-        let attempts = 0;
-        const maxAttempts = 50;
-        const checkDataService = setInterval(() => {
-          attempts++;
-          if (typeof DataService !== 'undefined') {
-            clearInterval(checkDataService);
-            loadEvents();
-          } else if (attempts >= maxAttempts) {
-            clearInterval(checkDataService);
-            console.error('DataService not available after waiting');
-          }
-        }, 100);
-      }
-    }
-    
-    // Start loading events
-    initEvents();
   </script>
 </body>
 </html>
