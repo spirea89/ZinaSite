@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Eveniment - ZusammenInAustria (Zina)">
+  <title>Eveniment - ZusammenInAustria (Zina)</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logos/ZinA%20Logos-07.png" alt="ZusammenInAustria" class="logo-img">
+        <span class="logo-text">Zina</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html#mission" class="nav-link">Despre noi</a>
+        <a href="articles.html" class="nav-link">Articole</a>
+        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="admin.html" class="nav-link admin-link">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content" style="padding-top: 8rem;">
+    <div id="loading-state" class="empty-state">
+      <span class="empty-icon">⏳</span>
+      <span>Se încarcă evenimentul...</span>
+    </div>
+
+    <div id="error-state" class="empty-state" style="display: none;">
+      <span class="empty-icon">⚠️</span>
+      <span>Evenimentul nu a fost găsit.</span>
+      <a href="events.html" class="button" style="margin-top: 1rem;">Înapoi la evenimente</a>
+    </div>
+
+    <article id="event-content" class="event-detail-panel" style="display: none;">
+      <a href="events.html" class="button ghost" style="margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+        ← Înapoi la evenimente
+      </a>
+      <header class="event-detail-header">
+        <div id="event-date-badge" class="event-detail-date-badge"></div>
+        <h1 id="event-title" class="event-detail-title"></h1>
+        <div id="event-meta" class="event-detail-meta"></div>
+      </header>
+      <div id="event-description" class="event-detail-description"></div>
+      <div id="event-registration-wrap" class="event-detail-registration" style="display: none;">
+        <a id="event-registration-link" href="#" target="_blank" rel="noopener noreferrer" class="button">
+          Înscrie-te la eveniment →
+        </a>
+      </div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
+      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+    </div>
+  </footer>
+
+  <script src="data-service.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    function getEventId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('ro-RO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString('ro-RO', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    async function loadEvent() {
+      const eventId = getEventId();
+      const loadingState = document.getElementById('loading-state');
+      const errorState = document.getElementById('error-state');
+      const eventContent = document.getElementById('event-content');
+
+      if (!eventId) {
+        loadingState.style.display = 'none';
+        errorState.style.display = 'flex';
+        return;
+      }
+
+      try {
+        const events = await DataService.getEvents('published');
+        const event = events.find(e => e.id === eventId);
+
+        if (!event) {
+          loadingState.style.display = 'none';
+          errorState.style.display = 'flex';
+          return;
+        }
+
+        const startDate = new Date(event.startDate);
+        const dateStr = formatDate(startDate);
+        const timeStr = formatTime(startDate);
+
+        document.getElementById('event-title').textContent = event.title;
+        document.getElementById('event-date-badge').innerHTML = `
+          <span class="event-detail-day">${startDate.getDate()}</span>
+          <span class="event-detail-month">${startDate.toLocaleDateString('ro-RO', { month: 'long' })} ${startDate.getFullYear()}</span>
+        `;
+
+        let metaHtml = `<span class="event-detail-time">🕐 ${dateStr} la ${timeStr}</span>`;
+        if (event.endDate) {
+          const endDate = new Date(event.endDate);
+          metaHtml += ` <span class="event-detail-end">– ${formatTime(endDate)}</span>`;
+        }
+        if (event.location) {
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
+          metaHtml += ` · <span class="event-detail-location">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="location-link">${event.location}</a></span>`;
+        }
+        document.getElementById('event-meta').innerHTML = metaHtml;
+
+        const descEl = document.getElementById('event-description');
+        if (event.description) {
+          descEl.innerHTML = event.description.replace(/\n/g, '<br>');
+          descEl.style.display = 'block';
+        } else {
+          descEl.style.display = 'none';
+        }
+
+        const regWrap = document.getElementById('event-registration-wrap');
+        const regLink = document.getElementById('event-registration-link');
+        if (event.registrationUrl) {
+          regLink.href = event.registrationUrl;
+          regWrap.style.display = 'block';
+        } else {
+          regWrap.style.display = 'none';
+        }
+
+        document.title = `${event.title} - ZusammenInAustria (Zina)`;
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) metaDesc.setAttribute('content', event.description ? event.description.substring(0, 160) + '...' : event.title);
+
+        loadingState.style.display = 'none';
+        eventContent.style.display = 'block';
+      } catch (error) {
+        console.error('Failed to load event', error);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'flex';
+      }
+    }
+
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.pageYOffset > 100);
+    });
+
+    loadEvent();
+  </script>
+</body>
+</html>

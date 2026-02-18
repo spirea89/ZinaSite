@@ -181,15 +181,18 @@
 
     function createEventCard(event, isPastEvent) {
       const card = document.createElement('article');
-      card.className = `event-card ${isPastEvent ? 'past-event' : ''}`;
+      card.className = `event-card ${isPastEvent ? 'past-event' : ''} event-card-clickable`;
       card.dataset.date = event.startDate;
+      card.setAttribute('role', 'link');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `Vezi detalii: ${event.title}`);
       const eventDate = new Date(event.startDate);
       const dateStr = formatDate(eventDate);
       const timeStr = formatTime(eventDate);
       let locationHtml = '';
       if (event.location) {
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
-        locationHtml = `<span class="event-location">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="location-link">${event.location}</a></span>`;
+        locationHtml = `<span class="event-location">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="location-link" onclick="event.stopPropagation()">${event.location}</a></span>`;
       }
       card.innerHTML = `
         <div class="event-date">
@@ -205,6 +208,16 @@
           </div>
         </div>
       `;
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('a')) return;
+        window.location.href = `event.html?id=${event.id}`;
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          window.location.href = `event.html?id=${event.id}`;
+        }
+      });
       return card;
     }
 

@@ -210,11 +210,12 @@ app.get('/api/events', async (req, res) => {
       startDate: event.start_date,
       endDate: event.end_date,
       location: event.location,
+      registrationUrl: event.registration_url,
       status: event.status,
       createdAt: event.created_at,
       updatedAt: event.updated_at,
     }));
-    
+
     res.json(formattedEvents);
   } catch (error) {
     console.error('Error in /api/events:', error);
@@ -242,6 +243,7 @@ app.get('/api/admin/events', async (req, res) => {
       startDate: event.start_date,
       endDate: event.end_date,
       location: event.location,
+      registrationUrl: event.registration_url,
       status: event.status,
       createdAt: event.created_at,
       updatedAt: event.updated_at,
@@ -256,7 +258,7 @@ app.get('/api/admin/events', async (req, res) => {
 
 app.post('/api/events', async (req, res) => {
   try {
-    const { title, description, startDate, endDate, location, status } = req.body || {};
+    const { title, description, startDate, endDate, location, registrationUrl, status } = req.body || {};
 
     if (!title || !startDate || !status || !['draft', 'published'].includes(status)) {
       return res.status(400).json({ error: 'Invalid event payload.' });
@@ -271,6 +273,7 @@ app.post('/api/events', async (req, res) => {
         start_date: startDate,
         end_date: endDate || null,
         location: location || null,
+        registration_url: registrationUrl || null,
         status,
         created_at: now,
         updated_at: now,
@@ -291,6 +294,7 @@ app.post('/api/events', async (req, res) => {
       startDate: event.start_date,
       endDate: event.end_date,
       location: event.location,
+      registrationUrl: event.registration_url,
       status: event.status,
       createdAt: event.created_at,
       updatedAt: event.updated_at,
@@ -306,7 +310,7 @@ app.post('/api/events', async (req, res) => {
 app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, startDate, endDate, location, status } = req.body || {};
+    const { title, description, startDate, endDate, location, registrationUrl, status } = req.body || {};
 
     if (!title || !startDate || !status || !['draft', 'published'].includes(status)) {
       return res.status(400).json({ error: 'Invalid event payload.' });
@@ -321,6 +325,7 @@ app.put('/api/events/:id', async (req, res) => {
         start_date: startDate,
         end_date: endDate || null,
         location: location || null,
+        registration_url: registrationUrl || null,
         status,
         updated_at: updatedAt,
       })

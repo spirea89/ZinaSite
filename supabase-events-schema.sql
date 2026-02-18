@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS events (
   start_date TIMESTAMPTZ NOT NULL,
   end_date TIMESTAMPTZ,
   location TEXT,
+  registration_url TEXT,
   status TEXT NOT NULL CHECK (status IN ('draft', 'published')),
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
