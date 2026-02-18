@@ -97,6 +97,7 @@ function formatEvent(event) {
     startDate: event.start_date || event.startDate,
     endDate: event.end_date || event.endDate,
     location: event.location,
+    registrationUrl: event.registration_url || event.registrationUrl,
     status: event.status,
     createdAt: event.created_at || event.createdAt,
     updatedAt: event.updated_at || event.updatedAt
@@ -501,6 +502,7 @@ const DataService = {
             start_date: event.startDate,
             end_date: event.endDate || null,
             location: event.location || null,
+            registration_url: event.registrationUrl || null,
             status: event.status,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -545,6 +547,7 @@ const DataService = {
             start_date: event.startDate,
             end_date: event.endDate || null,
             location: event.location || null,
+            registration_url: event.registrationUrl || null,
             status: event.status,
             updated_at: new Date().toISOString()
           })

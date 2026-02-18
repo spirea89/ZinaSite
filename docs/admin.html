@@ -131,6 +131,10 @@
             <input id="event-location" name="location" type="text" placeholder="Locația evenimentului (opțional)">
           </label>
           <label class="stack">
+            <span>Link formular înscriere (opțional)</span>
+            <input id="event-registration-url" name="registrationUrl" type="url" placeholder="https://... (ex. Google Form, Typeform)">
+          </label>
+          <label class="stack">
             <span>Status</span>
             <select id="event-status" name="status" required>
               <option value="draft">Ciornă</option>
@@ -193,6 +197,7 @@
     const eventStartDateInput = document.getElementById('event-start-date');
     const eventEndDateInput = document.getElementById('event-end-date');
     const eventLocationInput = document.getElementById('event-location');
+    const eventRegistrationUrlInput = document.getElementById('event-registration-url');
     const eventStatusInput = document.getElementById('event-status');
     const adminEvents = document.getElementById('admin-events');
     const adminEventsEmpty = document.getElementById('admin-events-empty');
@@ -607,8 +612,9 @@
           }
           
           eventLocationInput.value = event.location || '';
+          eventRegistrationUrlInput.value = event.registrationUrl || '';
           eventStatusInput.value = event.status;
-          
+
           eventTitleInput.focus();
           window.scrollTo({ top: 0, behavior: 'smooth' });
         };
@@ -675,6 +681,7 @@
         startDate: eventStartDateInput.value,
         endDate: eventEndDateInput.value || undefined,
         location: eventLocationInput.value || undefined,
+        registrationUrl: eventRegistrationUrlInput.value || undefined,
         status: eventStatusInput.value,
       });
     });
