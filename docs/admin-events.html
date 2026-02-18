@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zina Admin - Gestionare Evenimente</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logos/ZinA%20Logos-07.png" alt="ZusammenInAustria" class="logo-img">
+        <span class="logo-text">Zina</span>
+      </a>
+      <div class="nav-links">
+        <a href="admin.html" class="nav-link">Panou admin</a>
+        <a href="admin-articles.html" class="nav-link">Articole</a>
+        <a href="index.html" class="nav-link">Înapoi la site</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="login-modal" class="modal" style="display: flex;">
+    <div class="modal-content">
+      <h2>Autentificare Admin</h2>
+      <p class="muted">Te rugăm să te autentifici pentru a accesa panoul de administrare.</p>
+      <form id="login-form" class="stack">
+        <label class="stack">
+          <span>Email</span>
+          <input type="email" id="login-email" required placeholder="email@example.com" autocomplete="email">
+        </label>
+        <label class="stack">
+          <span>Parolă</span>
+          <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+        </label>
+        <div id="login-error" class="error-message" style="display: none;"></div>
+        <div class="actions">
+          <button type="submit" class="button">Autentificare</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <header class="hero hero-small" id="admin-header" style="display: none;">
+    <div class="hero-content">
+      <div class="hero-panel">
+        <p class="eyebrow">Admin</p>
+        <h1>Gestionare Evenimente</h1>
+        <p class="lead">Creează, editează și publică evenimente.</p>
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <span id="user-info" class="muted"></span>
+          <button id="logout-btn" class="button ghost">Deconectare</button>
+          <a class="button ghost" href="admin.html">Panou admin</a>
+          <a class="button ghost" href="index.html">Înapoi la site</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content" id="admin-content" style="display: none;">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
+      <section class="panel">
+        <h2>Creează sau actualizează eveniment</h2>
+        <form id="event-form" class="stack">
+          <input type="hidden" id="event-id">
+          <label class="stack">
+            <span>Titlu</span>
+            <input id="event-title" name="title" type="text" required placeholder="Introduceți titlul evenimentului">
+          </label>
+          <label class="stack">
+            <span>Descriere</span>
+            <textarea id="event-description" name="description" rows="4" placeholder="Descrierea evenimentului (opțional)"></textarea>
+          </label>
+          <label class="stack">
+            <span>Data și ora de început</span>
+            <input id="event-start-date" name="startDate" type="datetime-local" required>
+          </label>
+          <label class="stack">
+            <span>Data și ora de sfârșit (opțional)</span>
+            <input id="event-end-date" name="endDate" type="datetime-local">
+          </label>
+          <label class="stack">
+            <span>Locație</span>
+            <input id="event-location" name="location" type="text" placeholder="Locația evenimentului (opțional)">
+          </label>
+          <label class="stack">
+            <span>Link formular înscriere (opțional)</span>
+            <input id="event-registration-url" name="registrationUrl" type="url" placeholder="https://... (ex. Google Form, Typeform)">
+          </label>
+          <label class="stack">
+            <span>Status</span>
+            <select id="event-status" name="status" required>
+              <option value="draft">Ciornă</option>
+              <option value="published">Publicat</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button type="submit" class="button">Salvează eveniment</button>
+            <button type="button" id="reset-event-form" class="button ghost">Resetează</button>
+          </div>
+        </form>
+      </section>
+      <section class="panel">
+        <h2>Toate evenimentele</h2>
+        <div id="admin-events" class="cards"></div>
+        <p id="admin-events-empty" class="empty-state">
+          <span class="empty-icon">📅</span>
+          <span>Nu există evenimente încă.</span>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p><a href="admin.html" style="color: inherit;">Panou admin</a> · <a href="admin-articles.html" style="color: inherit;">Articole</a></p>
+    </div>
+  </footer>
+
+  <script src="auth-service.js"></script>
+  <script src="data-service.js"></script>
+  <script>
+    const loginModal = document.getElementById('login-modal');
+    const loginForm = document.getElementById('login-form');
+    const loginEmail = document.getElementById('login-email');
+    const loginPassword = document.getElementById('login-password');
+    const loginError = document.getElementById('login-error');
+    const adminHeader = document.getElementById('admin-header');
+    const adminContent = document.getElementById('admin-content');
+    const userInfo = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const eventForm = document.getElementById('event-form');
+    const eventIdInput = document.getElementById('event-id');
+    const eventTitleInput = document.getElementById('event-title');
+    const eventDescriptionInput = document.getElementById('event-description');
+    const eventStartDateInput = document.getElementById('event-start-date');
+    const eventEndDateInput = document.getElementById('event-end-date');
+    const eventLocationInput = document.getElementById('event-location');
+    const eventRegistrationUrlInput = document.getElementById('event-registration-url');
+    const eventStatusInput = document.getElementById('event-status');
+    const adminEvents = document.getElementById('admin-events');
+    const adminEventsEmpty = document.getElementById('admin-events-empty');
+    const resetEventButton = document.getElementById('reset-event-form');
+
+    let currentUser = null;
+    let authChecked = false;
+
+    async function checkAuth() {
+      if (authChecked) return;
+      try {
+        if (typeof AuthService === 'undefined') await new Promise(r => setTimeout(r, 100));
+        currentUser = await AuthService.getCurrentUser();
+        if (currentUser) {
+          loginModal.style.display = 'none';
+          adminHeader.style.display = 'block';
+          adminContent.style.display = 'block';
+          userInfo.textContent = `Conectat: ${currentUser.email}`;
+          loadEvents();
+        } else {
+          loginModal.style.display = 'flex';
+          adminHeader.style.display = 'none';
+          adminContent.style.display = 'none';
+        }
+        authChecked = true;
+      } catch (e) {
+        console.error(e);
+        loginModal.style.display = 'flex';
+        authChecked = true;
+      }
+    }
+
+    function showPanel() {
+      loginModal.style.display = 'none';
+      adminHeader.style.display = 'block';
+      adminContent.style.display = 'block';
+      if (currentUser) userInfo.textContent = `Conectat: ${currentUser.email}`;
+      loadEvents();
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.style.display = 'none';
+      try {
+        const result = await AuthService.signIn(loginEmail.value, loginPassword.value);
+        if (result.user) {
+          currentUser = result.user;
+          await new Promise(r => setTimeout(r, 200));
+          showPanel();
+        }
+      } catch (err) {
+        loginError.textContent = err.message || 'Email sau parolă incorectă.';
+        loginError.style.display = 'block';
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await AuthService.signOut();
+      currentUser = null;
+      loginModal.style.display = 'flex';
+      adminHeader.style.display = 'none';
+      adminContent.style.display = 'none';
+      loginEmail.value = '';
+      loginPassword.value = '';
+    });
+
+    AuthService.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') { currentUser = null; loginModal.style.display = 'flex'; adminHeader.style.display = 'none'; adminContent.style.display = 'none'; }
+      else if (event === 'SIGNED_IN' && session?.user) { currentUser = session.user; showPanel(); }
+    });
+
+    function resetEventForm() {
+      eventForm.reset();
+      eventIdInput.value = '';
+      eventStatusInput.value = 'draft';
+    }
+
+    resetEventButton.addEventListener('click', resetEventForm);
+
+    function renderEvents(events) {
+      adminEvents.innerHTML = '';
+      if (!events.length) { adminEventsEmpty.style.display = 'flex'; return; }
+      adminEventsEmpty.style.display = 'none';
+      events.forEach((event) => {
+        const card = document.createElement('article');
+        card.className = 'card';
+        const title = document.createElement('h3');
+        title.textContent = event.title;
+        const meta = document.createElement('p');
+        meta.className = 'muted';
+        const statusText = event.status === 'published' ? 'Publicat' : 'Ciornă';
+        const startDate = new Date(event.startDate);
+        meta.textContent = `${statusText} • ${startDate.toLocaleDateString('ro-RO', { dateStyle: 'medium' })} la ${startDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}`;
+        const body = document.createElement('div');
+        body.className = 'article-preview';
+        body.textContent = event.description || 'Fără descriere';
+        const buttons = document.createElement('div');
+        buttons.className = 'actions space-between';
+        const edit = document.createElement('button');
+        edit.className = 'button ghost';
+        edit.textContent = 'Editează';
+        edit.onclick = () => {
+          eventIdInput.value = event.id;
+          eventTitleInput.value = event.title;
+          eventDescriptionInput.value = event.description || '';
+          const startDate = new Date(event.startDate);
+          eventStartDateInput.value = startDate.toISOString().slice(0, 16);
+          if (event.endDate) {
+            const endDate = new Date(event.endDate);
+            eventEndDateInput.value = endDate.toISOString().slice(0, 16);
+          } else eventEndDateInput.value = '';
+          eventLocationInput.value = event.location || '';
+          eventRegistrationUrlInput.value = event.registrationUrl || '';
+          eventStatusInput.value = event.status;
+          eventTitleInput.focus();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+        const publish = document.createElement('button');
+        publish.className = 'button';
+        publish.textContent = event.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
+        publish.onclick = async () => {
+          await saveEvent({
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            location: event.location,
+            registrationUrl: event.registrationUrl,
+            status: event.status === 'published' ? 'draft' : 'published',
+          });
+        };
+        const del = document.createElement('button');
+        del.className = 'button danger';
+        del.textContent = 'Șterge';
+        del.onclick = async () => {
+          if (!confirm('Sigur vrei să ștergi acest eveniment?')) return;
+          await DataService.deleteEvent(event.id);
+          loadEvents();
+        };
+        buttons.appendChild(edit);
+        buttons.appendChild(publish);
+        buttons.appendChild(del);
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(body);
+        card.appendChild(buttons);
+        adminEvents.appendChild(card);
+      });
+    }
+
+    async function saveEvent({ id, title, description, startDate, endDate, location, registrationUrl, status }) {
+      try {
+        if (id) await DataService.updateEvent(id, { title, description, startDate, endDate, location, registrationUrl, status });
+        else await DataService.createEvent({ title, description, startDate, endDate, location, registrationUrl, status });
+        resetEventForm();
+        loadEvents();
+      } catch (err) {
+        console.error(err);
+        alert('Eroare la salvarea evenimentului.');
+      }
+    }
+
+    eventForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveEvent({
+        id: eventIdInput.value || undefined,
+        title: eventTitleInput.value,
+        description: eventDescriptionInput.value,
+        startDate: eventStartDateInput.value,
+        endDate: eventEndDateInput.value || undefined,
+        location: eventLocationInput.value || undefined,
+        registrationUrl: eventRegistrationUrlInput.value || undefined,
+        status: eventStatusInput.value,
+      });
+    });
+
+    async function loadEvents() {
+      try {
+        await new Promise(r => setTimeout(r, 100));
+        const events = await DataService.getAllEvents();
+        renderEvents(events);
+      } catch (err) {
+        console.error(err);
+        alert('Eroare la încărcarea evenimentelor. Verifică autentificarea.');
+      }
+    }
+
+    (async function init() {
+      let n = 0;
+      while (typeof window.supabase === 'undefined' && n < 50) { await new Promise(r => setTimeout(r, 100)); n++; }
+      await checkAuth();
+    })();
+  </script>
+</body>
+</html>

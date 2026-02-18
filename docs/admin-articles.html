@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zina Admin - Gestionare Articole</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logos/ZinA%20Logos-07.png" alt="ZusammenInAustria" class="logo-img">
+        <span class="logo-text">Zina</span>
+      </a>
+      <div class="nav-links">
+        <a href="admin.html" class="nav-link">Panou admin</a>
+        <a href="admin-events.html" class="nav-link">Evenimente</a>
+        <a href="index.html" class="nav-link">Înapoi la site</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="login-modal" class="modal" style="display: flex;">
+    <div class="modal-content">
+      <h2>Autentificare Admin</h2>
+      <p class="muted">Te rugăm să te autentifici pentru a accesa panoul de administrare.</p>
+      <form id="login-form" class="stack">
+        <label class="stack">
+          <span>Email</span>
+          <input type="email" id="login-email" required placeholder="email@example.com" autocomplete="email">
+        </label>
+        <label class="stack">
+          <span>Parolă</span>
+          <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+        </label>
+        <div id="login-error" class="error-message" style="display: none;"></div>
+        <div class="actions">
+          <button type="submit" class="button">Autentificare</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <header class="hero hero-small" id="admin-header" style="display: none;">
+    <div class="hero-content">
+      <div class="hero-panel">
+        <p class="eyebrow">Admin</p>
+        <h1>Gestionare Articole</h1>
+        <p class="lead">Creează, editează și publică articole.</p>
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <span id="user-info" class="muted"></span>
+          <button id="logout-btn" class="button ghost">Deconectare</button>
+          <a class="button ghost" href="admin.html">Panou admin</a>
+          <a class="button ghost" href="index.html">Înapoi la site</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content" id="admin-content" style="display: none;">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
+      <section class="panel panel-with-editor">
+        <h2>Creează sau actualizează articol</h2>
+        <form id="article-form" class="stack">
+          <input type="hidden" id="article-id">
+          <label class="stack">
+            <span>Titlu</span>
+            <input id="title" name="title" type="text" required placeholder="Introduceți titlul articolului">
+          </label>
+          <label class="stack">
+            <span>Conținut</span>
+            <div id="editor-container" style="min-height: 300px; background: white; border: 1px solid var(--border); border-radius: var(--radius-md); position: relative; z-index: 1;"></div>
+            <textarea id="content" name="content" style="display: none;" required></textarea>
+          </label>
+          <label class="stack">
+            <span>Status</span>
+            <select id="status" name="status" required>
+              <option value="draft">Ciornă</option>
+              <option value="published">Publicat</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button type="submit" class="button">Salvează articol</button>
+            <button type="button" id="reset-form" class="button ghost">Resetează</button>
+          </div>
+        </form>
+      </section>
+      <section class="panel">
+        <h2>Toate articolele</h2>
+        <div id="admin-articles" class="cards"></div>
+        <p id="admin-empty" class="empty-state">
+          <span class="empty-icon">📝</span>
+          <span>Nu există articole încă.</span>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p><a href="admin.html" style="color: inherit;">Panou admin</a> · <a href="admin-events.html" style="color: inherit;">Evenimente</a></p>
+    </div>
+  </footer>
+
+  <script src="auth-service.js"></script>
+  <script src="data-service.js"></script>
+  <script>
+    const loginModal = document.getElementById('login-modal');
+    const loginForm = document.getElementById('login-form');
+    const loginEmail = document.getElementById('login-email');
+    const loginPassword = document.getElementById('login-password');
+    const loginError = document.getElementById('login-error');
+    const adminHeader = document.getElementById('admin-header');
+    const adminContent = document.getElementById('admin-content');
+    const userInfo = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const form = document.getElementById('article-form');
+    const titleInput = document.getElementById('title');
+    const contentInput = document.getElementById('content');
+    const statusInput = document.getElementById('status');
+    const idInput = document.getElementById('article-id');
+    const adminArticles = document.getElementById('admin-articles');
+    const adminEmpty = document.getElementById('admin-empty');
+    const resetButton = document.getElementById('reset-form');
+    const editorContainer = document.getElementById('editor-container');
+
+    let currentUser = null;
+    let authChecked = false;
+    let quill = null;
+
+    function initQuill() {
+      if (quill) return quill;
+      quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+          toolbar: {
+            container: [
+              [{ 'header': [1, 2, 3, false] }],
+              ['bold', 'italic', 'underline', 'strike'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'color': [] }, { 'background': [] }],
+              [{ 'align': [] }],
+              ['link', 'image', 'video'],
+              ['clean']
+            ],
+            handlers: {
+              'image': function() {
+                const url = prompt('Introduceți URL-ul imaginii:');
+                if (url) {
+                  const range = quill.getSelection(true);
+                  quill.insertEmbed(range.index, 'image', url, 'user');
+                }
+              },
+              'video': function() {
+                const url = prompt('Introduceți URL-ul videoclipului (YouTube, Vimeo):');
+                if (url) {
+                  let embedHtml = '';
+                  if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+                    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+                    if (videoId) embedHtml = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                  } else if (url.includes('vimeo.com/')) {
+                    const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
+                    if (videoId) embedHtml = `<iframe src="https://player.vimeo.com/video/${videoId}" width="560" height="315" frameborder="0" allowfullscreen></iframe>`;
+                  }
+                  if (embedHtml) {
+                    const range = quill.getSelection(true);
+                    const delta = quill.clipboard.convert({ html: embedHtml });
+                    quill.updateContents(delta, 'user');
+                    quill.setSelection(range.index + 1);
+                  }
+                }
+              }
+            }
+          }
+        },
+        placeholder: 'Scrieți conținutul articolului aici...'
+      });
+      quill.on('text-change', () => { contentInput.value = quill.root.innerHTML; });
+      return quill;
+    }
+
+    async function checkAuth() {
+      if (authChecked) return;
+      try {
+        if (typeof AuthService === 'undefined') await new Promise(r => setTimeout(r, 100));
+        currentUser = await AuthService.getCurrentUser();
+        if (currentUser) {
+          loginModal.style.display = 'none';
+          adminHeader.style.display = 'block';
+          adminContent.style.display = 'block';
+          userInfo.textContent = `Conectat: ${currentUser.email}`;
+          if (!quill) initQuill();
+          loadArticles();
+        } else {
+          loginModal.style.display = 'flex';
+          adminHeader.style.display = 'none';
+          adminContent.style.display = 'none';
+        }
+        authChecked = true;
+      } catch (e) {
+        console.error(e);
+        loginModal.style.display = 'flex';
+        authChecked = true;
+      }
+    }
+
+    function showPanel() {
+      loginModal.style.display = 'none';
+      adminHeader.style.display = 'block';
+      adminContent.style.display = 'block';
+      if (currentUser) userInfo.textContent = `Conectat: ${currentUser.email}`;
+      if (!quill) initQuill();
+      loadArticles();
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.style.display = 'none';
+      try {
+        const result = await AuthService.signIn(loginEmail.value, loginPassword.value);
+        if (result.user) {
+          currentUser = result.user;
+          await new Promise(r => setTimeout(r, 200));
+          showPanel();
+        }
+      } catch (err) {
+        loginError.textContent = err.message || 'Email sau parolă incorectă.';
+        loginError.style.display = 'block';
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await AuthService.signOut();
+      currentUser = null;
+      loginModal.style.display = 'flex';
+      adminHeader.style.display = 'none';
+      adminContent.style.display = 'none';
+      loginEmail.value = '';
+      loginPassword.value = '';
+    });
+
+    AuthService.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') { currentUser = null; loginModal.style.display = 'flex'; adminHeader.style.display = 'none'; adminContent.style.display = 'none'; }
+      else if (event === 'SIGNED_IN' && session?.user) { currentUser = session.user; showPanel(); }
+    });
+
+    function resetForm() {
+      form.reset();
+      idInput.value = '';
+      statusInput.value = 'draft';
+      if (quill) { quill.setContents([]); contentInput.value = ''; }
+    }
+
+    function renderArticles(articles) {
+      adminArticles.innerHTML = '';
+      if (!articles.length) { adminEmpty.style.display = 'flex'; return; }
+      adminEmpty.style.display = 'none';
+      articles.forEach((article) => {
+        const card = document.createElement('article');
+        card.className = 'card';
+        const title = document.createElement('h3');
+        title.textContent = article.title;
+        const meta = document.createElement('p');
+        meta.className = 'muted';
+        meta.textContent = `${article.status === 'published' ? 'Publicat' : 'Ciornă'} • ${new Date(article.updatedAt || article.createdAt).toLocaleDateString('ro-RO', { dateStyle: 'medium' })}`;
+        const body = document.createElement('div');
+        body.className = 'article-preview';
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = article.content || '';
+        body.textContent = (tempDiv.textContent || tempDiv.innerText || '').length > 200 ? (tempDiv.textContent || tempDiv.innerText || '').substring(0, 200) + '...' : (tempDiv.textContent || tempDiv.innerText || '');
+        const buttons = document.createElement('div');
+        buttons.className = 'actions space-between';
+        const edit = document.createElement('button');
+        edit.className = 'button ghost';
+        edit.textContent = 'Editează';
+        edit.onclick = () => {
+          idInput.value = article.id;
+          titleInput.value = article.title;
+          statusInput.value = article.status;
+          if (quill) {
+            if (article.content) {
+              const t = document.createElement('div');
+              t.innerHTML = article.content;
+              const hasHtml = t.children.length > 0 || t.innerHTML !== article.content;
+              if (hasHtml) quill.root.innerHTML = article.content;
+              else quill.setText(article.content);
+              contentInput.value = quill.root.innerHTML;
+            } else { quill.setContents([]); contentInput.value = ''; }
+          } else contentInput.value = article.content || '';
+          titleInput.focus();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+        const publish = document.createElement('button');
+        publish.className = 'button';
+        publish.textContent = article.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
+        publish.onclick = async () => {
+          await saveArticle({ id: article.id, title: article.title, content: article.content, status: article.status === 'published' ? 'draft' : 'published' });
+        };
+        const del = document.createElement('button');
+        del.className = 'button danger';
+        del.textContent = 'Șterge';
+        del.onclick = async () => {
+          if (!confirm('Sigur vrei să ștergi acest articol?')) return;
+          await DataService.deleteArticle(article.id);
+          loadArticles();
+        };
+        buttons.appendChild(edit);
+        buttons.appendChild(publish);
+        buttons.appendChild(del);
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(body);
+        card.appendChild(buttons);
+        adminArticles.appendChild(card);
+      });
+    }
+
+    async function saveArticle({ id, title, content, status }) {
+      try {
+        let articleContent = content;
+        if (quill && (contentInput.value || !content)) articleContent = quill.root.innerHTML;
+        if (id) await DataService.updateArticle(id, { title, content: articleContent, status });
+        else await DataService.createArticle({ title, content: articleContent, status });
+        resetForm();
+        loadArticles();
+      } catch (err) {
+        console.error(err);
+        alert('Eroare la salvarea articolului.');
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (quill) contentInput.value = quill.root.innerHTML;
+      await saveArticle({ id: idInput.value || undefined, title: titleInput.value, content: contentInput.value, status: statusInput.value });
+    });
+
+    resetButton.addEventListener('click', resetForm);
+
+    async function loadArticles() {
+      try {
+        await new Promise(r => setTimeout(r, 100));
+        const articles = await DataService.getAllArticles();
+        renderArticles(articles);
+      } catch (err) {
+        console.error(err);
+        alert('Eroare la încărcarea articolelor. Verifică autentificarea.');
+      }
+    }
+
+    (async function init() {
+      let n = 0;
+      while (typeof window.supabase === 'undefined' && n < 50) { await new Promise(r => setTimeout(r, 100)); n++; }
+      await checkAuth();
+    })();
+  </script>
+</body>
+</html>

@@ -3,16 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zina Admin - Gestionare Articole</title>
+  <title>Zina Admin - Panou de Administrare</title>
   <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <!-- Quill.js Rich Text Editor -->
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -27,7 +24,6 @@
     </div>
   </nav>
 
-  <!-- Login Modal -->
   <div id="login-modal" class="modal" style="display: flex;">
     <div class="modal-content">
       <h2>Autentificare Admin</h2>
@@ -54,8 +50,8 @@
       <div class="hero-panel">
         <p class="eyebrow">Admin</p>
         <h1>Panou de Administrare</h1>
-        <p class="lead">Creează, editează și publică articole și evenimente pentru ZusammenInAustria.</p>
-        <div style="display: flex; gap: 1rem; align-items: center;">
+        <p class="lead">Gestionare conținut pentru ZusammenInAustria.</p>
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
           <span id="user-info" class="muted"></span>
           <button id="logout-btn" class="button ghost">Deconectare</button>
           <a class="button ghost" href="index.html">Înapoi la site</a>
@@ -65,97 +61,19 @@
   </header>
 
   <main class="content" id="admin-content" style="display: none;">
-    <!-- Articles Section -->
-    <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start; margin-bottom: 3rem;">
-      <section class="panel panel-with-editor">
-        <h2>Creează sau actualizează articol</h2>
-        <form id="article-form" class="stack">
-          <input type="hidden" id="article-id">
-          <label class="stack">
-            <span>Titlu</span>
-            <input id="title" name="title" type="text" required placeholder="Introduceți titlul articolului">
-          </label>
-          <label class="stack">
-            <span>Conținut</span>
-            <div id="editor-container" style="min-height: 300px; background: white; border: 1px solid var(--border); border-radius: var(--radius-md); position: relative; z-index: 1;"></div>
-            <textarea id="content" name="content" style="display: none;" required></textarea>
-          </label>
-          <label class="stack">
-            <span>Status</span>
-            <select id="status" name="status" required>
-              <option value="draft">Ciornă</option>
-              <option value="published">Publicat</option>
-            </select>
-          </label>
-          <div class="actions">
-            <button type="submit" class="button">Salvează articol</button>
-            <button type="button" id="reset-form" class="button ghost">Resetează</button>
-          </div>
-        </form>
-      </section>
-
-      <section class="panel">
-        <h2>Toate articolele</h2>
-        <div id="admin-articles" class="cards"></div>
-        <p id="admin-empty" class="empty-state">
-          <span class="empty-icon">📝</span>
-          <span>Nu există articole încă.</span>
-        </p>
-      </section>
-    </div>
-
-    <!-- Events Section -->
-    <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
-      <section class="panel">
-        <h2>Creează sau actualizează eveniment</h2>
-        <form id="event-form" class="stack">
-          <input type="hidden" id="event-id">
-          <label class="stack">
-            <span>Titlu</span>
-            <input id="event-title" name="title" type="text" required placeholder="Introduceți titlul evenimentului">
-          </label>
-          <label class="stack">
-            <span>Descriere</span>
-            <textarea id="event-description" name="description" rows="4" placeholder="Descrierea evenimentului (opțional)"></textarea>
-          </label>
-          <label class="stack">
-            <span>Data și ora de început</span>
-            <input id="event-start-date" name="startDate" type="datetime-local" required>
-          </label>
-          <label class="stack">
-            <span>Data și ora de sfârșit (opțional)</span>
-            <input id="event-end-date" name="endDate" type="datetime-local">
-          </label>
-          <label class="stack">
-            <span>Locație</span>
-            <input id="event-location" name="location" type="text" placeholder="Locația evenimentului (opțional)">
-          </label>
-          <label class="stack">
-            <span>Link formular înscriere (opțional)</span>
-            <input id="event-registration-url" name="registrationUrl" type="url" placeholder="https://... (ex. Google Form, Typeform)">
-          </label>
-          <label class="stack">
-            <span>Status</span>
-            <select id="event-status" name="status" required>
-              <option value="draft">Ciornă</option>
-              <option value="published">Publicat</option>
-            </select>
-          </label>
-          <div class="actions">
-            <button type="submit" class="button">Salvează eveniment</button>
-            <button type="button" id="reset-event-form" class="button ghost">Resetează</button>
-          </div>
-        </form>
-      </section>
-
-      <section class="panel">
-        <h2>Toate evenimentele</h2>
-        <div id="admin-events" class="cards"></div>
-        <p id="admin-events-empty" class="empty-state">
-          <span class="empty-icon">📅</span>
-          <span>Nu există evenimente încă.</span>
-        </p>
-      </section>
+    <div class="cta-grid" style="max-width: 800px; margin: 0 auto;">
+      <a href="admin-articles.html" class="cta-card">
+        <span class="cta-icon">📝</span>
+        <h3>Gestionare Articole</h3>
+        <p class="muted">Creează, editează și publică articole pentru comunitate</p>
+        <span class="cta-link">Deschide →</span>
+      </a>
+      <a href="admin-events.html" class="cta-card">
+        <span class="cta-icon">📅</span>
+        <h3>Gestionare Evenimente</h3>
+        <p class="muted">Organizează și publică evenimente ale comunității</p>
+        <span class="cta-link">Deschide →</span>
+      </a>
     </div>
   </main>
 
@@ -166,9 +84,7 @@
   </footer>
 
   <script src="auth-service.js"></script>
-  <script src="data-service.js"></script>
   <script>
-    // UI Elements
     const loginModal = document.getElementById('login-modal');
     const loginForm = document.getElementById('login-form');
     const loginEmail = document.getElementById('login-email');
@@ -179,560 +95,85 @@
     const userInfo = document.getElementById('user-info');
     const logoutBtn = document.getElementById('logout-btn');
 
-    const form = document.getElementById('article-form');
-    const titleInput = document.getElementById('title');
-    const contentInput = document.getElementById('content');
-    const statusInput = document.getElementById('status');
-    const idInput = document.getElementById('article-id');
-    const adminArticles = document.getElementById('admin-articles');
-    const adminEmpty = document.getElementById('admin-empty');
-    const resetButton = document.getElementById('reset-form');
-    const editorContainer = document.getElementById('editor-container');
-
-    // Event form elements
-    const eventForm = document.getElementById('event-form');
-    const eventIdInput = document.getElementById('event-id');
-    const eventTitleInput = document.getElementById('event-title');
-    const eventDescriptionInput = document.getElementById('event-description');
-    const eventStartDateInput = document.getElementById('event-start-date');
-    const eventEndDateInput = document.getElementById('event-end-date');
-    const eventLocationInput = document.getElementById('event-location');
-    const eventRegistrationUrlInput = document.getElementById('event-registration-url');
-    const eventStatusInput = document.getElementById('event-status');
-    const adminEvents = document.getElementById('admin-events');
-    const adminEventsEmpty = document.getElementById('admin-events-empty');
-    const resetEventButton = document.getElementById('reset-event-form');
-
     let currentUser = null;
     let authChecked = false;
-    let quill = null;
 
-    // Initialize Quill editor
-    function initQuill() {
-      if (quill) return quill;
-
-      quill = new Quill('#editor-container', {
-        theme: 'snow',
-        modules: {
-          toolbar: {
-            container: [
-              [{ 'header': [1, 2, 3, false] }],
-              ['bold', 'italic', 'underline', 'strike'],
-              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-              [{ 'color': [] }, { 'background': [] }],
-              [{ 'align': [] }],
-              ['link', 'image', 'video'],
-              ['clean']
-            ],
-            handlers: {
-              'image': imageHandler,
-              'video': videoHandler
-            }
-          }
-        },
-        placeholder: 'Scrieți conținutul articolului aici...'
-      });
-
-      // Update hidden textarea on content change
-      quill.on('text-change', () => {
-        contentInput.value = quill.root.innerHTML;
-      });
-
-      return quill;
-    }
-
-    // Handle image insertion
-    function imageHandler() {
-      const url = prompt('Introduceți URL-ul imaginii:');
-      if (url) {
-        const range = quill.getSelection(true);
-        quill.insertEmbed(range.index, 'image', url, 'user');
-      }
-    }
-
-    // Handle video insertion
-    function videoHandler() {
-      const url = prompt('Introduceți URL-ul videoclipului (YouTube, Vimeo, sau orice URL video):');
-      if (url) {
-        let embedHtml = '';
-        
-        // Convert YouTube/Vimeo URLs to embed format
-        if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
-          const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-          if (videoId) {
-            embedHtml = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-          }
-        } else if (url.includes('vimeo.com/')) {
-          const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
-          if (videoId) {
-            embedHtml = `<iframe src="https://player.vimeo.com/video/${videoId}" width="560" height="315" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-          }
-        } else {
-          // For other video URLs, try to use as direct video tag or iframe
-          embedHtml = `<video controls width="560" style="max-width: 100%; height: auto;"><source src="${url}" type="video/mp4">Browser-ul tău nu suportă tag-ul video.</video>`;
-        }
-        
-        if (embedHtml) {
-          const range = quill.getSelection(true);
-          const delta = quill.clipboard.convert({ html: embedHtml });
-          quill.updateContents(delta, 'user');
-          quill.setSelection(range.index + 1);
-        }
-      }
-    }
-
-    // Wait for Supabase to load, then check authentication
-    async function waitForSupabaseAndCheckAuth() {
-      // Wait for Supabase library to load
-      let attempts = 0;
-      const maxAttempts = 50; // 5 seconds max wait
-      
-      while (typeof window.supabase === 'undefined' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
-      
-      if (typeof window.supabase === 'undefined') {
-        console.error('Supabase library not loaded');
-        showLoginModal();
-        return;
-      }
-
-      // Now check authentication
-      await checkAuth();
-    }
-
-    // Check authentication on page load
     async function checkAuth() {
       if (authChecked) return;
-      
       try {
-        // Wait a bit for auth-service to be fully loaded
-        if (typeof AuthService === 'undefined') {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
+        if (typeof AuthService === 'undefined') await new Promise(r => setTimeout(r, 100));
         currentUser = await AuthService.getCurrentUser();
         if (currentUser) {
-          showAdminPanel();
+          loginModal.style.display = 'none';
+          adminHeader.style.display = 'block';
+          adminContent.style.display = 'block';
+          userInfo.textContent = `Conectat: ${currentUser.email}`;
         } else {
-          showLoginModal();
+          loginModal.style.display = 'flex';
+          adminHeader.style.display = 'none';
+          adminContent.style.display = 'none';
         }
         authChecked = true;
-      } catch (error) {
-        console.error('Auth check error:', error);
-        showLoginModal();
+      } catch (e) {
+        console.error(e);
+        loginModal.style.display = 'flex';
         authChecked = true;
       }
     }
 
-    function showLoginModal() {
-      loginModal.style.display = 'flex';
-      adminHeader.style.display = 'none';
-      adminContent.style.display = 'none';
-    }
-
-    function showAdminPanel() {
+    function showPanel() {
       loginModal.style.display = 'none';
       adminHeader.style.display = 'block';
       adminContent.style.display = 'block';
-      if (currentUser) {
-        userInfo.textContent = `Conectat ca: ${currentUser.email}`;
-      }
-      // Initialize Quill editor when admin panel is shown
-      if (!quill) {
-        initQuill();
-      }
-      loadArticles();
-      loadEvents();
+      if (currentUser) userInfo.textContent = `Conectat: ${currentUser.email}`;
     }
 
-    // Login form handler
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       loginError.style.display = 'none';
-      
-      const email = loginEmail.value;
-      const password = loginPassword.value;
-
       try {
-        const result = await AuthService.signIn(email, password);
+        const result = await AuthService.signIn(loginEmail.value, loginPassword.value);
         if (result.user) {
           currentUser = result.user;
-          // Wait a moment for session to be fully established
-          await new Promise(resolve => setTimeout(resolve, 200));
-          showAdminPanel();
+          await new Promise(r => setTimeout(r, 200));
+          showPanel();
         }
-      } catch (error) {
-        console.error('Login error:', error);
-        loginError.textContent = error.message || 'Email sau parolă incorectă.';
+      } catch (err) {
+        loginError.textContent = err.message || 'Email sau parolă incorectă.';
         loginError.style.display = 'block';
       }
     });
 
-    // Logout handler
     logoutBtn.addEventListener('click', async () => {
-      try {
-        await AuthService.signOut();
-        currentUser = null;
-        showLoginModal();
-        loginEmail.value = '';
-        loginPassword.value = '';
-      } catch (error) {
-        console.error('Logout error:', error);
-        alert('Eroare la deconectare. Te rugăm să reîncerci pagina.');
-      }
+      await AuthService.signOut();
+      currentUser = null;
+      loginModal.style.display = 'flex';
+      adminHeader.style.display = 'none';
+      adminContent.style.display = 'none';
+      loginEmail.value = '';
+      loginPassword.value = '';
     });
 
-    // Listen for auth state changes
     AuthService.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         currentUser = null;
-        showLoginModal();
+        loginModal.style.display = 'flex';
+        adminHeader.style.display = 'none';
+        adminContent.style.display = 'none';
       } else if (event === 'SIGNED_IN' && session?.user) {
         currentUser = session.user;
-        showAdminPanel();
+        showPanel();
       }
     });
 
-    async function fetchArticles() {
-      return await DataService.getAllArticles();
-    }
-
-    function resetForm() {
-      form.reset();
-      idInput.value = '';
-      statusInput.value = 'draft';
-      if (quill) {
-        quill.setContents([]);
-        contentInput.value = '';
+    (async function init() {
+      let n = 0;
+      while (typeof window.supabase === 'undefined' && n < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        n++;
       }
-    }
-
-    function renderArticles(articles) {
-      adminArticles.innerHTML = '';
-      if (!articles.length) {
-        adminEmpty.style.display = 'flex';
-        return;
-      }
-
-      adminEmpty.style.display = 'none';
-
-      articles.forEach((article) => {
-        const card = document.createElement('article');
-        card.className = 'card';
-
-        const title = document.createElement('h3');
-        title.textContent = article.title;
-
-        const meta = document.createElement('p');
-        meta.className = 'muted';
-        const statusText = article.status === 'published' ? 'Publicat' : 'Ciornă';
-        meta.textContent = `${statusText} • ${new Date(article.updatedAt || article.createdAt).toLocaleDateString('ro-RO', { dateStyle: 'medium' })}`;
-
-        const body = document.createElement('div');
-        body.className = 'article-preview';
-        // Strip HTML tags for preview (first 200 chars of text only)
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = article.content || '';
-        const textContent = tempDiv.textContent || tempDiv.innerText || '';
-        body.textContent = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
-
-        const buttons = document.createElement('div');
-        buttons.className = 'actions space-between';
-
-        const edit = document.createElement('button');
-        edit.className = 'button ghost';
-        edit.textContent = 'Editează';
-        edit.onclick = () => {
-          idInput.value = article.id;
-          titleInput.value = article.title;
-          statusInput.value = article.status;
-          
-          // Set Quill content (handle both HTML and plain text)
-          if (quill) {
-            if (article.content) {
-              // Check if content is HTML
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = article.content;
-              const hasHtmlTags = tempDiv.children.length > 0 || tempDiv.innerHTML !== article.content;
-              
-              if (hasHtmlTags) {
-                quill.root.innerHTML = article.content;
-              } else {
-                quill.setText(article.content);
-              }
-              contentInput.value = quill.root.innerHTML;
-            } else {
-              quill.setContents([]);
-              contentInput.value = '';
-            }
-          } else {
-            contentInput.value = article.content || '';
-          }
-          
-          titleInput.focus();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        const publish = document.createElement('button');
-        publish.className = 'button';
-        publish.textContent = article.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
-        publish.onclick = async () => {
-          await saveArticle({
-            id: article.id,
-            title: article.title,
-            content: article.content,
-            status: article.status === 'published' ? 'draft' : 'published',
-          });
-        };
-
-        const del = document.createElement('button');
-        del.className = 'button danger';
-        del.textContent = 'Șterge';
-        del.onclick = async () => {
-          if (!confirm('Sigur vrei să ștergi acest articol?')) return;
-          await DataService.deleteArticle(article.id);
-          loadArticles();
-        };
-
-        buttons.appendChild(edit);
-        buttons.appendChild(publish);
-        buttons.appendChild(del);
-
-        card.appendChild(title);
-        card.appendChild(meta);
-        card.appendChild(body);
-        card.appendChild(buttons);
-
-        adminArticles.appendChild(card);
-      });
-    }
-
-    async function saveArticle({ id, title, content, status }) {
-      try {
-        // Get content from Quill if available, otherwise from textarea
-        let articleContent = content;
-        if (quill && !content) {
-          articleContent = quill.root.innerHTML;
-        } else if (quill && contentInput.value) {
-          articleContent = quill.root.innerHTML;
-        }
-        
-        if (id) {
-          await DataService.updateArticle(id, { title, content: articleContent, status });
-        } else {
-          await DataService.createArticle({ title, content: articleContent, status });
-        }
-        resetForm();
-        loadArticles();
-      } catch (error) {
-        console.error('Error saving article:', error);
-        alert('Eroare la salvarea articolului. Verificați formularul.');
-      }
-    }
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      
-      // Ensure Quill content is synced to textarea
-      if (quill) {
-        contentInput.value = quill.root.innerHTML;
-      }
-      
-      await saveArticle({
-        id: idInput.value || undefined,
-        title: titleInput.value,
-        content: contentInput.value,
-        status: statusInput.value,
-      });
-    });
-
-    resetButton.addEventListener('click', resetForm);
-
-    // Event form handlers
-    function resetEventForm() {
-      eventForm.reset();
-      eventIdInput.value = '';
-      eventStatusInput.value = 'draft';
-    }
-
-    resetEventButton.addEventListener('click', resetEventForm);
-
-    function renderEvents(events) {
-      adminEvents.innerHTML = '';
-      if (!events.length) {
-        adminEventsEmpty.style.display = 'flex';
-        return;
-      }
-
-      adminEventsEmpty.style.display = 'none';
-
-      events.forEach((event) => {
-        const card = document.createElement('article');
-        card.className = 'card';
-
-        const title = document.createElement('h3');
-        title.textContent = event.title;
-
-        const meta = document.createElement('p');
-        meta.className = 'muted';
-        const statusText = event.status === 'published' ? 'Publicat' : 'Ciornă';
-        const startDate = new Date(event.startDate);
-        const dateStr = startDate.toLocaleDateString('ro-RO', { dateStyle: 'medium' });
-        const timeStr = startDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-        meta.textContent = `${statusText} • ${dateStr} la ${timeStr}`;
-
-        const body = document.createElement('div');
-        body.className = 'article-preview';
-        body.textContent = event.description || 'Fără descriere';
-
-        const buttons = document.createElement('div');
-        buttons.className = 'actions space-between';
-
-        const edit = document.createElement('button');
-        edit.className = 'button ghost';
-        edit.textContent = 'Editează';
-        edit.onclick = () => {
-          eventIdInput.value = event.id;
-          eventTitleInput.value = event.title;
-          eventDescriptionInput.value = event.description || '';
-          
-          // Format datetime for input (YYYY-MM-DDTHH:mm)
-          const startDate = new Date(event.startDate);
-          const startDateStr = startDate.toISOString().slice(0, 16);
-          eventStartDateInput.value = startDateStr;
-          
-          if (event.endDate) {
-            const endDate = new Date(event.endDate);
-            const endDateStr = endDate.toISOString().slice(0, 16);
-            eventEndDateInput.value = endDateStr;
-          } else {
-            eventEndDateInput.value = '';
-          }
-          
-          eventLocationInput.value = event.location || '';
-          eventRegistrationUrlInput.value = event.registrationUrl || '';
-          eventStatusInput.value = event.status;
-
-          eventTitleInput.focus();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        const publish = document.createElement('button');
-        publish.className = 'button';
-        publish.textContent = event.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
-        publish.onclick = async () => {
-          await saveEvent({
-            id: event.id,
-            title: event.title,
-            description: event.description,
-            startDate: event.startDate,
-            endDate: event.endDate,
-            location: event.location,
-            status: event.status === 'published' ? 'draft' : 'published',
-          });
-        };
-
-        const del = document.createElement('button');
-        del.className = 'button danger';
-        del.textContent = 'Șterge';
-        del.onclick = async () => {
-          if (!confirm('Sigur vrei să ștergi acest eveniment?')) return;
-          await DataService.deleteEvent(event.id);
-          loadEvents();
-        };
-
-        buttons.appendChild(edit);
-        buttons.appendChild(publish);
-        buttons.appendChild(del);
-
-        card.appendChild(title);
-        card.appendChild(meta);
-        card.appendChild(body);
-        card.appendChild(buttons);
-
-        adminEvents.appendChild(card);
-      });
-    }
-
-    async function saveEvent({ id, title, description, startDate, endDate, location, status }) {
-      try {
-        if (id) {
-          await DataService.updateEvent(id, { title, description, startDate, endDate, location, status });
-        } else {
-          await DataService.createEvent({ title, description, startDate, endDate, location, status });
-        }
-        resetEventForm();
-        loadEvents();
-      } catch (error) {
-        console.error('Error saving event:', error);
-        alert('Eroare la salvarea evenimentului. Verificați formularul.');
-      }
-    }
-
-    eventForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      
-      await saveEvent({
-        id: eventIdInput.value || undefined,
-        title: eventTitleInput.value,
-        description: eventDescriptionInput.value,
-        startDate: eventStartDateInput.value,
-        endDate: eventEndDateInput.value || undefined,
-        location: eventLocationInput.value || undefined,
-        registrationUrl: eventRegistrationUrlInput.value || undefined,
-        status: eventStatusInput.value,
-      });
-    });
-
-    async function loadEvents() {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const events = await DataService.getAllEvents();
-        renderEvents(events);
-      } catch (error) {
-        console.error('Error loading events:', error);
-        console.error('Error details:', error.message, error);
-        
-        let errorMsg = 'Eroare la încărcarea evenimentelor.';
-        if (error.message) {
-          errorMsg += ` ${error.message}`;
-        }
-        if (error.message?.includes('permission') || error.message?.includes('policy')) {
-          errorMsg += ' Verifică dacă ești autentificat și ai permisiuni.';
-        }
-        alert(errorMsg);
-      }
-    }
-
-    async function loadArticles() {
-      try {
-        // Make sure we're using the authenticated client
-        // Wait a moment to ensure auth session is established
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const articles = await fetchArticles();
-        renderArticles(articles);
-      } catch (error) {
-        console.error('Error loading articles:', error);
-        console.error('Error details:', error.message, error);
-        
-        // Show more specific error message
-        let errorMsg = 'Eroare la încărcarea articolelor.';
-        if (error.message) {
-          errorMsg += ` ${error.message}`;
-        }
-        if (error.message?.includes('permission') || error.message?.includes('policy')) {
-          errorMsg += ' Verifică dacă ești autentificat și ai permisiuni.';
-        }
-        alert(errorMsg);
-      }
-    }
-
-    // Initialize: Wait for Supabase and check auth on page load
-    waitForSupabaseAndCheckAuth();
+      await checkAuth();
+    })();
   </script>
 </body>
 </html>
