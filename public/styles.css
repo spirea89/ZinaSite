@@ -2238,11 +2238,16 @@ textarea:focus-visible {
 }
 .homepage-image-editor img {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 4.35;
   object-fit: cover;
+  object-position: 64% 50%;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
+.homepage-image-controls { align-self: stretch; justify-content: center; }
+.homepage-image-controls input[type="range"] { width: 100%; accent-color: var(--terracotta); }
+.range-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.82rem; }
+.homepage-image-controls .button { align-self: flex-start; }
 .homepage-message { min-height: 1.5rem; font-weight: 600; }
 .success-message { color: var(--forest); }
 .homepage-save-bar {

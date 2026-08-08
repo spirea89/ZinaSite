@@ -804,12 +804,13 @@ const DataService = {
     if (!data) return null;
     return {
       content: data.content || {},
-      heroImageUrl: data.hero_image_url || null
+      heroImageUrl: data.hero_image_url || null,
+      heroImagePosition: data.content?._settings?.heroImagePosition || { x: 64, y: 50 }
     };
   },
 
   // Save homepage content. Supabase RLS restricts this operation to authenticated users.
-  async updateHomepageContent(content, heroImageUrl = null) {
+  async updateHomepageContent(content, heroImageUrl = null, heroImagePosition = { x: 64, y: 50 }) {
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -817,11 +818,20 @@ const DataService = {
     const { data: { session } } = await client.auth.getSession();
     if (!session) throw new Error('Not authenticated. Please log in again.');
 
+    const normalizedPosition = {
+      x: Math.min(100, Math.max(0, Number(heroImagePosition.x) || 0)),
+      y: Math.min(100, Math.max(0, Number(heroImagePosition.y) || 0))
+    };
+    const contentWithSettings = {
+      ...content,
+      _settings: { ...(content._settings || {}), heroImagePosition: normalizedPosition }
+    };
+
     const { data, error } = await client
       .from('homepage_content')
       .upsert({
         id: 'home',
-        content,
+        content: contentWithSettings,
         hero_image_url: heroImageUrl || null,
         updated_at: new Date().toISOString(),
         updated_by: session.user.id
@@ -832,7 +842,8 @@ const DataService = {
     if (error) throw error;
     return {
       content: data.content || {},
-      heroImageUrl: data.hero_image_url || null
+      heroImageUrl: data.hero_image_url || null,
+      heroImagePosition: data.content?._settings?.heroImagePosition || normalizedPosition
     };
   },
 

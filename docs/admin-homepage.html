@@ -66,10 +66,24 @@
         <p class="muted"><strong>Dimensiune recomandată: 1600 × 1000 px (raport 16:10).</strong><br>Încarcă JPG, PNG sau WebP, maximum 5 MB și minimum 1400 px lățime.</p>
         <div class="homepage-image-editor">
           <img id="hero-image-preview" src="logos/hero-acasa-romania.jpg" alt="Previzualizare imagine principală">
-          <label class="stack">
-            <span>Alege o imagine nouă</span>
-            <input id="hero-image-file" type="file" accept="image/jpeg,image/png,image/webp">
-          </label>
+          <div class="stack homepage-image-controls">
+            <label class="stack">
+              <span>Alege o imagine nouă</span>
+              <input id="hero-image-file" type="file" accept="image/jpeg,image/png,image/webp">
+            </label>
+            <p class="muted">Mută punctul central al imaginii până când aceasta este încadrată cum dorești. Previzualizarea are aceeași formă ca imaginea de pe pagina principală.</p>
+            <label class="stack">
+              <span>Poziție orizontală: <strong id="hero-position-x-value">64%</strong></span>
+              <input id="hero-position-x" type="range" min="0" max="100" value="64" aria-label="Poziție imagine stânga dreapta">
+              <span class="range-labels"><span>← Stânga</span><span>Dreapta →</span></span>
+            </label>
+            <label class="stack">
+              <span>Poziție verticală: <strong id="hero-position-y-value">50%</strong></span>
+              <input id="hero-position-y" type="range" min="0" max="100" value="50" aria-label="Poziție imagine sus jos">
+              <span class="range-labels"><span>↑ Sus</span><span>Jos ↓</span></span>
+            </label>
+            <button id="hero-position-reset" type="button" class="button ghost">Centrează imaginea</button>
+          </div>
         </div>
       </section>
 
@@ -128,6 +142,10 @@
     const message = document.getElementById('homepage-message');
     const fileInput = document.getElementById('hero-image-file');
     const imagePreview = document.getElementById('hero-image-preview');
+    const positionXInput = document.getElementById('hero-position-x');
+    const positionYInput = document.getElementById('hero-position-y');
+    const positionXValue = document.getElementById('hero-position-x-value');
+    const positionYValue = document.getElementById('hero-position-y-value');
     let currentHeroImageUrl = null;
     let activeAdminUserId = null;
     let homepageByLocale = {
@@ -135,6 +153,14 @@
       en: I18n.homepageContent('en'),
       de: I18n.homepageContent('de')
     };
+
+    function updateImagePositionPreview() {
+      const x = Number(positionXInput.value);
+      const y = Number(positionYInput.value);
+      imagePreview.style.objectPosition = `${x}% ${y}%`;
+      positionXValue.textContent = `${x}%`;
+      positionYValue.textContent = `${y}%`;
+    }
 
     function captureCurrentFields() {
       ['ro', 'en', 'de'].forEach(locale => { homepageByLocale[locale] = {}; });
@@ -224,6 +250,9 @@
         renderFields(homepageByLocale);
         currentHeroImageUrl = saved?.heroImageUrl || null;
         imagePreview.src = currentHeroImageUrl || 'logos/hero-acasa-romania.jpg';
+        positionXInput.value = saved?.heroImagePosition?.x ?? 64;
+        positionYInput.value = saved?.heroImagePosition?.y ?? 50;
+        updateImagePositionPreview();
         message.textContent = saved ? '' : 'Conținutul implicit este afișat. Prima salvare va crea setările paginii.';
       } catch (error) {
         renderFields(homepageByLocale);
@@ -236,6 +265,13 @@
       const file = fileInput.files[0];
       if (file) imagePreview.src = URL.createObjectURL(file);
     });
+    positionXInput.addEventListener('input', updateImagePositionPreview);
+    positionYInput.addEventListener('input', updateImagePositionPreview);
+    document.getElementById('hero-position-reset').addEventListener('click', () => {
+      positionXInput.value = '50';
+      positionYInput.value = '50';
+      updateImagePositionPreview();
+    });
 
     homepageForm.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -247,9 +283,11 @@
         let heroImageUrl = currentHeroImageUrl;
         if (fileInput.files[0]) heroImageUrl = await DataService.uploadHomepageImage(fileInput.files[0]);
         captureCurrentFields();
-        await DataService.updateHomepageContent(homepageByLocale, heroImageUrl);
+        const heroImagePosition = { x: Number(positionXInput.value), y: Number(positionYInput.value) };
+        await DataService.updateHomepageContent(homepageByLocale, heroImageUrl, heroImagePosition);
         currentHeroImageUrl = heroImageUrl;
         if (heroImageUrl) localStorage.setItem('zina-homepage-hero-image', heroImageUrl);
+        localStorage.setItem('zina-homepage-hero-position', JSON.stringify(heroImagePosition));
         fileInput.value = '';
         message.textContent = 'Pagina principală a fost salvată. Modificările sunt vizibile imediat.';
         message.classList.add('success-message');
