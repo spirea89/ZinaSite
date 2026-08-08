@@ -16,13 +16,12 @@
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
-        <img src="logos/NewLogoGPT.png" alt="ZusammenInAustria" class="logo-img">
-        <span class="logo-text">Zina</span>
+        <img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA — Asociația Românilor din Austria" class="logo-img">
       </a>
       <div class="nav-links">
-        <a href="#mission" class="nav-link">Despre noi</a>
-        <a href="articles.html" class="nav-link">Articole</a>
-        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="#mission" class="nav-link" data-home-field="navAbout">Despre noi</a>
+        <a href="articles.html" class="nav-link" data-home-field="navArticles">Articole</a>
+        <a href="events.html" class="nav-link" data-home-field="navEvents">Evenimente</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
       </div>
     </div>
@@ -32,60 +31,54 @@
     <div class="traditional-pattern" aria-hidden="true"></div>
     <div class="hero-content">
       <div class="hero-panel">
-        <div class="hero-logo">
-          <img src="logos/ZinA%20Logos-04.png" alt="ZusammenInAustria Logo" class="hero-logo-img">
-        </div>
-        <p class="eyebrow">Rădăcini românești • Acasă în Viena</p>
-        <h1>ZusammenInAustria</h1>
-        <p class="lead">
-          Aducem comunitatea românilor din Viena împreună prin articole, evenimente și suport — cu căldura care te face să te simți ca acasă.
+        <p class="eyebrow" data-home-field="heroEyebrow">Rădăcini românești · Împreună în Viena</p>
+        <h1><span data-home-field="heroTitle">Aici poți să te simți</span> <em data-home-field="heroTitleAccent">acasă.</em></h1>
+        <p class="lead" data-home-field="heroLead">
+          Un loc sigur și primitor pentru românii din Viena. Ne întâlnim, ne ajutăm și păstrăm aproape lucrurile care ne leagă de casă.
         </p>
         <div class="hero-actions">
-          <a class="button" href="articles.html">Citește articole</a>
-          <a class="button ghost" href="#mission">Despre noi</a>
+          <a class="button" href="events.html" data-home-field="heroPrimaryButton">Vino la următoarea întâlnire</a>
+          <a class="button ghost" href="#mission" data-home-field="heroSecondaryButton">Descoperă comunitatea</a>
         </div>
-        <div class="hero-stats">
-          <div class="stat">
-            <span class="stat-label">Comunitate</span>
-            <span class="stat-value">Români în Viena</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Evenimente</span>
-            <span class="stat-value">Lunar în Viena</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Suport</span>
-            <span class="stat-value">Pentru noi veniți</span>
-          </div>
+        <div class="welcome-note">
+          <span class="welcome-heart" aria-hidden="true">♥</span>
+          <p><strong data-home-field="welcomeTitle">Ești binevenit.</strong> <span data-home-field="welcomeText">Fie că ai sosit ieri sau Viena îți este acasă de ani buni.</span></p>
         </div>
       </div>
+      <figure class="hero-visual">
+        <img id="homepage-hero-image" src="logos/hero-acasa-romania.jpg" alt="Oameni de toate vârstele reuniți în jurul mesei, într-o curte românească primitoare">
+        <figcaption data-home-field="heroCaption">Acasă nu este doar un loc. Sunt oamenii care te primesc.</figcaption>
+      </figure>
     </div>
   </header>
 
   <main class="content">
     <section id="mission" class="panel highlight">
       <div class="section-header">
-        <h2>Misiunea noastră</h2>
-        <p class="section-description">
-          Zina construiește poduri între românii din Viena și comunitatea austriacă mai largă.
-          Organizăm evenimente culturale, întâlniri de networking și oferim resurse pentru a ajuta noii veniți să se simtă ca acasă.
+        <p class="section-kicker" data-home-field="missionKicker">De ce suntem aici</p>
+        <h2><span data-home-field="missionTitleLine1">Mai aproape unii de alții.</span><br><span data-home-field="missionTitleLine2">Mai aproape de casă.</span></h2>
+        <p class="section-description" data-home-field="missionDescription">
+          Zina construiește o comunitate în care poți cere ajutor, poți lega prietenii și poți împărtăși bucuria de a fi român — oriunde te-ar purta viața.
         </p>
       </div>
       <div class="grid pillars">
         <article class="card pillar">
-          <div class="pill">🎉 Evenimente culturale</div>
-          <h3>Sărbătorim împreună</h3>
-          <p class="muted">Întâlniri sezoniere, sărbători tradiționale și cinări comunitare care poartă culorile României.</p>
+          <div class="pillar-symbol" aria-hidden="true">01</div>
+          <div class="pill" data-home-field="pillar1Label">Evenimente culturale</div>
+          <h3 data-home-field="pillar1Title">Ne adunăm în jurul mesei</h3>
+          <p class="muted" data-home-field="pillar1Text">Întâlniri, sărbători și seri comunitare în care tradițiile prind din nou viață.</p>
         </article>
         <article class="card pillar">
-          <div class="pill">🤝 Conexiune</div>
-          <h3>Îți extinzi cercul</h3>
-          <p class="muted">Întâlniri de networking și mentorat pentru a ajuta noii veniți să-și construiască prietenii și cariera în Viena.</p>
+          <div class="pillar-symbol" aria-hidden="true">02</div>
+          <div class="pill" data-home-field="pillar2Label">Oameni aproape</div>
+          <h3 data-home-field="pillar2Title">Nu trebuie să fii singur</h3>
+          <p class="muted" data-home-field="pillar2Text">Prietenii, mentorat și legături sincere pentru fiecare început nou în Viena.</p>
         </article>
         <article class="card pillar">
-          <div class="pill">🧭 Ghidare</div>
-          <h3>Stabilirea ușoară</h3>
-          <p class="muted">Sfaturi locale, suport pentru locuințe și resurse lingvistice adaptate pentru familiile și studenții români.</p>
+          <div class="pillar-symbol" aria-hidden="true">03</div>
+          <div class="pill" data-home-field="pillar3Label">Sprijin de încredere</div>
+          <h3 data-home-field="pillar3Title">Găsim drumul împreună</h3>
+          <p class="muted" data-home-field="pillar3Text">Informații locale și resurse utile, explicate cu răbdare pentru familii, studenți și nou-veniți.</p>
         </article>
       </div>
     </section>
@@ -94,21 +87,21 @@
 
     <section class="panel cta-section">
       <div class="section-header">
-        <h2>Descoperă mai mult</h2>
-        <p class="section-description">Articole pentru comunitate și evenimente în Viena</p>
+        <h2 data-home-field="discoverTitle">Descoperă mai mult</h2>
+        <p class="section-description" data-home-field="discoverDescription">Articole pentru comunitate și evenimente în Viena</p>
       </div>
       <div class="cta-grid">
         <a href="articles.html" class="cta-card">
           <span class="cta-icon">📝</span>
-          <h3>Articole</h3>
-          <p class="muted">Știri, sfaturi și resurse pentru românii din Viena</p>
-          <span class="cta-link">Vezi articole →</span>
+          <h3 data-home-field="articlesCardTitle">Articole</h3>
+          <p class="muted" data-home-field="articlesCardText">Știri, sfaturi și resurse pentru românii din Viena</p>
+          <span class="cta-link" data-home-field="articlesCardLink">Vezi articole →</span>
         </a>
         <a href="events.html" class="cta-card">
           <span class="cta-icon">📅</span>
-          <h3>Evenimente</h3>
-          <p class="muted">Întâlniri, sărbători și evenimente ale comunității</p>
-          <span class="cta-link">Vezi evenimente →</span>
+          <h3 data-home-field="eventsCardTitle">Evenimente</h3>
+          <p class="muted" data-home-field="eventsCardText">Întâlniri, sărbători și evenimente ale comunității</p>
+          <span class="cta-link" data-home-field="eventsCardLink">Vezi evenimente →</span>
         </a>
       </div>
     </section>
@@ -116,11 +109,12 @@
 
   <footer class="footer">
     <div class="footer-content">
-      <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
-      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+      <p>© <span id="year"></span> <span data-home-field="footerMain">ZusammenInAustria (Zina) • Viena, Austria</span></p>
+      <p class="footer-subtitle" data-home-field="footerSubtitle">Comunitatea românilor din Viena</p>
     </div>
   </footer>
 
+  <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -136,6 +130,22 @@
     window.addEventListener('scroll', () => {
       navbar.classList.toggle('scrolled', window.pageYOffset > 100);
     });
+
+    (async function loadHomepageContent() {
+      try {
+        const homepage = await DataService.getHomepageContent();
+        if (!homepage) return;
+        Object.entries(homepage.content || {}).forEach(([field, value]) => {
+          const element = document.querySelector(`[data-home-field="${field}"]`);
+          if (element && typeof value === 'string') element.textContent = value;
+        });
+        if (homepage.heroImageUrl) {
+          document.getElementById('homepage-hero-image').src = homepage.heroImageUrl;
+        }
+      } catch (error) {
+        console.warn('Se folosește conținutul implicit al paginii principale.', error);
+      }
+    })();
   </script>
 </body>
 </html>

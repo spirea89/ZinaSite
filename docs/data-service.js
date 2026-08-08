@@ -603,6 +603,79 @@ const DataService = {
     });
     if (!response.ok) throw new Error('Failed to delete event');
     return true;
+  },
+
+  // Get editable homepage content. Returns null until the optional homepage schema is installed.
+  async getHomepageContent() {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { data, error } = await client
+      .from('homepage_content')
+      .select('content, hero_image_url')
+      .eq('id', 'home')
+      .maybeSingle();
+
+    if (error) {
+      if (error.code === '42P01' || error.code === 'PGRST205') return null;
+      throw error;
+    }
+
+    if (!data) return null;
+    return {
+      content: data.content || {},
+      heroImageUrl: data.hero_image_url || null
+    };
+  },
+
+  // Save homepage content. Supabase RLS restricts this operation to authenticated users.
+  async updateHomepageContent(content, heroImageUrl = null) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) throw new Error('Not authenticated. Please log in again.');
+
+    const { data, error } = await client
+      .from('homepage_content')
+      .upsert({
+        id: 'home',
+        content,
+        hero_image_url: heroImageUrl || null,
+        updated_at: new Date().toISOString(),
+        updated_by: session.user.id
+      }, { onConflict: 'id' })
+      .select('content, hero_image_url')
+      .single();
+
+    if (error) throw error;
+    return {
+      content: data.content || {},
+      heroImageUrl: data.hero_image_url || null
+    };
+  },
+
+  // Upload a homepage image to the public, admin-write-only media bucket.
+  async uploadHomepageImage(file) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    if (!file || !file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+    if (file.size > 5 * 1024 * 1024) throw new Error('The image must be smaller than 5 MB.');
+
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) throw new Error('Not authenticated. Please log in again.');
+
+    const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = `${session.user.id}/${Date.now()}.${extension}`;
+    const { error } = await client.storage
+      .from('homepage-media')
+      .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+    if (error) throw error;
+
+    const { data } = client.storage.from('homepage-media').getPublicUrl(path);
+    return data.publicUrl;
   }
 };
-
