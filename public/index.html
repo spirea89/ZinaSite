@@ -134,17 +134,18 @@
 
     (async function loadHomepageContent() {
       try {
-        if (I18n.locale !== 'ro') {
-          I18n.applyHomepage();
-          return;
-        }
         const homepage = await DataService.getHomepageContent();
-        if (!homepage) return;
-        Object.entries(homepage.content || {}).forEach(([field, value]) => {
+        const stored = homepage?.content || {};
+        const isMultilingual = stored.ro || stored.en || stored.de;
+        const localizedContent = isMultilingual
+          ? (stored[I18n.locale] || {})
+          : (I18n.locale === 'ro' ? stored : {});
+        if (I18n.locale !== 'ro') I18n.applyHomepage();
+        Object.entries(localizedContent).forEach(([field, value]) => {
           const element = document.querySelector(`[data-home-field="${field}"]`);
           if (element && typeof value === 'string') element.textContent = value;
         });
-        if (homepage.heroImageUrl) {
+        if (homepage?.heroImageUrl) {
           document.getElementById('homepage-hero-image').src = homepage.heroImageUrl;
         }
       } catch (error) {

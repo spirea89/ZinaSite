@@ -56,6 +56,15 @@
 
   <main class="content" id="admin-content" style="display: none;">
     <form id="homepage-form" class="stack homepage-admin-form">
+      <section class="panel homepage-language-panel">
+        <h2>Limba editată</h2>
+        <p class="muted">Imaginea este comună tuturor limbilor. Textele se salvează separat.</p>
+        <div id="homepage-language-tabs" class="admin-language-tabs">
+          <button type="button" class="active" data-edit-locale="ro">Română</button>
+          <button type="button" data-edit-locale="en">English</button>
+          <button type="button" data-edit-locale="de">Deutsch</button>
+        </div>
+      </section>
       <section class="panel">
         <h2>Imagine principală</h2>
         <p class="muted">Încarcă JPG, PNG sau WebP, maximum 5 MB. O imagine lată, de minimum 1400 px, oferă cel mai bun rezultat.</p>
@@ -81,6 +90,7 @@
   <footer class="footer"><div class="footer-content"><p>Panou de administrare ZinA</p></div></footer>
 
   <script src="auth-service.js"></script>
+  <script src="i18n.js"></script>
   <script src="data-service.js"></script>
   <script>
     const DEFAULT_HOMEPAGE = {
@@ -123,6 +133,27 @@
     const fileInput = document.getElementById('hero-image-file');
     const imagePreview = document.getElementById('hero-image-preview');
     let currentHeroImageUrl = null;
+    let currentEditingLocale = 'ro';
+    let homepageByLocale = {
+      ro: { ...DEFAULT_HOMEPAGE },
+      en: I18n.homepageContent('en'),
+      de: I18n.homepageContent('de')
+    };
+
+    function captureCurrentFields() {
+      const values = {};
+      fieldsContainer.querySelectorAll('[name]').forEach(input => { values[input.name] = input.value.trim(); });
+      homepageByLocale[currentEditingLocale] = values;
+    }
+
+    function switchEditingLocale(locale) {
+      captureCurrentFields();
+      currentEditingLocale = locale;
+      renderFields(homepageByLocale[locale]);
+      document.querySelectorAll('[data-edit-locale]').forEach(button => {
+        button.classList.toggle('active', button.dataset.editLocale === locale);
+      });
+    }
 
     function renderFields(values) {
       fieldsContainer.innerHTML = '';
@@ -165,12 +196,19 @@
       message.textContent = 'Se încarcă…';
       try {
         const saved = await DataService.getHomepageContent();
-        renderFields({ ...DEFAULT_HOMEPAGE, ...(saved?.content || {}) });
+        const stored = saved?.content || {};
+        const isMultilingual = stored.ro || stored.en || stored.de;
+        homepageByLocale = {
+          ro: { ...DEFAULT_HOMEPAGE, ...(isMultilingual ? stored.ro : stored) },
+          en: { ...I18n.homepageContent('en'), ...(isMultilingual ? stored.en : {}) },
+          de: { ...I18n.homepageContent('de'), ...(isMultilingual ? stored.de : {}) }
+        };
+        renderFields(homepageByLocale[currentEditingLocale]);
         currentHeroImageUrl = saved?.heroImageUrl || null;
         imagePreview.src = currentHeroImageUrl || 'logos/hero-acasa-romania.jpg';
         message.textContent = saved ? '' : 'Conținutul implicit este afișat. Prima salvare va crea setările paginii.';
       } catch (error) {
-        renderFields(DEFAULT_HOMEPAGE);
+        renderFields(homepageByLocale[currentEditingLocale]);
         message.textContent = `Nu s-a putut încărca editorul: ${error.message}`;
         message.className = 'homepage-message error-message';
       }
@@ -179,6 +217,10 @@
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (file) imagePreview.src = URL.createObjectURL(file);
+    });
+
+    document.querySelectorAll('[data-edit-locale]').forEach(button => {
+      button.addEventListener('click', () => switchEditingLocale(button.dataset.editLocale));
     });
 
     homepageForm.addEventListener('submit', async (event) => {
@@ -190,9 +232,8 @@
       try {
         let heroImageUrl = currentHeroImageUrl;
         if (fileInput.files[0]) heroImageUrl = await DataService.uploadHomepageImage(fileInput.files[0]);
-        const content = {};
-        new FormData(homepageForm).forEach((value, key) => { if (key) content[key] = String(value).trim(); });
-        await DataService.updateHomepageContent(content, heroImageUrl);
+        captureCurrentFields();
+        await DataService.updateHomepageContent(homepageByLocale, heroImageUrl);
         currentHeroImageUrl = heroImageUrl;
         fileInput.value = '';
         message.textContent = 'Pagina principală a fost salvată. Modificările sunt vizibile imediat.';

@@ -92,6 +92,8 @@
     nav.insertBefore(wrap, admin || null);
   }
 
-  window.I18n = { locale, t, apply, applyHomepage, categoryName, localizeArticle, localizeEvent };
+  function homepageContent(language = locale) { return { ...(homepage[language] || {}) }; }
+
+  window.I18n = { locale, t, apply, applyHomepage, homepageContent, categoryName, localizeArticle, localizeEvent };
   document.addEventListener('DOMContentLoaded', () => { apply(); addSwitcher(); });
 })();

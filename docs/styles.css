@@ -862,6 +862,26 @@ h3 {
   padding: 0.75rem 0;
   border-top: 1px solid var(--border);
 }
+.admin-language-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+.admin-language-tabs button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.65rem 1.15rem;
+  background: var(--card);
+  color: var(--text-secondary);
+  font: 700 0.9rem var(--font-body);
+  cursor: pointer;
+}
+.admin-language-tabs button.active {
+  border-color: var(--primary-blue);
+  background: var(--primary-blue);
+  color: white;
+}
 
 @media (max-width: 768px) {
   .language-switcher { order: -1; }
