@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZinA Admin - Pagina principală</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA — Asociația Românilor din Austria" class="logo-img">
+      </a>
+      <div class="nav-links">
+        <a href="admin.html" class="nav-link">Panou admin</a>
+        <a href="admin-articles.html" class="nav-link">Articole</a>
+        <a href="admin-events.html" class="nav-link">Evenimente</a>
+        <a href="index.html" class="nav-link">Vezi site-ul</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="login-modal" class="modal" style="display: flex;">
+    <div class="modal-content">
+      <h2>Autentificare Admin</h2>
+      <p class="muted">Autentifică-te pentru a edita pagina principală.</p>
+      <form id="login-form" class="stack">
+        <label class="stack"><span>Email</span><input type="email" id="login-email" required autocomplete="email"></label>
+        <label class="stack"><span>Parolă</span><input type="password" id="login-password" required autocomplete="current-password"></label>
+        <div id="login-error" class="error-message" style="display: none;"></div>
+        <button type="submit" class="button">Autentificare</button>
+      </form>
+    </div>
+  </div>
+
+  <header class="hero hero-small" id="admin-header" style="display: none;">
+    <div class="hero-content">
+      <div class="hero-panel">
+        <p class="eyebrow">Admin</p>
+        <h1>Pagina principală</h1>
+        <p class="lead">Editează textele și imaginea de întâmpinare.</p>
+        <div class="actions">
+          <span id="user-info" class="muted"></span>
+          <button id="logout-btn" class="button ghost">Deconectare</button>
+          <a href="index.html" class="button ghost">Vezi pagina</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content" id="admin-content" style="display: none;">
+    <form id="homepage-form" class="stack homepage-admin-form">
+      <section class="panel">
+        <h2>Imagine principală</h2>
+        <p class="muted">Încarcă JPG, PNG sau WebP, maximum 5 MB. O imagine lată, de minimum 1400 px, oferă cel mai bun rezultat.</p>
+        <div class="homepage-image-editor">
+          <img id="hero-image-preview" src="logos/hero-acasa-romania.jpg" alt="Previzualizare imagine principală">
+          <label class="stack">
+            <span>Alege o imagine nouă</span>
+            <input id="hero-image-file" type="file" accept="image/jpeg,image/png,image/webp">
+          </label>
+        </div>
+      </section>
+
+      <div id="homepage-fields"></div>
+
+      <div id="homepage-message" class="homepage-message" role="status" aria-live="polite"></div>
+      <div class="actions homepage-save-bar">
+        <button type="submit" class="button">Salvează pagina principală</button>
+        <a href="index.html" class="button ghost">Anulează și vezi pagina</a>
+      </div>
+    </form>
+  </main>
+
+  <footer class="footer"><div class="footer-content"><p>Panou de administrare ZinA</p></div></footer>
+
+  <script src="auth-service.js"></script>
+  <script src="data-service.js"></script>
+  <script>
+    const DEFAULT_HOMEPAGE = {
+      navAbout: 'Despre noi', navArticles: 'Articole', navEvents: 'Evenimente',
+      heroEyebrow: 'Rădăcini românești · Împreună în Viena', heroTitle: 'Aici poți să te simți', heroTitleAccent: 'acasă.',
+      heroLead: 'Un loc sigur și primitor pentru românii din Viena. Ne întâlnim, ne ajutăm și păstrăm aproape lucrurile care ne leagă de casă.',
+      heroPrimaryButton: 'Vino la următoarea întâlnire', heroSecondaryButton: 'Descoperă comunitatea',
+      welcomeTitle: 'Ești binevenit.', welcomeText: 'Fie că ai sosit ieri sau Viena îți este acasă de ani buni.',
+      heroCaption: 'Acasă nu este doar un loc. Sunt oamenii care te primesc.',
+      missionKicker: 'De ce suntem aici', missionTitleLine1: 'Mai aproape unii de alții.', missionTitleLine2: 'Mai aproape de casă.',
+      missionDescription: 'Zina construiește o comunitate în care poți cere ajutor, poți lega prietenii și poți împărtăși bucuria de a fi român — oriunde te-ar purta viața.',
+      pillar1Label: 'Evenimente culturale', pillar1Title: 'Ne adunăm în jurul mesei', pillar1Text: 'Întâlniri, sărbători și seri comunitare în care tradițiile prind din nou viață.',
+      pillar2Label: 'Oameni aproape', pillar2Title: 'Nu trebuie să fii singur', pillar2Text: 'Prietenii, mentorat și legături sincere pentru fiecare început nou în Viena.',
+      pillar3Label: 'Sprijin de încredere', pillar3Title: 'Găsim drumul împreună', pillar3Text: 'Informații locale și resurse utile, explicate cu răbdare pentru familii, studenți și nou-veniți.',
+      discoverTitle: 'Descoperă mai mult', discoverDescription: 'Articole pentru comunitate și evenimente în Viena',
+      articlesCardTitle: 'Articole', articlesCardText: 'Știri, sfaturi și resurse pentru românii din Viena', articlesCardLink: 'Vezi articole →',
+      eventsCardTitle: 'Evenimente', eventsCardText: 'Întâlniri, sărbători și evenimente ale comunității', eventsCardLink: 'Vezi evenimente →',
+      footerMain: 'ZusammenInAustria (Zina) • Viena, Austria', footerSubtitle: 'Comunitatea românilor din Viena'
+    };
+
+    const FIELD_GROUPS = [
+      ['Navigație', [['navAbout','Despre noi'],['navArticles','Articole'],['navEvents','Evenimente']]],
+      ['Zona principală', [['heroEyebrow','Text deasupra titlului'],['heroTitle','Titlu'],['heroTitleAccent','Cuvânt evidențiat'],['heroLead','Introducere','textarea'],['heroPrimaryButton','Buton principal'],['heroSecondaryButton','Buton secundar'],['welcomeTitle','Titlu de bun venit'],['welcomeText','Mesaj de bun venit','textarea'],['heroCaption','Text sub imagine','textarea']]],
+      ['Misiune', [['missionKicker','Supratitlu'],['missionTitleLine1','Titlu — rândul 1'],['missionTitleLine2','Titlu — rândul 2'],['missionDescription','Descriere','textarea']]],
+      ['Cardul 1', [['pillar1Label','Etichetă'],['pillar1Title','Titlu'],['pillar1Text','Text','textarea']]],
+      ['Cardul 2', [['pillar2Label','Etichetă'],['pillar2Title','Titlu'],['pillar2Text','Text','textarea']]],
+      ['Cardul 3', [['pillar3Label','Etichetă'],['pillar3Title','Titlu'],['pillar3Text','Text','textarea']]],
+      ['Descoperă', [['discoverTitle','Titlu secțiune'],['discoverDescription','Descriere'],['articlesCardTitle','Titlu articole'],['articlesCardText','Text articole','textarea'],['articlesCardLink','Link articole'],['eventsCardTitle','Titlu evenimente'],['eventsCardText','Text evenimente','textarea'],['eventsCardLink','Link evenimente']]],
+      ['Subsol', [['footerMain','Text principal'],['footerSubtitle','Text secundar']]]
+    ];
+
+    const loginModal = document.getElementById('login-modal');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const adminHeader = document.getElementById('admin-header');
+    const adminContent = document.getElementById('admin-content');
+    const homepageForm = document.getElementById('homepage-form');
+    const fieldsContainer = document.getElementById('homepage-fields');
+    const message = document.getElementById('homepage-message');
+    const fileInput = document.getElementById('hero-image-file');
+    const imagePreview = document.getElementById('hero-image-preview');
+    let currentHeroImageUrl = null;
+
+    function renderFields(values) {
+      fieldsContainer.innerHTML = '';
+      FIELD_GROUPS.forEach(([title, fields]) => {
+        const section = document.createElement('section');
+        section.className = 'panel homepage-field-group';
+        const heading = document.createElement('h2');
+        heading.textContent = title;
+        section.appendChild(heading);
+        const grid = document.createElement('div');
+        grid.className = 'homepage-fields-grid';
+        fields.forEach(([key, label, type]) => {
+          const wrapper = document.createElement('label');
+          wrapper.className = 'stack';
+          const caption = document.createElement('span');
+          caption.textContent = label;
+          const input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
+          if (type === 'textarea') input.rows = 3;
+          else input.type = 'text';
+          input.name = key;
+          input.value = values[key] || '';
+          input.required = true;
+          wrapper.append(caption, input);
+          grid.appendChild(wrapper);
+        });
+        section.appendChild(grid);
+        fieldsContainer.appendChild(section);
+      });
+    }
+
+    function showPanel(user) {
+      loginModal.style.display = 'none';
+      adminHeader.style.display = 'block';
+      adminContent.style.display = 'block';
+      document.getElementById('user-info').textContent = `Conectat: ${user.email}`;
+      loadHomepage();
+    }
+
+    async function loadHomepage() {
+      message.textContent = 'Se încarcă…';
+      try {
+        const saved = await DataService.getHomepageContent();
+        renderFields({ ...DEFAULT_HOMEPAGE, ...(saved?.content || {}) });
+        currentHeroImageUrl = saved?.heroImageUrl || null;
+        imagePreview.src = currentHeroImageUrl || 'logos/hero-acasa-romania.jpg';
+        message.textContent = saved ? '' : 'Conținutul implicit este afișat. Prima salvare va crea setările paginii.';
+      } catch (error) {
+        renderFields(DEFAULT_HOMEPAGE);
+        message.textContent = `Nu s-a putut încărca editorul: ${error.message}`;
+        message.className = 'homepage-message error-message';
+      }
+    }
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) imagePreview.src = URL.createObjectURL(file);
+    });
+
+    homepageForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      message.className = 'homepage-message';
+      message.textContent = 'Se salvează…';
+      const submit = homepageForm.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      try {
+        let heroImageUrl = currentHeroImageUrl;
+        if (fileInput.files[0]) heroImageUrl = await DataService.uploadHomepageImage(fileInput.files[0]);
+        const content = {};
+        new FormData(homepageForm).forEach((value, key) => { if (key) content[key] = String(value).trim(); });
+        await DataService.updateHomepageContent(content, heroImageUrl);
+        currentHeroImageUrl = heroImageUrl;
+        fileInput.value = '';
+        message.textContent = 'Pagina principală a fost salvată. Modificările sunt vizibile imediat.';
+        message.classList.add('success-message');
+      } catch (error) {
+        console.error(error);
+        message.textContent = `Salvarea a eșuat: ${error.message}. Dacă editorul este nou, rulează supabase-homepage-schema.sql în Supabase.`;
+        message.classList.add('error-message');
+      } finally {
+        submit.disabled = false;
+      }
+    });
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      loginError.style.display = 'none';
+      try {
+        const result = await AuthService.signIn(document.getElementById('login-email').value, document.getElementById('login-password').value);
+        if (result.user) showPanel(result.user);
+      } catch (error) {
+        loginError.textContent = error.message || 'Email sau parolă incorectă.';
+        loginError.style.display = 'block';
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await AuthService.signOut();
+      location.href = 'admin.html';
+    });
+
+    (async function init() {
+      let attempts = 0;
+      while (typeof window.supabase === 'undefined' && attempts < 50) { await new Promise(resolve => setTimeout(resolve, 100)); attempts++; }
+      const user = await AuthService.getCurrentUser();
+      if (user) showPanel(user);
+    })();
+  </script>
+</body>
+</html>

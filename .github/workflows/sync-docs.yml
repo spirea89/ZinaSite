@@ -12,8 +12,27 @@ on:
       - '.github/workflows/sync-docs.yml'
   workflow_dispatch:
 
+concurrency:
+  group: sync-docs-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  check-docs:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify docs mirrors public
+        run: |
+          rsync -a --delete public/ docs/
+          git diff --exit-code -- docs/
+
   sync-docs:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,16 +44,15 @@ jobs:
           fetch-depth: 0
 
       - name: Sync docs directory
-        run: |
-          rsync -av --delete public/ docs/
+        run: rsync -a --delete public/ docs/
 
-      - name: Check for changes and commit
+      - name: Commit synced docs
         run: |
           if ! git diff --quiet -- docs; then
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
+            git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
             git add docs/
-            git commit -m "Sync docs/ directory with public/ [skip ci]" || exit 0
+            git commit -m "Sync docs/ directory with public/ [skip ci]"
             git push origin HEAD:main
           else
             echo "No changes to sync"
