@@ -6,7 +6,8 @@
 
   const messages = {
     ro: {
-      about: 'Despre noi', articles: 'Articole', events: 'Evenimente', admin: 'Admin',
+      about: 'Despre noi', team: 'Echipă', articles: 'Articole', events: 'Evenimente', admin: 'Admin',
+      teamTitle: 'Echipa noastră', teamDescription: 'Oamenii care au fondat și construiesc comunitatea ZinA', noTeam: 'Profilurile echipei vor apărea aici în curând.',
       articlesTitle: 'Articole', articlesDescription: 'Știri, sfaturi și resurse pentru comunitatea română din Viena',
       noArticles: 'Nu există articole publicate încă.', readMore: 'Citește mai mult →', allCategories: 'Toate categoriile',
       eventsTitle: 'Evenimente', eventsDescription: 'Întâlniri și evenimente ale comunității române din Viena',
@@ -17,7 +18,8 @@
       footer: 'Comunitatea românilor din Viena', previous: '← Anterior', next: 'Următor →'
     },
     en: {
-      about: 'About us', articles: 'Articles', events: 'Events', admin: 'Admin',
+      about: 'About us', team: 'Team', articles: 'Articles', events: 'Events', admin: 'Admin',
+      teamTitle: 'Our team', teamDescription: 'The people who founded and continue to build the ZinA community', noTeam: 'Team profiles will appear here soon.',
       articlesTitle: 'Articles', articlesDescription: 'News, guidance and resources for Vienna’s Romanian community',
       noArticles: 'No articles have been published yet.', readMore: 'Read more →', allCategories: 'All categories',
       eventsTitle: 'Events', eventsDescription: 'Gatherings and events for Vienna’s Romanian community',
@@ -28,7 +30,8 @@
       footer: 'The Romanian community in Vienna', previous: '← Previous', next: 'Next →'
     },
     de: {
-      about: 'Über uns', articles: 'Artikel', events: 'Veranstaltungen', admin: 'Admin',
+      about: 'Über uns', team: 'Team', articles: 'Artikel', events: 'Veranstaltungen', admin: 'Admin',
+      teamTitle: 'Unser Team', teamDescription: 'Die Menschen, die die ZinA-Gemeinschaft gegründet haben und weiter aufbauen', noTeam: 'Die Teamprofile erscheinen hier in Kürze.',
       articlesTitle: 'Artikel', articlesDescription: 'Neuigkeiten, Tipps und Ressourcen für die rumänische Gemeinschaft in Wien',
       noArticles: 'Noch keine Artikel veröffentlicht.', readMore: 'Weiterlesen →', allCategories: 'Alle Kategorien',
       eventsTitle: 'Veranstaltungen', eventsDescription: 'Treffen und Veranstaltungen der rumänischen Gemeinschaft in Wien',

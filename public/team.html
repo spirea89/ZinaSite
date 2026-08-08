@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Echipa și fondatorii ZinA - Asociația Românilor din Austria">
+  <title>Team - ZinA</title>
+  <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <nav class="navbar"><div class="nav-container">
+    <a href="index.html" class="nav-logo"><img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA — Asociația Românilor din Austria" class="logo-img"></a>
+    <div class="nav-links">
+      <a href="index.html#mission" class="nav-link" data-i18n="about">Despre noi</a>
+      <a href="team.html" class="nav-link" data-i18n="team">Team</a>
+      <a href="articles.html" class="nav-link" data-i18n="articles">Articole</a>
+      <a href="events.html" class="nav-link" data-i18n="events">Evenimente</a>
+      <a href="admin.html" class="nav-link admin-link">Admin</a>
+    </div>
+  </div></nav>
+
+  <main class="content page-content">
+    <section class="team-section">
+      <div class="section-header">
+        <p class="section-kicker">ZinA</p>
+        <h1 data-i18n="teamTitle">Echipa noastră</h1>
+        <p class="section-description" data-i18n="teamDescription">Oamenii care au fondat și construiesc comunitatea ZinA</p>
+      </div>
+      <div id="team-grid" class="team-grid"></div>
+      <p id="team-empty" class="empty-state" style="display:none"><span class="empty-icon">🤝</span><span data-i18n="noTeam">Profilurile echipei vor apărea aici în curând.</span></p>
+    </section>
+  </main>
+
+  <footer class="footer"><div class="footer-content"><p>© <span id="year"></span> ZusammenInAustria (ZinA) • Viena, Austria</p><p class="footer-subtitle" data-i18n="footer">Comunitatea românilor din Viena</p></div></footer>
+  <script src="i18n.js"></script>
+  <script src="data-service.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    function localizedMember(member) {
+      const locale = I18n.locale;
+      return {
+        ...member,
+        role: member[`role${locale === 'ro' ? 'Ro' : locale === 'de' ? 'De' : 'En'}`] || member.roleEn,
+        bio: member[`bio${locale === 'ro' ? 'Ro' : locale === 'de' ? 'De' : 'En'}`] || member.bioEn
+      };
+    }
+
+    async function loadTeam() {
+      const grid = document.getElementById('team-grid');
+      const empty = document.getElementById('team-empty');
+      try {
+        const members = await DataService.getTeamMembers();
+        if (!members.length) { empty.style.display = 'flex'; return; }
+        members.map(localizedMember).forEach(member => {
+          const card = document.createElement('article');
+          card.className = 'team-card';
+          const visual = document.createElement('div');
+          visual.className = 'team-card-visual';
+          if (member.imageUrl) {
+            const image = document.createElement('img');
+            image.src = member.imageUrl;
+            image.alt = member.name;
+            image.loading = 'lazy';
+            visual.appendChild(image);
+          } else {
+            visual.classList.add('team-card-placeholder');
+            visual.textContent = member.name.slice(0, 1).toUpperCase();
+          }
+          const content = document.createElement('div');
+          content.className = 'team-card-content';
+          const role = document.createElement('p'); role.className = 'team-role'; role.textContent = member.role;
+          const name = document.createElement('h2'); name.textContent = member.name;
+          const bio = document.createElement('p'); bio.className = 'team-bio'; bio.textContent = member.bio;
+          content.append(role, name, bio); card.append(visual, content); grid.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Team load failed', error);
+        empty.style.display = 'flex';
+      }
+    }
+    loadTeam();
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => navbar.classList.toggle('scrolled', window.pageYOffset > 100));
+  </script>
+</body>
+</html>

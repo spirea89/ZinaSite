@@ -126,6 +126,19 @@ async function formatArticlesWithCategories(client, rows) {
   return (rows || []).map(article => formatArticle({ ...article, category: byId.get(article.category_id) || null }));
 }
 
+function formatTeamMember(member) {
+  return {
+    id: member.id,
+    name: member.name,
+    roleEn: member.role_en || '', roleRo: member.role_ro || '', roleDe: member.role_de || '',
+    bioEn: member.bio_en || '', bioRo: member.bio_ro || '', bioDe: member.bio_de || '',
+    imageUrl: member.image_url || null,
+    sortOrder: member.sort_order || 0,
+    createdAt: member.created_at,
+    updatedAt: member.updated_at
+  };
+}
+
 // Data Service API
 const DataService = {
   // Ensure Supabase is initialized before use
@@ -643,6 +656,81 @@ const DataService = {
     });
     if (!response.ok) throw new Error('Failed to delete event');
     return true;
+  },
+
+  async getTeamMembers() {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) return [];
+    const { data, error } = await client.from('team_members').select('*').order('sort_order').order('created_at');
+    if (error) {
+      if (error.code === '42P01' || error.code === 'PGRST205') return [];
+      throw error;
+    }
+    return (data || []).map(formatTeamMember);
+  },
+
+  async createTeamMember(member) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    const { data, error } = await client.from('team_members').insert({
+      name: member.name,
+      role_en: member.roleEn,
+      role_ro: member.roleRo || null,
+      role_de: member.roleDe || null,
+      bio_en: member.bioEn,
+      bio_ro: member.bioRo || null,
+      bio_de: member.bioDe || null,
+      image_url: member.imageUrl || null,
+      sort_order: member.sortOrder || 0
+    }).select().single();
+    if (error) throw error;
+    return formatTeamMember(data);
+  },
+
+  async updateTeamMember(id, member) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    const { data, error } = await client.from('team_members').update({
+      name: member.name,
+      role_en: member.roleEn,
+      role_ro: member.roleRo || null,
+      role_de: member.roleDe || null,
+      bio_en: member.bioEn,
+      bio_ro: member.bioRo || null,
+      bio_de: member.bioDe || null,
+      image_url: member.imageUrl || null,
+      sort_order: member.sortOrder || 0,
+      updated_at: new Date().toISOString()
+    }).eq('id', id).select().single();
+    if (error) throw error;
+    return formatTeamMember(data);
+  },
+
+  async deleteTeamMember(id) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    const { error } = await client.from('team_members').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  async uploadTeamImage(file) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    if (!file || !file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+    if (file.size > 5 * 1024 * 1024) throw new Error('The image must be smaller than 5 MB.');
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) throw new Error('Not authenticated. Please log in again.');
+    const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = `${session.user.id}/${Date.now()}.${extension}`;
+    const { error } = await client.storage.from('team-media').upload(path, file, { cacheControl: '3600', contentType: file.type });
+    if (error) throw error;
+    return client.storage.from('team-media').getPublicUrl(path).data.publicUrl;
   },
 
   async getCategories() {
