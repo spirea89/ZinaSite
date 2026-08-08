@@ -57,13 +57,8 @@
   <main class="content" id="admin-content" style="display: none;">
     <form id="homepage-form" class="stack homepage-admin-form">
       <section class="panel homepage-language-panel">
-        <h2>Limba editată</h2>
-        <p class="muted">Imaginea este comună tuturor limbilor. Textele se salvează separat.</p>
-        <div id="homepage-language-tabs" class="admin-language-tabs">
-          <button type="button" class="active" data-edit-locale="ro">Română</button>
-          <button type="button" data-edit-locale="en">English</button>
-          <button type="button" data-edit-locale="de">Deutsch</button>
-        </div>
+        <h2>Conținut multilingv</h2>
+        <p class="muted">English is the default text. Select the globe beside any field to maintain its Romanian and German translations.</p>
       </section>
       <section class="panel">
         <h2>Imagine principală</h2>
@@ -133,7 +128,6 @@
     const fileInput = document.getElementById('hero-image-file');
     const imagePreview = document.getElementById('hero-image-preview');
     let currentHeroImageUrl = null;
-    let currentEditingLocale = 'ro';
     let activeAdminUserId = null;
     let homepageByLocale = {
       ro: { ...DEFAULT_HOMEPAGE },
@@ -142,21 +136,24 @@
     };
 
     function captureCurrentFields() {
-      const values = {};
-      fieldsContainer.querySelectorAll('[name]').forEach(input => { values[input.name] = input.value.trim(); });
-      homepageByLocale[currentEditingLocale] = values;
-    }
-
-    function switchEditingLocale(locale) {
-      captureCurrentFields();
-      currentEditingLocale = locale;
-      renderFields(homepageByLocale[locale]);
-      document.querySelectorAll('[data-edit-locale]').forEach(button => {
-        button.classList.toggle('active', button.dataset.editLocale === locale);
+      ['ro', 'en', 'de'].forEach(locale => { homepageByLocale[locale] = {}; });
+      fieldsContainer.querySelectorAll('[data-locale][data-field]').forEach(input => {
+        homepageByLocale[input.dataset.locale][input.dataset.field] = input.value.trim();
       });
     }
 
-    function renderFields(values) {
+    function createFieldControl(type, field, locale, value) {
+      const input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
+      if (type === 'textarea') input.rows = locale === 'en' ? 3 : 2;
+      else input.type = 'text';
+      input.value = value || '';
+      input.required = locale === 'en';
+      input.dataset.locale = locale;
+      input.dataset.field = field;
+      return input;
+    }
+
+    function renderFields(valuesByLocale) {
       fieldsContainer.innerHTML = '';
       FIELD_GROUPS.forEach(([title, fields]) => {
         const section = document.createElement('section');
@@ -167,17 +164,33 @@
         const grid = document.createElement('div');
         grid.className = 'homepage-fields-grid';
         fields.forEach(([key, label, type]) => {
-          const wrapper = document.createElement('label');
-          wrapper.className = 'stack';
+          const wrapper = document.createElement('div');
+          wrapper.className = 'stack translatable-admin-field';
           const caption = document.createElement('span');
           caption.textContent = label;
-          const input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
-          if (type === 'textarea') input.rows = 3;
-          else input.type = 'text';
-          input.name = key;
-          input.value = values[key] || '';
-          input.required = true;
-          wrapper.append(caption, input);
+          const row = document.createElement('div');
+          row.className = 'translation-input-row';
+          const englishInput = createFieldControl(type, key, 'en', valuesByLocale.en[key]);
+          englishInput.setAttribute('aria-label', `${label} — English`);
+          const translations = document.createElement('details');
+          translations.className = 'translation-globe';
+          const summary = document.createElement('summary');
+          summary.textContent = '🌐';
+          summary.title = 'Romanian and German translations';
+          summary.setAttribute('aria-label', `Translations for ${label}`);
+          const popup = document.createElement('div');
+          popup.className = 'translation-popup';
+          [['ro', 'Română'], ['de', 'Deutsch']].forEach(([locale, language]) => {
+            const translationLabel = document.createElement('label');
+            translationLabel.className = 'stack';
+            const languageName = document.createElement('span');
+            languageName.textContent = language;
+            translationLabel.append(languageName, createFieldControl(type, key, locale, valuesByLocale[locale][key]));
+            popup.appendChild(translationLabel);
+          });
+          translations.append(summary, popup);
+          row.append(englishInput, translations);
+          wrapper.append(caption, row);
           grid.appendChild(wrapper);
         });
         section.appendChild(grid);
@@ -207,12 +220,12 @@
           en: { ...I18n.homepageContent('en'), ...(isMultilingual ? stored.en : {}) },
           de: { ...I18n.homepageContent('de'), ...(isMultilingual ? stored.de : {}) }
         };
-        renderFields(homepageByLocale[currentEditingLocale]);
+        renderFields(homepageByLocale);
         currentHeroImageUrl = saved?.heroImageUrl || null;
         imagePreview.src = currentHeroImageUrl || 'logos/hero-acasa-romania.jpg';
         message.textContent = saved ? '' : 'Conținutul implicit este afișat. Prima salvare va crea setările paginii.';
       } catch (error) {
-        renderFields(homepageByLocale[currentEditingLocale]);
+        renderFields(homepageByLocale);
         message.textContent = `Nu s-a putut încărca editorul: ${error.message}`;
         message.className = 'homepage-message error-message';
       }
@@ -221,10 +234,6 @@
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (file) imagePreview.src = URL.createObjectURL(file);
-    });
-
-    document.querySelectorAll('[data-edit-locale]').forEach(button => {
-      button.addEventListener('click', () => switchEditingLocale(button.dataset.editLocale));
     });
 
     homepageForm.addEventListener('submit', async (event) => {
