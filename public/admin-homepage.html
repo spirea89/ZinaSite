@@ -26,7 +26,7 @@
     </div>
   </nav>
 
-  <div id="login-modal" class="modal" style="display: flex;">
+  <div id="login-modal" class="modal" style="display: none;">
     <div class="modal-content">
       <h2>Autentificare Admin</h2>
       <p class="muted">Autentifică-te pentru a edita pagina principală.</p>
@@ -134,6 +134,7 @@
     const imagePreview = document.getElementById('hero-image-preview');
     let currentHeroImageUrl = null;
     let currentEditingLocale = 'ro';
+    let activeAdminUserId = null;
     let homepageByLocale = {
       ro: { ...DEFAULT_HOMEPAGE },
       en: I18n.homepageContent('en'),
@@ -189,7 +190,10 @@
       adminHeader.style.display = 'block';
       adminContent.style.display = 'block';
       document.getElementById('user-info').textContent = `Conectat: ${user.email}`;
-      loadHomepage();
+      if (activeAdminUserId !== user.id) {
+        activeAdminUserId = user.id;
+        loadHomepage();
+      }
     }
 
     async function loadHomepage() {
@@ -265,11 +269,23 @@
       location.href = 'admin.html';
     });
 
+    AuthService.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session?.user) {
+        showPanel(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        activeAdminUserId = null;
+        adminHeader.style.display = 'none';
+        adminContent.style.display = 'none';
+        loginModal.style.display = 'flex';
+      }
+    });
+
     (async function init() {
       let attempts = 0;
       while (typeof window.supabase === 'undefined' && attempts < 50) { await new Promise(resolve => setTimeout(resolve, 100)); attempts++; }
       const user = await AuthService.getCurrentUser();
       if (user) showPanel(user);
+      else loginModal.style.display = 'flex';
     })();
   </script>
 </body>
