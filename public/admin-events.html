@@ -77,6 +77,16 @@
             <span>Descriere</span>
             <textarea id="event-description" name="description" rows="4" placeholder="Descrierea evenimentului (opțional)"></textarea>
           </label>
+          <details class="translation-editor">
+            <summary>Traducere în engleză</summary>
+            <label class="stack"><span>Titlu (EN)</span><input id="event-title-en" type="text"></label>
+            <label class="stack"><span>Descriere (EN)</span><textarea id="event-description-en" rows="4"></textarea></label>
+          </details>
+          <details class="translation-editor">
+            <summary>Traducere în germană</summary>
+            <label class="stack"><span>Titlu (DE)</span><input id="event-title-de" type="text"></label>
+            <label class="stack"><span>Descriere (DE)</span><textarea id="event-description-de" rows="4"></textarea></label>
+          </details>
           <label class="stack">
             <span>Data și ora de început</span>
             <input id="event-start-date" name="startDate" type="datetime-local" required>
@@ -140,6 +150,10 @@
     const eventIdInput = document.getElementById('event-id');
     const eventTitleInput = document.getElementById('event-title');
     const eventDescriptionInput = document.getElementById('event-description');
+    const eventTitleEnInput = document.getElementById('event-title-en');
+    const eventDescriptionEnInput = document.getElementById('event-description-en');
+    const eventTitleDeInput = document.getElementById('event-title-de');
+    const eventDescriptionDeInput = document.getElementById('event-description-de');
     const eventStartDateInput = document.getElementById('event-start-date');
     const eventEndDateInput = document.getElementById('event-end-date');
     const eventLocationInput = document.getElementById('event-location');
@@ -249,6 +263,10 @@
           eventIdInput.value = event.id;
           eventTitleInput.value = event.title;
           eventDescriptionInput.value = event.description || '';
+          eventTitleEnInput.value = event.titleEn || '';
+          eventDescriptionEnInput.value = event.descriptionEn || '';
+          eventTitleDeInput.value = event.titleDe || '';
+          eventDescriptionDeInput.value = event.descriptionDe || '';
           const startDate = new Date(event.startDate);
           eventStartDateInput.value = startDate.toISOString().slice(0, 16);
           if (event.endDate) {
@@ -267,8 +285,7 @@
         publish.onclick = async () => {
           await saveEvent({
             id: event.id,
-            title: event.title,
-            description: event.description,
+            ...event,
             startDate: event.startDate,
             endDate: event.endDate,
             location: event.location,
@@ -295,10 +312,11 @@
       });
     }
 
-    async function saveEvent({ id, title, description, startDate, endDate, location, registrationUrl, status }) {
+    async function saveEvent({ id, title, description, titleEn, descriptionEn, titleDe, descriptionDe, startDate, endDate, location, registrationUrl, status }) {
       try {
-        if (id) await DataService.updateEvent(id, { title, description, startDate, endDate, location, registrationUrl, status });
-        else await DataService.createEvent({ title, description, startDate, endDate, location, registrationUrl, status });
+        const payload = { title, description, titleEn, descriptionEn, titleDe, descriptionDe, startDate, endDate, location, registrationUrl, status };
+        if (id) await DataService.updateEvent(id, payload);
+        else await DataService.createEvent(payload);
         resetEventForm();
         loadEvents();
       } catch (err) {
@@ -313,6 +331,10 @@
         id: eventIdInput.value || undefined,
         title: eventTitleInput.value,
         description: eventDescriptionInput.value,
+        titleEn: eventTitleEnInput.value,
+        descriptionEn: eventDescriptionEnInput.value,
+        titleDe: eventTitleDeInput.value,
+        descriptionDe: eventDescriptionDeInput.value,
         startDate: eventStartDateInput.value,
         endDate: eventEndDateInput.value || undefined,
         location: eventLocationInput.value || undefined,

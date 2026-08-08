@@ -81,6 +81,20 @@
             <textarea id="content" name="content" style="display: none;" required></textarea>
           </label>
           <label class="stack">
+            <span>Categorie</span>
+            <select id="article-category" name="categoryId"><option value="">Fără categorie</option></select>
+          </label>
+          <details class="translation-editor">
+            <summary>Traducere în engleză</summary>
+            <label class="stack"><span>Titlu (EN)</span><input id="title-en" type="text"></label>
+            <label class="stack"><span>Conținut (EN)</span><textarea id="content-en" rows="8" placeholder="Poți folosi text simplu sau HTML."></textarea></label>
+          </details>
+          <details class="translation-editor">
+            <summary>Traducere în germană</summary>
+            <label class="stack"><span>Titlu (DE)</span><input id="title-de" type="text"></label>
+            <label class="stack"><span>Conținut (DE)</span><textarea id="content-de" rows="8" placeholder="Poți folosi text simplu sau HTML."></textarea></label>
+          </details>
+          <label class="stack">
             <span>Status</span>
             <select id="status" name="status" required>
               <option value="draft">Ciornă</option>
@@ -102,6 +116,17 @@
         </p>
       </section>
     </div>
+    <section class="panel category-admin-panel">
+      <h2>Gestionare categorii</h2>
+      <form id="category-form" class="category-admin-form">
+        <input type="hidden" id="category-id">
+        <label class="stack"><span>Nume română</span><input id="category-name-ro" required placeholder="Ex. Integrare"></label>
+        <label class="stack"><span>Nume engleză</span><input id="category-name-en" required placeholder="Ex. Integration"></label>
+        <label class="stack"><span>Nume germană</span><input id="category-name-de" required placeholder="Ex. Integration"></label>
+        <div class="actions"><button class="button" type="submit">Salvează categoria</button><button class="button ghost" id="category-reset" type="button">Resetează</button></div>
+      </form>
+      <div id="category-list" class="category-admin-list"></div>
+    </section>
   </main>
 
   <footer class="footer">
@@ -132,6 +157,11 @@
     const adminEmpty = document.getElementById('admin-empty');
     const resetButton = document.getElementById('reset-form');
     const editorContainer = document.getElementById('editor-container');
+    const categoryInput = document.getElementById('article-category');
+    const titleEnInput = document.getElementById('title-en');
+    const contentEnInput = document.getElementById('content-en');
+    const titleDeInput = document.getElementById('title-de');
+    const contentDeInput = document.getElementById('content-de');
 
     let currentUser = null;
     let authChecked = false;
@@ -200,6 +230,7 @@
           userInfo.textContent = `Conectat: ${currentUser.email}`;
           if (!quill) initQuill();
           loadArticles();
+          loadCategories();
         } else {
           loginModal.style.display = 'flex';
           adminHeader.style.display = 'none';
@@ -220,6 +251,7 @@
       if (currentUser) userInfo.textContent = `Conectat: ${currentUser.email}`;
       if (!quill) initQuill();
       loadArticles();
+      loadCategories();
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -258,6 +290,11 @@
       idInput.value = '';
       statusInput.value = 'draft';
       if (quill) { quill.setContents([]); contentInput.value = ''; }
+      categoryInput.value = '';
+      titleEnInput.value = '';
+      contentEnInput.value = '';
+      titleDeInput.value = '';
+      contentDeInput.value = '';
     }
 
     function renderArticles(articles) {
@@ -286,6 +323,11 @@
           idInput.value = article.id;
           titleInput.value = article.title;
           statusInput.value = article.status;
+          categoryInput.value = article.categoryId || '';
+          titleEnInput.value = article.titleEn || '';
+          contentEnInput.value = article.contentEn || '';
+          titleDeInput.value = article.titleDe || '';
+          contentDeInput.value = article.contentDe || '';
           if (quill) {
             if (article.content) {
               const t = document.createElement('div');
@@ -303,7 +345,7 @@
         publish.className = 'button';
         publish.textContent = article.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
         publish.onclick = async () => {
-          await saveArticle({ id: article.id, title: article.title, content: article.content, status: article.status === 'published' ? 'draft' : 'published' });
+          await saveArticle({ ...article, status: article.status === 'published' ? 'draft' : 'published' });
         };
         const del = document.createElement('button');
         del.className = 'button danger';
@@ -324,12 +366,13 @@
       });
     }
 
-    async function saveArticle({ id, title, content, status }) {
+    async function saveArticle({ id, title, content, status, titleEn, contentEn, titleDe, contentDe, categoryId }) {
       try {
         let articleContent = content;
         if (quill && (contentInput.value || !content)) articleContent = quill.root.innerHTML;
-        if (id) await DataService.updateArticle(id, { title, content: articleContent, status });
-        else await DataService.createArticle({ title, content: articleContent, status });
+        const payload = { title, content: articleContent, status, titleEn, contentEn, titleDe, contentDe, categoryId };
+        if (id) await DataService.updateArticle(id, payload);
+        else await DataService.createArticle(payload);
         resetForm();
         loadArticles();
       } catch (err) {
@@ -341,7 +384,7 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (quill) contentInput.value = quill.root.innerHTML;
-      await saveArticle({ id: idInput.value || undefined, title: titleInput.value, content: contentInput.value, status: statusInput.value });
+      await saveArticle({ id: idInput.value || undefined, title: titleInput.value, content: contentInput.value, status: statusInput.value, categoryId: categoryInput.value || null, titleEn: titleEnInput.value, contentEn: contentEnInput.value, titleDe: titleDeInput.value, contentDe: contentDeInput.value });
     });
 
     resetButton.addEventListener('click', resetForm);
@@ -356,6 +399,50 @@
         alert('Eroare la încărcarea articolelor. Verifică autentificarea.');
       }
     }
+
+    const categoryForm = document.getElementById('category-form');
+    const categoryId = document.getElementById('category-id');
+    const categoryNameRo = document.getElementById('category-name-ro');
+    const categoryNameEn = document.getElementById('category-name-en');
+    const categoryNameDe = document.getElementById('category-name-de');
+
+    async function loadCategories() {
+      try {
+        const categories = await DataService.getCategories();
+        const selected = categoryInput.value;
+        categoryInput.innerHTML = '<option value="">Fără categorie</option>';
+        const list = document.getElementById('category-list');
+        list.innerHTML = '';
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = `${category.name_ro} / ${category.name_en} / ${category.name_de}`;
+          categoryInput.appendChild(option);
+          const row = document.createElement('div');
+          row.className = 'category-admin-row';
+          const name = document.createElement('span');
+          name.textContent = option.textContent;
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+          const edit = document.createElement('button');
+          edit.type = 'button'; edit.className = 'button ghost'; edit.textContent = 'Editează';
+          edit.onclick = () => { categoryId.value = category.id; categoryNameRo.value = category.name_ro; categoryNameEn.value = category.name_en; categoryNameDe.value = category.name_de; };
+          const del = document.createElement('button');
+          del.type = 'button'; del.className = 'button danger'; del.textContent = 'Șterge';
+          del.onclick = async () => { if (confirm('Ștergi categoria? Articolele vor rămâne fără categorie.')) { await DataService.deleteCategory(category.id); loadCategories(); loadArticles(); } };
+          actions.append(edit, del); row.append(name, actions); list.appendChild(row);
+        });
+        categoryInput.value = selected;
+      } catch (error) { console.error('Category load failed', error); }
+    }
+
+    categoryForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const payload = { nameRo: categoryNameRo.value, nameEn: categoryNameEn.value, nameDe: categoryNameDe.value };
+      if (categoryId.value) await DataService.updateCategory(categoryId.value, payload); else await DataService.createCategory(payload);
+      categoryForm.reset(); categoryId.value = ''; loadCategories();
+    });
+    document.getElementById('category-reset').addEventListener('click', () => { categoryForm.reset(); categoryId.value = ''; });
 
     (async function init() {
       let n = 0;

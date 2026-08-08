@@ -785,6 +785,91 @@ h3 {
   }
 }
 
+.language-switcher {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.7);
+}
+.language-switcher button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.28rem 0.48rem;
+  background: transparent;
+  color: var(--text-muted);
+  font: 700 0.65rem/1 var(--font-body);
+  cursor: pointer;
+}
+.language-switcher button.active {
+  background: var(--primary-blue);
+  color: white;
+}
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: -1rem 0 2.5rem;
+}
+.category-filter {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  background: var(--card);
+  color: var(--text-secondary);
+  font: 600 0.85rem var(--font-body);
+  cursor: pointer;
+}
+.category-filter.active,
+.category-filter:hover {
+  border-color: var(--primary-blue);
+  background: var(--primary-blue);
+  color: white;
+}
+.article-category {
+  display: inline-flex;
+  margin-right: 0.65rem;
+  color: var(--clay);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.translation-editor {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+.translation-editor summary { cursor: pointer; font-weight: 700; color: var(--primary-blue); }
+.translation-editor[open] { display: grid; gap: 1rem; }
+.category-admin-panel { margin-top: 2rem; }
+.category-admin-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+.category-admin-form .actions { grid-column: 1 / -1; }
+.category-admin-list { display: grid; gap: 0.65rem; margin-top: 1.5rem; }
+.category-admin-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .language-switcher { order: -1; }
+  .language-switcher button { padding: 0.26rem 0.4rem; }
+  .category-admin-form { grid-template-columns: 1fr; }
+  .category-admin-form .actions { grid-column: auto; }
+}
+
 /* Quill editor styling */
 #editor-container .ql-container {
   font-size: 1rem;

@@ -114,6 +114,7 @@
     </div>
   </footer>
 
+  <script src="i18n.js"></script>
   <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -133,6 +134,10 @@
 
     (async function loadHomepageContent() {
       try {
+        if (I18n.locale !== 'ro') {
+          I18n.applyHomepage();
+          return;
+        }
         const homepage = await DataService.getHomepageContent();
         if (!homepage) return;
         Object.entries(homepage.content || {}).forEach(([field, value]) => {

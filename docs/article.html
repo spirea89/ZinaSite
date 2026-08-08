@@ -19,9 +19,9 @@
         <img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA — Asociația Românilor din Austria" class="logo-img">
       </a>
       <div class="nav-links">
-        <a href="index.html#mission" class="nav-link">Despre noi</a>
-        <a href="articles.html" class="nav-link">Articole</a>
-        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="index.html#mission" class="nav-link" data-i18n="about">Despre noi</a>
+        <a href="articles.html" class="nav-link" data-i18n="articles">Articole</a>
+        <a href="events.html" class="nav-link" data-i18n="events">Evenimente</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
       </div>
     </div>
@@ -35,16 +35,15 @@
 
     <div id="error-state" class="empty-state" style="display: none;">
       <span class="empty-icon">⚠️</span>
-      <span>Articolul nu a fost găsit.</span>
-      <a href="articles.html" class="button" style="margin-top: 1rem;">Înapoi la articole</a>
+      <span data-i18n="articleMissing">Articolul nu a fost găsit.</span>
+      <a href="articles.html" class="button" style="margin-top: 1rem;" data-i18n="backArticles">Înapoi la articole</a>
     </div>
 
     <article id="article-content" style="display: none;">
       <div class="article-header">
-        <a href="articles.html" class="button ghost" style="margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 0.5rem;">
-          ← Înapoi la articole
-        </a>
+        <a href="articles.html" class="button ghost" style="margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 0.5rem;" data-i18n="backArticles">Înapoi la articole</a>
         <div class="article-meta">
+          <span id="article-category" class="article-category"></span>
           <span id="article-date" class="article-date"></span>
         </div>
         <h1 id="article-title" class="article-detail-title"></h1>
@@ -56,10 +55,11 @@
   <footer class="footer">
     <div class="footer-content">
       <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
-      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+      <p class="footer-subtitle" data-i18n="footer">Comunitatea românilor din Viena</p>
     </div>
   </footer>
 
+  <script src="i18n.js"></script>
   <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -85,17 +85,18 @@
       try {
         // Get all published articles and find the one with matching ID
         const articles = await DataService.getArticles('published');
-        const article = articles.find(a => a.id === articleId);
+        let article = articles.find(a => a.id === articleId);
 
         if (!article) {
           loadingState.style.display = 'none';
           errorState.style.display = 'flex';
           return;
         }
+        article = I18n.localizeArticle(article);
 
         // Display article
         const date = new Date(article.updatedAt || article.createdAt);
-        const formattedDate = date.toLocaleDateString('ro-RO', {
+        const formattedDate = date.toLocaleDateString(I18n.locale, {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
@@ -103,6 +104,7 @@
 
         document.getElementById('article-title').textContent = article.title;
         document.getElementById('article-date').textContent = formattedDate;
+        document.getElementById('article-category').textContent = I18n.categoryName(article.category);
         document.getElementById('article-body').innerHTML = article.content || '';
 
         // Update page title

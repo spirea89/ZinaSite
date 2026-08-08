@@ -19,9 +19,9 @@
         <img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA — Asociația Românilor din Austria" class="logo-img">
       </a>
       <div class="nav-links">
-        <a href="index.html#mission" class="nav-link">Despre noi</a>
-        <a href="articles.html" class="nav-link">Articole</a>
-        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="index.html#mission" class="nav-link" data-i18n="about">Despre noi</a>
+        <a href="articles.html" class="nav-link" data-i18n="articles">Articole</a>
+        <a href="events.html" class="nav-link" data-i18n="events">Evenimente</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
       </div>
     </div>
@@ -35,14 +35,12 @@
 
     <div id="error-state" class="empty-state" style="display: none;">
       <span class="empty-icon">⚠️</span>
-      <span>Evenimentul nu a fost găsit.</span>
-      <a href="events.html" class="button" style="margin-top: 1rem;">Înapoi la evenimente</a>
+      <span data-i18n="eventMissing">Evenimentul nu a fost găsit.</span>
+      <a href="events.html" class="button" style="margin-top: 1rem;" data-i18n="backEvents">Înapoi la evenimente</a>
     </div>
 
     <article id="event-content" class="event-detail-panel" style="display: none;">
-      <a href="events.html" class="button ghost" style="margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 0.5rem;">
-        ← Înapoi la evenimente
-      </a>
+      <a href="events.html" class="button ghost" style="margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 0.5rem;" data-i18n="backEvents">Înapoi la evenimente</a>
       <header class="event-detail-header">
         <div id="event-date-badge" class="event-detail-date-badge"></div>
         <h1 id="event-title" class="event-detail-title"></h1>
@@ -51,7 +49,7 @@
       <div id="event-description" class="event-detail-description"></div>
       <div id="event-registration-wrap" class="event-detail-registration" style="display: none;">
         <a id="event-registration-link" href="#" target="_blank" rel="noopener noreferrer" class="button">
-          Înscrie-te la eveniment →
+          <span data-i18n="registerButton">Înscrie-te la eveniment</span> →
         </a>
       </div>
     </article>
@@ -60,10 +58,11 @@
   <footer class="footer">
     <div class="footer-content">
       <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
-      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+      <p class="footer-subtitle" data-i18n="footer">Comunitatea românilor din Viena</p>
     </div>
   </footer>
 
+  <script src="i18n.js"></script>
   <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -74,7 +73,7 @@
     }
 
     function formatDate(date) {
-      return date.toLocaleDateString('ro-RO', {
+      return date.toLocaleDateString(I18n.locale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -82,7 +81,7 @@
     }
 
     function formatTime(date) {
-      return date.toLocaleTimeString('ro-RO', {
+      return date.toLocaleTimeString(I18n.locale, {
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -102,13 +101,14 @@
 
       try {
         const events = await DataService.getEvents('published');
-        const event = events.find(e => e.id === eventId);
+        let event = events.find(e => e.id === eventId);
 
         if (!event) {
           loadingState.style.display = 'none';
           errorState.style.display = 'flex';
           return;
         }
+        event = I18n.localizeEvent(event);
 
         const startDate = new Date(event.startDate);
         const dateStr = formatDate(startDate);
@@ -117,7 +117,7 @@
         document.getElementById('event-title').textContent = event.title;
         document.getElementById('event-date-badge').innerHTML = `
           <span class="event-detail-day">${startDate.getDate()}</span>
-          <span class="event-detail-month">${startDate.toLocaleDateString('ro-RO', { month: 'long' })} ${startDate.getFullYear()}</span>
+          <span class="event-detail-month">${startDate.toLocaleDateString(I18n.locale, { month: 'long' })} ${startDate.getFullYear()}</span>
         `;
 
         let metaHtml = `<span class="event-detail-time">🕐 ${dateStr} la ${timeStr}</span>`;

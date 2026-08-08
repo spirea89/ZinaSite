@@ -19,9 +19,9 @@
         <img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA — Asociația Românilor din Austria" class="logo-img">
       </a>
       <div class="nav-links">
-        <a href="index.html#mission" class="nav-link">Despre noi</a>
-        <a href="articles.html" class="nav-link">Articole</a>
-        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="index.html#mission" class="nav-link" data-i18n="about">Despre noi</a>
+        <a href="articles.html" class="nav-link" data-i18n="articles">Articole</a>
+        <a href="events.html" class="nav-link" data-i18n="events">Evenimente</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
       </div>
     </div>
@@ -30,8 +30,8 @@
   <main class="content page-content">
     <section class="events-section">
       <div class="section-header">
-        <h1>Evenimente</h1>
-        <p class="section-description">Vezi evenimentele trecute și viitoare ale comunității românilor din Viena</p>
+        <h1 data-i18n="eventsTitle">Evenimente</h1>
+        <p class="section-description" data-i18n="eventsDescription">Vezi evenimentele trecute și viitoare ale comunității românilor din Viena</p>
       </div>
       <div class="calendar-container">
         <div class="calendar-controls">
@@ -44,7 +44,7 @@
       <div id="events-list" class="events-list"></div>
       <p id="events-empty" class="empty-state">
         <span class="empty-icon">📅</span>
-        <span>Nu există evenimente publicate încă.</span>
+        <span data-i18n="noEvents">Nu există evenimente publicate încă.</span>
       </p>
       <div id="pagination-wrap" class="pagination-wrap" style="display: none;"></div>
     </section>
@@ -53,10 +53,11 @@
   <footer class="footer">
     <div class="footer-content">
       <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
-      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+      <p class="footer-subtitle" data-i18n="footer">Comunitatea românilor din Viena</p>
     </div>
   </footer>
 
+  <script src="i18n.js"></script>
   <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -71,7 +72,7 @@
     }
 
     function formatDate(date) {
-      return date.toLocaleDateString('ro-RO', {
+      return date.toLocaleDateString(I18n.locale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -79,7 +80,7 @@
     }
 
     function formatTime(date) {
-      return date.toLocaleTimeString('ro-RO', {
+      return date.toLocaleTimeString(I18n.locale, {
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -119,12 +120,10 @@
     function renderCalendar() {
       const calendar = document.getElementById('calendar');
       const monthYear = document.getElementById('current-month-year');
-      const monthNames = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',
-        'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
-      monthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      monthYear.textContent = currentDate.toLocaleDateString(I18n.locale, { month: 'long', year: 'numeric' });
       calendar.innerHTML = '';
 
-      const weekdays = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+      const weekdays = Array.from({ length: 7 }, (_, index) => new Date(2024, 0, index + 1).toLocaleDateString(I18n.locale, { weekday: 'short' }));
       const header = document.createElement('div');
       header.className = 'calendar-header';
       weekdays.forEach(day => {
@@ -179,6 +178,7 @@
     }
 
     function createEventCard(event, isPastEvent) {
+      event = I18n.localizeEvent(event);
       const card = document.createElement('article');
       card.className = `event-card ${isPastEvent ? 'past-event' : ''} event-card-clickable`;
       card.dataset.date = event.startDate;
@@ -196,7 +196,7 @@
       card.innerHTML = `
         <div class="event-date">
           <div class="event-day">${eventDate.getDate()}</div>
-          <div class="event-month">${eventDate.toLocaleDateString('ro-RO', { month: 'short' })}</div>
+          <div class="event-month">${eventDate.toLocaleDateString(I18n.locale, { month: 'short' })}</div>
         </div>
         <div class="event-content">
           <h3 class="event-title">${event.title}</h3>
@@ -231,11 +231,11 @@
       let html = '<nav class="pagination" aria-label="Paginare">';
       if (page > 1) {
         const prevUrl = page === 2 ? 'events.html' : `events.html?page=${page - 1}`;
-        html += `<a href="${prevUrl}" class="prev">← Anterior</a>`;
+        html += `<a href="${prevUrl}" class="prev">${I18n.t('previous')}</a>`;
       }
       html += '<span class="pagination-info">Pagina ' + page + ' din ' + totalPages + '</span>';
       if (page < totalPages) {
-        html += `<a href="events.html?page=${page + 1}" class="next">Următor →</a>`;
+        html += `<a href="events.html?page=${page + 1}" class="next">${I18n.t('next')}</a>`;
       }
       html += '</nav>';
       wrap.innerHTML = html;
@@ -277,7 +277,7 @@
         return;
       }
       try {
-        allEvents = await DataService.getEvents('published');
+        allEvents = (await DataService.getEvents('published')).map(I18n.localizeEvent);
         if (allEvents && allEvents.length) allEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
       } catch (e) {
         console.warn('Could not load all events for calendar', e);

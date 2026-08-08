@@ -19,9 +19,9 @@
         <img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA — Asociația Românilor din Austria" class="logo-img">
       </a>
       <div class="nav-links">
-        <a href="index.html#mission" class="nav-link">Despre noi</a>
-        <a href="articles.html" class="nav-link">Articole</a>
-        <a href="events.html" class="nav-link">Evenimente</a>
+        <a href="index.html#mission" class="nav-link" data-i18n="about">Despre noi</a>
+        <a href="articles.html" class="nav-link" data-i18n="articles">Articole</a>
+        <a href="events.html" class="nav-link" data-i18n="events">Evenimente</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
       </div>
     </div>
@@ -30,13 +30,14 @@
   <main class="content page-content">
     <section class="articles-section">
       <div class="section-header">
-        <h1>Articole</h1>
-        <p class="section-description">Știri, sfaturi și resurse pentru comunitatea română din Viena</p>
+        <h1 data-i18n="articlesTitle">Articole</h1>
+        <p class="section-description" data-i18n="articlesDescription">Știri, sfaturi și resurse pentru comunitatea română din Viena</p>
       </div>
+      <div id="category-filters" class="category-filters"></div>
       <div id="articles-container" class="articles-grid"></div>
       <p id="empty-state" class="empty-state">
         <span class="empty-icon">📝</span>
-        <span>Nu există articole publicate încă.</span>
+        <span data-i18n="noArticles">Nu există articole publicate încă.</span>
       </p>
       <div id="pagination-wrap" class="pagination-wrap" style="display: none;"></div>
     </section>
@@ -45,10 +46,11 @@
   <footer class="footer">
     <div class="footer-content">
       <p>© <span id="year"></span> ZusammenInAustria (Zina) • Viena, Austria</p>
-      <p class="footer-subtitle">Comunitatea românilor din Viena</p>
+      <p class="footer-subtitle" data-i18n="footer">Comunitatea românilor din Viena</p>
     </div>
   </footer>
 
+  <script src="i18n.js"></script>
   <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -56,6 +58,8 @@
     const PAGE_SIZE = 9;
     let currentPage = 1;
     let totalItems = 0;
+    let allArticles = [];
+    let activeCategory = 'all';
 
     function getPageFromUrl() {
       const params = new URLSearchParams(window.location.search);
@@ -63,12 +67,13 @@
     }
 
     function buildArticleCard(article, index) {
+      article = I18n.localizeArticle(article);
       const card = document.createElement('article');
       card.className = 'article-card';
       card.style.animationDelay = `${index * 0.05}s`;
 
       const date = new Date(article.updatedAt || article.createdAt);
-      const formattedDate = date.toLocaleDateString('ro-RO', {
+      const formattedDate = date.toLocaleDateString(I18n.locale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -82,11 +87,12 @@
       card.innerHTML = `
         <div class="article-card-header">
           <div class="article-date">${formattedDate}</div>
+          ${article.category ? `<span class="article-category">${I18n.categoryName(article.category)}</span>` : ''}
         </div>
         <h3 class="article-title">${article.title}</h3>
         <p class="article-excerpt">${excerpt}</p>
         <div class="article-footer">
-          <a href="article.html?id=${article.id}" class="article-read-more">Citește mai mult →</a>
+          <a href="article.html?id=${article.id}" class="article-read-more">${I18n.t('readMore')}</a>
         </div>
       `;
 
@@ -113,11 +119,11 @@
       let html = '<nav class="pagination" aria-label="Paginare">';
       if (page > 1) {
         const prevUrl = page === 2 ? 'articles.html' : `articles.html?page=${page - 1}`;
-        html += `<a href="${prevUrl}" class="prev">← Anterior</a>`;
+        html += `<a href="${prevUrl}" class="prev">${I18n.t('previous')}</a>`;
       }
       html += '<span class="pagination-info">Pagina ' + page + ' din ' + totalPages + '</span>';
       if (page < totalPages) {
-        html += `<a href="articles.html?page=${page + 1}" class="next">Următor →</a>`;
+        html += `<a href="articles.html?page=${page + 1}" class="next">${I18n.t('next')}</a>`;
       }
       html += '</nav>';
       wrap.innerHTML = html;
@@ -134,7 +140,10 @@
       paginationWrap.style.display = 'none';
 
       try {
-        const { items, total } = await DataService.getArticlesPage('published', page, PAGE_SIZE);
+        if (!allArticles.length) allArticles = await DataService.getArticles('published');
+        const filtered = activeCategory === 'all' ? allArticles : allArticles.filter(article => article.category?.slug === activeCategory);
+        const total = filtered.length;
+        const items = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
         totalItems = total;
         container.innerHTML = '';
 
@@ -161,8 +170,27 @@
       }
     }
 
+    async function renderCategoryFilters() {
+      const wrap = document.getElementById('category-filters');
+      const categories = await DataService.getCategories();
+      wrap.innerHTML = '';
+      [{ slug: 'all', name_ro: I18n.t('allCategories'), name_en: I18n.t('allCategories'), name_de: I18n.t('allCategories') }, ...categories].forEach(category => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `category-filter${category.slug === activeCategory ? ' active' : ''}`;
+        button.textContent = category.slug === 'all' ? I18n.t('allCategories') : I18n.categoryName(category);
+        button.addEventListener('click', () => {
+          activeCategory = category.slug;
+          renderCategoryFilters();
+          loadPage(1);
+        });
+        wrap.appendChild(button);
+      });
+    }
+
     currentPage = getPageFromUrl();
     if (typeof DataService !== 'undefined') {
+      renderCategoryFilters();
       loadPage(currentPage);
     } else {
       window.addEventListener('DOMContentLoaded', () => {

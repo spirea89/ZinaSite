@@ -82,6 +82,12 @@ function formatArticle(article) {
     id: article.id,
     title: article.title,
     content: article.content,
+    titleEn: article.title_en || '',
+    contentEn: article.content_en || '',
+    titleDe: article.title_de || '',
+    contentDe: article.content_de || '',
+    categoryId: article.category_id || null,
+    category: article.category || null,
     status: article.status,
     createdAt: article.created_at || article.createdAt,
     updatedAt: article.updated_at || article.updatedAt
@@ -94,6 +100,10 @@ function formatEvent(event) {
     id: event.id,
     title: event.title,
     description: event.description,
+    titleEn: event.title_en || '',
+    descriptionEn: event.description_en || '',
+    titleDe: event.title_de || '',
+    descriptionDe: event.description_de || '',
     startDate: event.start_date || event.startDate,
     endDate: event.end_date || event.endDate,
     location: event.location,
@@ -102,6 +112,18 @@ function formatEvent(event) {
     createdAt: event.created_at || event.createdAt,
     updatedAt: event.updated_at || event.updatedAt
   };
+}
+
+async function formatArticlesWithCategories(client, rows) {
+  let categories = [];
+  try {
+    const result = await client.from('article_categories').select('*');
+    if (!result.error) categories = result.data || [];
+  } catch (_) {
+    // Categories are optional until the migration is installed.
+  }
+  const byId = new Map(categories.map(category => [category.id, category]));
+  return (rows || []).map(article => formatArticle({ ...article, category: byId.get(article.category_id) || null }));
 }
 
 // Data Service API
@@ -134,7 +156,7 @@ const DataService = {
         
         const { data, error } = await query;
         if (error) throw error;
-        return data.map(formatArticle);
+        return await formatArticlesWithCategories(client, data);
       } catch (error) {
         console.error('Error fetching articles from Supabase:', error);
         throw error;
@@ -168,7 +190,7 @@ const DataService = {
         if (status) query = query.eq('status', status);
         const { data, error, count } = await query;
         if (error) throw error;
-        return { items: (data || []).map(formatArticle), total: count ?? 0 };
+        return { items: await formatArticlesWithCategories(client, data), total: count ?? 0 };
       } catch (error) {
         console.error('Error fetching articles page:', error);
         throw error;
@@ -215,7 +237,7 @@ const DataService = {
           console.error('Supabase query error:', error);
           throw error;
         }
-        return data.map(formatArticle);
+        return await formatArticlesWithCategories(client, data);
       } catch (error) {
         console.error('Error fetching all articles from Supabase:', error);
         throw error;
@@ -244,6 +266,11 @@ const DataService = {
           .insert({
             title: article.title,
             content: article.content,
+            title_en: article.titleEn || null,
+            content_en: article.contentEn || null,
+            title_de: article.titleDe || null,
+            content_de: article.contentDe || null,
+            category_id: article.categoryId || null,
             status: article.status,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -285,6 +312,11 @@ const DataService = {
           .update({
             title: article.title,
             content: article.content,
+            title_en: article.titleEn || null,
+            content_en: article.contentEn || null,
+            title_de: article.titleDe || null,
+            content_de: article.contentDe || null,
+            category_id: article.categoryId || null,
             status: article.status,
             updated_at: new Date().toISOString()
           })
@@ -499,6 +531,10 @@ const DataService = {
           .insert({
             title: event.title,
             description: event.description || null,
+            title_en: event.titleEn || null,
+            description_en: event.descriptionEn || null,
+            title_de: event.titleDe || null,
+            description_de: event.descriptionDe || null,
             start_date: event.startDate,
             end_date: event.endDate || null,
             location: event.location || null,
@@ -544,6 +580,10 @@ const DataService = {
           .update({
             title: event.title,
             description: event.description || null,
+            title_en: event.titleEn || null,
+            description_en: event.descriptionEn || null,
+            title_de: event.titleDe || null,
+            description_de: event.descriptionDe || null,
             start_date: event.startDate,
             end_date: event.endDate || null,
             location: event.location || null,
@@ -602,6 +642,57 @@ const DataService = {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete event');
+    return true;
+  },
+
+  async getCategories() {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) return [];
+    const { data, error } = await client.from('article_categories').select('*').order('name_ro');
+    if (error) {
+      if (error.code === '42P01' || error.code === 'PGRST205') return [];
+      throw error;
+    }
+    return data || [];
+  },
+
+  async createCategory(category) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    const slug = (category.slug || category.nameRo)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const { data, error } = await client.from('article_categories').insert({
+      slug,
+      name_ro: category.nameRo,
+      name_en: category.nameEn || category.nameRo,
+      name_de: category.nameDe || category.nameRo
+    }).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateCategory(id, category) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    const { data, error } = await client.from('article_categories').update({
+      name_ro: category.nameRo,
+      name_en: category.nameEn || category.nameRo,
+      name_de: category.nameDe || category.nameRo
+    }).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteCategory(id) {
+    await this.ensureInitialized();
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase client not initialized.');
+    const { error } = await client.from('article_categories').delete().eq('id', id);
+    if (error) throw error;
     return true;
   },
 
