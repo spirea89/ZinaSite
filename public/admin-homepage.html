@@ -67,7 +67,7 @@
       </section>
       <section class="panel">
         <h2>Imagine principală</h2>
-        <p class="muted">Încarcă JPG, PNG sau WebP, maximum 5 MB. O imagine lată, de minimum 1400 px, oferă cel mai bun rezultat.</p>
+        <p class="muted"><strong>Dimensiune recomandată: 1600 × 1000 px (raport 16:10).</strong><br>Încarcă JPG, PNG sau WebP, maximum 5 MB și minimum 1400 px lățime.</p>
         <div class="homepage-image-editor">
           <img id="hero-image-preview" src="logos/hero-acasa-romania.jpg" alt="Previzualizare imagine principală">
           <label class="stack">
@@ -235,6 +235,7 @@
         captureCurrentFields();
         await DataService.updateHomepageContent(homepageByLocale, heroImageUrl);
         currentHeroImageUrl = heroImageUrl;
+        if (heroImageUrl) localStorage.setItem('zina-homepage-hero-image', heroImageUrl);
         fileInput.value = '';
         message.textContent = 'Pagina principală a fost salvată. Modificările sunt vizibile imediat.';
         message.classList.add('success-message');

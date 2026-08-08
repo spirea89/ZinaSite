@@ -46,7 +46,7 @@
         </div>
       </div>
       <figure class="hero-visual">
-        <img id="homepage-hero-image" src="logos/hero-acasa-romania.jpg" alt="Oameni de toate vârstele reuniți în jurul mesei, într-o curte românească primitoare">
+        <img id="homepage-hero-image" class="hero-image-loading" alt="Oameni de toate vârstele reuniți în jurul mesei, într-o curte românească primitoare">
         <figcaption data-home-field="heroCaption">Acasă nu este doar un loc. Sunt oamenii care te primesc.</figcaption>
       </figure>
     </div>
@@ -133,6 +133,22 @@
     });
 
     (async function loadHomepageContent() {
+      const heroImage = document.getElementById('homepage-hero-image');
+      const defaultHeroImage = 'logos/hero-acasa-romania.jpg';
+      const cachedHeroImage = localStorage.getItem('zina-homepage-hero-image');
+
+      function displayHeroImage(url) {
+        if (!url) return;
+        heroImage.onload = () => heroImage.classList.remove('hero-image-loading');
+        heroImage.onerror = () => {
+          localStorage.removeItem('zina-homepage-hero-image');
+          if (heroImage.getAttribute('src') !== defaultHeroImage) heroImage.src = defaultHeroImage;
+          else heroImage.classList.remove('hero-image-loading');
+        };
+        heroImage.src = url;
+      }
+
+      if (cachedHeroImage) displayHeroImage(cachedHeroImage);
       try {
         const homepage = await DataService.getHomepageContent();
         const stored = homepage?.content || {};
@@ -145,11 +161,13 @@
           const element = document.querySelector(`[data-home-field="${field}"]`);
           if (element && typeof value === 'string') element.textContent = value;
         });
-        if (homepage?.heroImageUrl) {
-          document.getElementById('homepage-hero-image').src = homepage.heroImageUrl;
-        }
+        const confirmedHeroImage = homepage?.heroImageUrl || defaultHeroImage;
+        if (homepage?.heroImageUrl) localStorage.setItem('zina-homepage-hero-image', homepage.heroImageUrl);
+        else localStorage.removeItem('zina-homepage-hero-image');
+        if (heroImage.getAttribute('src') !== confirmedHeroImage) displayHeroImage(confirmedHeroImage);
       } catch (error) {
         console.warn('Se folosește conținutul implicit al paginii principale.', error);
+        if (!cachedHeroImage) displayHeroImage(defaultHeroImage);
       }
     })();
   </script>

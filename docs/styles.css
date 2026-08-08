@@ -2019,7 +2019,9 @@ h1 em {
   object-position: 64% center;
   border-radius: 46% 46% 1.25rem 1.25rem;
   box-shadow: var(--shadow-xl);
+  transition: opacity 220ms ease;
 }
+.hero-visual img.hero-image-loading { opacity: 0; }
 .hero-visual figcaption {
   width: 78%;
   margin: -1.35rem auto 0;
