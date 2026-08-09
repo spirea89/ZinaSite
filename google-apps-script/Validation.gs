@@ -62,7 +62,7 @@ function statusValue_(value) {
 function urlValue_(value, name) {
   const result = stringValue_(value, name, { max: 2048 });
   if (!result) return '';
-  if (!/^https:\/\/[A-Za-z0-9.-]+(?::\d+)?(?:[/?#][^\s]*)?$/.test(result)) throw apiError_('INVALID_URL', name + ' must be a valid HTTPS URL.');
+  if (/[<>"'\u0000-\u001F\u007F]/.test(result) || !/^https:\/\/(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?(?:[/?#][^\s]*)?$/.test(result)) throw apiError_('INVALID_URL', name + ' must be a valid HTTPS URL.');
   return result;
 }
 
@@ -72,6 +72,92 @@ function dateValue_(value, name, required) {
   const date = new Date(result);
   if (isNaN(date.getTime())) throw apiError_('INVALID_DATE', name + ' must be a valid date.');
   return date.toISOString();
+}
+
+function expectedUpdatedAtValue_(value, allowNull) {
+  if (allowNull && value === null) return null;
+  if (value === undefined || value === null || value === '') throw apiError_('INVALID_CONCURRENCY_VALUE', 'expectedUpdatedAt is required.');
+  const result = stringValue_(value, 'expectedUpdatedAt', { required: true, max: 30 });
+  const date = new Date(result);
+  if (isNaN(date.getTime()) || date.toISOString() !== result) throw apiError_('INVALID_CONCURRENCY_VALUE', 'expectedUpdatedAt must be an exact UTC ISO timestamp.');
+  return result;
+}
+
+function idempotencyKeyValue_(value) {
+  if (value === undefined || value === null || value === '') throw apiError_('INVALID_IDEMPOTENCY_KEY', 'idempotencyKey is required.');
+  const result = stringValue_(value, 'idempotencyKey', { required: true, max: 128 });
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(result)) throw apiError_('INVALID_IDEMPOTENCY_KEY', 'idempotencyKey must contain 16 to 128 URL-safe characters.');
+  return result;
+}
+
+function plainTextValue_(value, name, options) {
+  const result = stringValue_(value, name, options);
+  if (/[<>]/.test(result) || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(result)) {
+    throw apiError_('UNSAFE_CONTENT', name + ' contains unsafe characters.');
+  }
+  return result;
+}
+
+const SAFE_HTML_TAGS = Object.freeze(['p','br','strong','b','em','i','u','s','ol','ul','li','blockquote','h1','h2','h3','a','span']);
+const SAFE_HTML_CLASSES = /^(?:ql-(?:align-(?:center|right|justify)|indent-[1-8]|direction-rtl|size-(?:small|large|huge)))(?:\s+ql-(?:align-(?:center|right|justify)|indent-[1-8]|direction-rtl|size-(?:small|large|huge)))*$/;
+
+function safeRichHtmlValue_(value, name, options) {
+  const html = stringValue_(value, name, options);
+  if (!html) return '';
+  if (/<!--[\s\S]*?-->|<![^>]*>|<\?|[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(html)) throw apiError_('UNSAFE_HTML', name + ' contains unsafe HTML.');
+  const stack = [];
+  let cursor = 0;
+  const tagPattern = /<[^>]*>/g;
+  let match;
+  while ((match = tagPattern.exec(html)) !== null) {
+    if (html.slice(cursor, match.index).indexOf('<') !== -1) throw apiError_('UNSAFE_HTML', name + ' contains malformed HTML.');
+    const token = match[0];
+    const parsed = token.match(/^<\s*(\/?)\s*([A-Za-z0-9]+)([\s\S]*?)\s*(\/?)>$/);
+    if (!parsed) throw apiError_('UNSAFE_HTML', name + ' contains malformed HTML.');
+    const closing = parsed[1] === '/';
+    const tag = parsed[2].toLowerCase();
+    const attributes = parsed[3];
+    const selfClosing = parsed[4] === '/' || tag === 'br';
+    if (SAFE_HTML_TAGS.indexOf(tag) === -1) throw apiError_('UNSAFE_HTML', name + ' contains a disallowed HTML element.');
+    if (closing) {
+      if (attributes.trim() || selfClosing || stack.pop() !== tag) throw apiError_('UNSAFE_HTML', name + ' contains malformed HTML nesting.');
+    } else {
+      validateSafeHtmlAttributes_(tag, attributes, name);
+      if (!selfClosing) stack.push(tag);
+    }
+    cursor = tagPattern.lastIndex;
+  }
+  if (html.slice(cursor).indexOf('<') !== -1 || stack.length) throw apiError_('UNSAFE_HTML', name + ' contains malformed HTML.');
+  return html;
+}
+
+function validateSafeHtmlAttributes_(tag, source, name) {
+  let rest = source;
+  const seen = {};
+  const attributePattern = /^\s+([A-Za-z][A-Za-z0-9_-]*)\s*=\s*("[^"]*"|'[^']*')/;
+  while (rest) {
+    if (!rest.trim()) return;
+    const match = rest.match(attributePattern);
+    if (!match) throw apiError_('UNSAFE_HTML', name + ' contains a disallowed HTML attribute.');
+    const attribute = match[1].toLowerCase();
+    const rawValue = match[2].slice(1, -1);
+    if (seen[attribute]) throw apiError_('UNSAFE_HTML', name + ' contains duplicate HTML attributes.');
+    seen[attribute] = true;
+    if (attribute === 'class') {
+      if (tag !== 'p' && tag !== 'span') throw apiError_('UNSAFE_HTML', name + ' contains a disallowed class attribute.');
+      if (!SAFE_HTML_CLASSES.test(rawValue)) throw apiError_('UNSAFE_HTML', name + ' contains a disallowed class name.');
+    } else if (attribute === 'href') {
+      if (tag !== 'a') throw apiError_('UNSAFE_HTML', name + ' contains a disallowed link attribute.');
+      urlValue_(rawValue, name + '.href');
+    } else if (attribute === 'target') {
+      if (tag !== 'a' || rawValue !== '_blank') throw apiError_('UNSAFE_HTML', name + ' contains a disallowed link target.');
+    } else if (attribute === 'rel') {
+      if (tag !== 'a' || !/^(?:noopener noreferrer|noreferrer noopener)$/.test(rawValue)) throw apiError_('UNSAFE_HTML', name + ' contains a disallowed link relationship.');
+    } else {
+      throw apiError_('UNSAFE_HTML', name + ' contains a disallowed HTML attribute.');
+    }
+    rest = rest.slice(match[0].length);
+  }
 }
 
 function numberValue_(value, name, min, max) {
@@ -97,12 +183,12 @@ function validateArticle_(input, partial) {
   rejectUnknownFields_(value, allowed);
   const output = {};
   function include(key, fn) { if (!partial || Object.prototype.hasOwnProperty.call(value, key)) output[key] = fn(value[key]); }
-  include('title', function (v) { return stringValue_(v, 'title', { required: true, max: 500 }); });
-  include('content', function (v) { return stringValue_(v, 'content', { required: true, max: 200000, preserveWhitespace: true }); });
-  include('titleEn', function (v) { return stringValue_(v, 'titleEn', { max: 500 }); });
-  include('contentEn', function (v) { return stringValue_(v, 'contentEn', { max: 200000, preserveWhitespace: true }); });
-  include('titleDe', function (v) { return stringValue_(v, 'titleDe', { max: 500 }); });
-  include('contentDe', function (v) { return stringValue_(v, 'contentDe', { max: 200000, preserveWhitespace: true }); });
+  include('title', function (v) { return plainTextValue_(v, 'title', { required: true, max: 500 }); });
+  include('content', function (v) { return safeRichHtmlValue_(v, 'content', { required: true, max: 200000, preserveWhitespace: true }); });
+  include('titleEn', function (v) { return plainTextValue_(v, 'titleEn', { max: 500 }); });
+  include('contentEn', function (v) { return safeRichHtmlValue_(v, 'contentEn', { max: 200000, preserveWhitespace: true }); });
+  include('titleDe', function (v) { return plainTextValue_(v, 'titleDe', { max: 500 }); });
+  include('contentDe', function (v) { return safeRichHtmlValue_(v, 'contentDe', { max: 200000, preserveWhitespace: true }); });
   include('categoryId', function (v) { return v ? idValue_(v, 'categoryId', true) : ''; });
   include('status', statusValue_);
   if (partial && !Object.keys(output).length) throw apiError_('VALIDATION_ERROR', 'At least one article field is required.');
@@ -114,7 +200,7 @@ function validateCategory_(input, partial) {
   rejectUnknownFields_(value, ['slug', 'nameRo', 'nameEn', 'nameDe']);
   const output = {};
   ['slug', 'nameRo', 'nameEn', 'nameDe'].forEach(function (key) {
-    if (!partial || Object.prototype.hasOwnProperty.call(value, key)) output[key] = stringValue_(value[key], key, { required: true, max: key === 'slug' ? 120 : 300 });
+    if (!partial || Object.prototype.hasOwnProperty.call(value, key)) output[key] = plainTextValue_(value[key], key, { required: true, max: key === 'slug' ? 120 : 300 });
   });
   if (output.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(output.slug)) throw apiError_('VALIDATION_ERROR', 'slug must contain lowercase letters, numbers and single hyphens only.');
   if (partial && !Object.keys(output).length) throw apiError_('VALIDATION_ERROR', 'At least one category field is required.');
@@ -127,12 +213,12 @@ function validateEvent_(input, partial) {
   rejectUnknownFields_(value, allowed);
   const output = {};
   function include(key, fn) { if (!partial || Object.prototype.hasOwnProperty.call(value, key)) output[key] = fn(value[key]); }
-  include('title', function (v) { return stringValue_(v, 'title', { required: true, max: 500 }); });
-  ['description', 'descriptionEn', 'descriptionDe'].forEach(function (key) { include(key, function (v) { return stringValue_(v, key, { max: 30000, preserveWhitespace: true }); }); });
-  ['titleEn', 'titleDe'].forEach(function (key) { include(key, function (v) { return stringValue_(v, key, { max: 500 }); }); });
+  include('title', function (v) { return plainTextValue_(v, 'title', { required: true, max: 500 }); });
+  ['description', 'descriptionEn', 'descriptionDe'].forEach(function (key) { include(key, function (v) { return safeRichHtmlValue_(v, key, { max: 30000, preserveWhitespace: true }); }); });
+  ['titleEn', 'titleDe'].forEach(function (key) { include(key, function (v) { return plainTextValue_(v, key, { max: 500 }); }); });
   include('startDate', function (v) { return dateValue_(v, 'startDate', true); });
   include('endDate', function (v) { return dateValue_(v, 'endDate', false); });
-  include('location', function (v) { return stringValue_(v, 'location', { max: 1000 }); });
+  include('location', function (v) { return plainTextValue_(v, 'location', { max: 1000 }); });
   include('registrationUrl', function (v) { return urlValue_(v, 'registrationUrl'); });
   include('status', statusValue_);
   if (output.startDate && output.endDate && new Date(output.endDate) < new Date(output.startDate)) throw apiError_('INVALID_DATE', 'endDate cannot be before startDate.');
@@ -146,13 +232,13 @@ function validateTeamMember_(input, partial) {
   rejectUnknownFields_(value, allowed);
   const output = {};
   function include(key, fn) { if (!partial || Object.prototype.hasOwnProperty.call(value, key)) output[key] = fn(value[key]); }
-  include('name', function (v) { return stringValue_(v, 'name', { required: true, max: 300 }); });
-  include('roleEn', function (v) { return stringValue_(v, 'roleEn', { required: true, max: 500 }); });
-  ['roleRo', 'roleDe'].forEach(function (key) { include(key, function (v) { return stringValue_(v, key, { max: 500 }); }); });
-  include('bioEn', function (v) { return stringValue_(v, 'bioEn', { required: true, max: 30000, preserveWhitespace: true }); });
-  ['bioRo', 'bioDe'].forEach(function (key) { include(key, function (v) { return stringValue_(v, key, { max: 30000, preserveWhitespace: true }); }); });
+  include('name', function (v) { return plainTextValue_(v, 'name', { required: true, max: 300 }); });
+  include('roleEn', function (v) { return plainTextValue_(v, 'roleEn', { required: true, max: 500 }); });
+  ['roleRo', 'roleDe'].forEach(function (key) { include(key, function (v) { return plainTextValue_(v, key, { max: 500 }); }); });
+  include('bioEn', function (v) { return plainTextValue_(v, 'bioEn', { required: true, max: 30000, preserveWhitespace: true }); });
+  ['bioRo', 'bioDe'].forEach(function (key) { include(key, function (v) { return plainTextValue_(v, key, { max: 30000, preserveWhitespace: true }); }); });
   include('imageUrl', function (v) { return urlValue_(v, 'imageUrl'); });
-  include('driveFileId', function (v) { return stringValue_(v, 'driveFileId', { max: 200 }); });
+  include('driveFileId', function (v) { return plainTextValue_(v, 'driveFileId', { max: 200 }); });
   include('sortOrder', function (v) { return numberValue_(v, 'sortOrder', -100000, 100000); });
   if (partial && !Object.keys(output).length) throw apiError_('VALIDATION_ERROR', 'At least one team member field is required.');
   return output;
@@ -162,20 +248,39 @@ function validateHomepage_(input) {
   const value = assertObject_(input, 'payload');
   rejectUnknownFields_(value, ['content', 'heroImageUrl', 'heroDriveFileId', 'heroImagePosition']);
   const content = assertObject_(value.content, 'content');
-  const serialized = JSON.stringify(content);
+  const sanitizedContent = validateHomepageContentNode_(content, 'content', 0);
+  const serialized = JSON.stringify(sanitizedContent);
   if (serialized.length > 200000) throw apiError_('VALIDATION_ERROR', 'content is too large.');
   const position = assertObject_(value.heroImagePosition, 'heroImagePosition');
   rejectUnknownFields_(position, ['x', 'y']);
   return {
     content: serialized,
     heroImageUrl: urlValue_(value.heroImageUrl, 'heroImageUrl'),
-    heroDriveFileId: stringValue_(value.heroDriveFileId, 'heroDriveFileId', { max: 200 }),
+    heroDriveFileId: plainTextValue_(value.heroDriveFileId, 'heroDriveFileId', { max: 200 }),
     heroImagePositionX: numberValue_(position.x, 'heroImagePosition.x', 0, 100),
     heroImagePositionY: numberValue_(position.y, 'heroImagePosition.y', 0, 100)
   };
 }
 
+function validateHomepageContentNode_(value, name, depth) {
+  if (depth > 8) throw apiError_('VALIDATION_ERROR', 'content is nested too deeply.');
+  if (typeof value === 'string') return plainTextValue_(value, name, { max: 30000, preserveWhitespace: true });
+  if (value === null || typeof value === 'boolean') return value;
+  if (typeof value === 'number') {
+    if (!isFinite(value)) throw apiError_('VALIDATION_ERROR', name + ' contains an invalid number.');
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(function (item, index) { return validateHomepageContentNode_(item, name + '[' + index + ']', depth + 1); });
+  if (Object.prototype.toString.call(value) !== '[object Object]') throw apiError_('VALIDATION_ERROR', name + ' contains an unsupported value.');
+  const output = {};
+  Object.keys(value).forEach(function (key) {
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(key) || key === '__proto__' || key === 'constructor' || key === 'prototype') throw apiError_('VALIDATION_ERROR', 'content contains an invalid field name.');
+    output[key] = validateHomepageContentNode_(value[key], name + '.' + key, depth + 1);
+  });
+  return output;
+}
+
 function safePlainCell_(value) {
   if (typeof value !== 'string') return value;
-  return /^[=+\-@]/.test(value) ? "'" + value : value;
+  return /^[\u0000-\u0020]*[=+\-@]/.test(value) ? "'" + value : value;
 }

@@ -21,8 +21,8 @@ function parsePostRequest_(e) {
   let request;
   try { request = JSON.parse(e.postData.contents); } catch (_) { throw apiError_('INVALID_JSON', 'Request body must be valid JSON.'); }
   assertObject_(request, 'request');
-  rejectUnknownFields_(request, ['action','idToken','id','payload']);
-  return { action:stringValue_(request.action,'action',{required:true,max:100}), idToken:googleIdTokenValue_(request.idToken), id:request.id, payload:request.payload };
+  rejectUnknownFields_(request, ['action','idToken','id','payload','expectedUpdatedAt','idempotencyKey']);
+  return { action:stringValue_(request.action,'action',{required:true,max:100}), idToken:googleIdTokenValue_(request.idToken), id:request.id, payload:request.payload, expectedUpdatedAt:request.expectedUpdatedAt, idempotencyKey:request.idempotencyKey };
 }
 
 function assertAllowedAction_(action, allowlist, publicRoute) {
@@ -47,37 +47,39 @@ function routePublicAction_(parameters) {
 function routeProtectedRequest_(request, dependencies) {
   assertAllowedAction_(request.action, ADMIN_ACTIONS, false);
   const admin = authenticateAdminRequest_(request.idToken, dependencies);
-  return executeAdminAction_(request, admin);
+  return executeAdminAction_(request, admin, dependencies);
 }
 
 function requestId_(request) { return idValue_(request.id, 'id', true); }
-function noArguments_(request) { if (request.id !== undefined || request.payload !== undefined) throw apiError_('UNKNOWN_FIELD','id and payload are not allowed for this action.'); }
-function idOnly_(request) { if (request.payload !== undefined) throw apiError_('UNKNOWN_FIELD','payload is not allowed for this action.'); return requestId_(request); }
-function payloadOnly_(request) { if (request.id !== undefined) throw apiError_('UNKNOWN_FIELD','id is not allowed for this action.'); return request.payload; }
-function idAndPayload_(request) { return { id:requestId_(request), payload:request.payload }; }
+function rejectSafetyMetadata_(request) { if (request.expectedUpdatedAt !== undefined || request.idempotencyKey !== undefined) throw apiError_('UNKNOWN_FIELD','Write-safety metadata is not allowed for this action.'); }
+function noArguments_(request) { if (request.id !== undefined || request.payload !== undefined) throw apiError_('UNKNOWN_FIELD','id and payload are not allowed for this action.'); rejectSafetyMetadata_(request); }
+function createArguments_(request) { if (request.id !== undefined || request.expectedUpdatedAt !== undefined) throw apiError_('UNKNOWN_FIELD','id and expectedUpdatedAt are not allowed for create actions.'); return {payload:request.payload,idempotencyKey:idempotencyKeyValue_(request.idempotencyKey)}; }
+function updateArguments_(request,allowNullExpected) { if (request.idempotencyKey !== undefined) throw apiError_('UNKNOWN_FIELD','idempotencyKey is not allowed for this update action.'); return {id:requestId_(request),payload:request.payload,expectedUpdatedAt:expectedUpdatedAtValue_(request.expectedUpdatedAt,!!allowNullExpected)}; }
+function deleteArguments_(request) { if (request.payload !== undefined) throw apiError_('UNKNOWN_FIELD','payload is not allowed for delete actions.'); return {id:requestId_(request),expectedUpdatedAt:expectedUpdatedAtValue_(request.expectedUpdatedAt,false),idempotencyKey:idempotencyKeyValue_(request.idempotencyKey)}; }
+function homepageArguments_(request) { if (request.id !== undefined || request.idempotencyKey !== undefined) throw apiError_('UNKNOWN_FIELD','id and idempotencyKey are not allowed for homepage update.'); return {payload:request.payload,expectedUpdatedAt:expectedUpdatedAtValue_(request.expectedUpdatedAt,true)}; }
 
-function executeAdminAction_(request, admin) {
+function executeAdminAction_(request, admin, dependencies) {
   const action=request.action;
   if(action==='listAllArticles'){noArguments_(request);return listArticles_(false);}
-  if(action==='createArticle')return createArticle_(validateArticle_(payloadOnly_(request),false));
-  if(action==='updateArticle'){const a=idAndPayload_(request);return updateArticle_(a.id,validateArticle_(a.payload,true));}
-  if(action==='deleteArticle'){const id=idOnly_(request);return withWriteLock_(function(){deleteRecord_('Articles',id);return true;});}
-  if(action==='setArticleStatus'){const a=idAndPayload_(request),p=assertObject_(a.payload,'payload');rejectUnknownFields_(p,['status']);return updateArticle_(a.id,{status:statusValue_(p.status)});}
+  if(action==='createArticle'){const a=createArguments_(request);return createArticle_(validateArticle_(a.payload,false),a.idempotencyKey,admin,dependencies);}
+  if(action==='updateArticle'){const a=updateArguments_(request);return updateArticle_(a.id,validateArticle_(a.payload,true),a.expectedUpdatedAt,admin,dependencies);}
+  if(action==='deleteArticle'){const a=deleteArguments_(request);return deleteArticle_(a.id,a.expectedUpdatedAt,a.idempotencyKey,admin,dependencies);}
+  if(action==='setArticleStatus'){const a=updateArguments_(request),p=assertObject_(a.payload,'payload');rejectUnknownFields_(p,['status']);return updateArticle_(a.id,{status:statusValue_(p.status)},a.expectedUpdatedAt,admin,dependencies,'setArticleStatus');}
   if(action==='listArticleCategories'){noArguments_(request);return listCategories_();}
-  if(action==='createArticleCategory')return createCategory_(validateCategory_(payloadOnly_(request),false));
-  if(action==='updateArticleCategory'){const a=idAndPayload_(request);return updateCategory_(a.id,validateCategory_(a.payload,true));}
-  if(action==='deleteArticleCategory')return deleteCategory_(idOnly_(request));
+  if(action==='createArticleCategory'){const a=createArguments_(request);return createCategory_(validateCategory_(a.payload,false),a.idempotencyKey,admin,dependencies);}
+  if(action==='updateArticleCategory'){const a=updateArguments_(request);return updateCategory_(a.id,validateCategory_(a.payload,true),a.expectedUpdatedAt,admin,dependencies);}
+  if(action==='deleteArticleCategory'){const a=deleteArguments_(request);return deleteCategory_(a.id,a.expectedUpdatedAt,a.idempotencyKey,admin,dependencies);}
   if(action==='listAllEvents'){noArguments_(request);return listEvents_(false);}
-  if(action==='createEvent')return createEvent_(validateEvent_(payloadOnly_(request),false));
-  if(action==='updateEvent'){const a=idAndPayload_(request);return updateEvent_(a.id,validateEvent_(a.payload,true));}
-  if(action==='deleteEvent'){const id=idOnly_(request);return withWriteLock_(function(){deleteRecord_('Events',id);return true;});}
-  if(action==='setEventStatus'){const a=idAndPayload_(request),p=assertObject_(a.payload,'payload');rejectUnknownFields_(p,['status']);return updateEvent_(a.id,{status:statusValue_(p.status)});}
+  if(action==='createEvent'){const a=createArguments_(request);return createEvent_(validateEvent_(a.payload,false),a.idempotencyKey,admin,dependencies);}
+  if(action==='updateEvent'){const a=updateArguments_(request);return updateEvent_(a.id,validateEvent_(a.payload,true),a.expectedUpdatedAt,admin,dependencies);}
+  if(action==='deleteEvent'){const a=deleteArguments_(request);return deleteEvent_(a.id,a.expectedUpdatedAt,a.idempotencyKey,admin,dependencies);}
+  if(action==='setEventStatus'){const a=updateArguments_(request),p=assertObject_(a.payload,'payload');rejectUnknownFields_(p,['status']);return updateEvent_(a.id,{status:statusValue_(p.status)},a.expectedUpdatedAt,admin,dependencies,'setEventStatus');}
   if(action==='listTeamMembers'){noArguments_(request);return listTeam_();}
-  if(action==='createTeamMember')return createTeam_(validateTeamMember_(payloadOnly_(request),false));
-  if(action==='updateTeamMember'){const a=idAndPayload_(request);return updateTeam_(a.id,validateTeamMember_(a.payload,true));}
-  if(action==='deleteTeamMember'){const id=idOnly_(request);return withWriteLock_(function(){deleteRecord_('TeamMembers',id);return true;});}
-  if(action==='updateTeamMemberSortOrder'){const a=idAndPayload_(request),p=assertObject_(a.payload,'payload');rejectUnknownFields_(p,['sortOrder']);return updateTeam_(a.id,{sortOrder:numberValue_(p.sortOrder,'sortOrder',-100000,100000)});}
+  if(action==='createTeamMember'){const a=createArguments_(request);return createTeam_(validateTeamMember_(a.payload,false),a.idempotencyKey,admin,dependencies);}
+  if(action==='updateTeamMember'){const a=updateArguments_(request);return updateTeam_(a.id,validateTeamMember_(a.payload,true),a.expectedUpdatedAt,admin,dependencies);}
+  if(action==='deleteTeamMember'){const a=deleteArguments_(request);return deleteTeam_(a.id,a.expectedUpdatedAt,a.idempotencyKey,admin,dependencies);}
+  if(action==='updateTeamMemberSortOrder'){const a=updateArguments_(request),p=assertObject_(a.payload,'payload');rejectUnknownFields_(p,['sortOrder']);return updateTeam_(a.id,{sortOrder:numberValue_(p.sortOrder,'sortOrder',-100000,100000)},a.expectedUpdatedAt,admin,dependencies,'updateTeamMemberSortOrder');}
   if(action==='getHomepageContent'){noArguments_(request);return homepageContent_();}
-  if(action==='updateHomepageContent')return updateHomepage_(validateHomepage_(payloadOnly_(request)),admin);
+  if(action==='updateHomepageContent'){const a=homepageArguments_(request);return updateHomepage_(validateHomepage_(a.payload),a.expectedUpdatedAt,admin,dependencies);}
   throw apiError_('UNKNOWN_ADMIN_ACTION','Unknown API action.');
 }

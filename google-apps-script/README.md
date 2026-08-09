@@ -11,7 +11,7 @@ This directory contains the spreadsheet/Drive bootstrap and the Apps Script back
 5. Open `appsscript.json` in the editor. Replace its contents with the complete contents of this repository's `google-apps-script/appsscript.json`, then save.
 6. Select `setupZinaCms` in the function selector and click **Run**.
 
-For Phase 2, also create Apps Script files named `Api.gs`, `Auth.gs`, `Repository.gs`, `Validation.gs`, and `Tests.gs`. Copy the complete contents of each matching `.gs` file from this directory into the Apps Script editor. Apps Script combines all `.gs` files in the project; their displayed order is not significant.
+Also create Apps Script files named `Api.gs`, `Auth.gs`, `Repository.gs`, `Validation.gs`, `WriteSafety.gs`, and `Tests.gs`. Copy the complete contents of each matching `.gs` file from this directory into the Apps Script editor. Apps Script combines all `.gs` files in the project; their displayed order is not significant.
 
 ## Authorization prompts
 
@@ -38,6 +38,8 @@ After a successful run, verify that the spreadsheet contains these worksheets:
 - `HomepageContent`
 - `Media`
 - `Settings`
+- `AuditLog`
+- `Idempotency`
 
 Each worksheet should have a formatted, frozen header row. Status columns should offer `draft` and `published`; the Admins `active` column should contain checkboxes.
 
@@ -72,11 +74,24 @@ Do not put the client ID in a worksheet or commit it to this repository. The bac
 
 Before using A1 against an existing spreadsheet, add the `google_sub` header to `Admins` and populate each approved row manually from a controlled identity-verification procedure. Do not activate an administrator until both identity fields have been independently checked. Running `setupZinaCms()` appends the missing header without deleting rows, but production schema changes remain a deliberate later step.
 
+## A2 schema migration (not yet approved for production)
+
+A2 adds `updated_at` to `ArticleCategories` and adds two private worksheets:
+
+- `AuditLog`: `timestamp`, `action`, `google_sub`, `record_type`, `record_id`, `outcome`, `error_code`
+- `Idempotency`: `id`, `request_hash`, `action`, `record_type`, `target_id`, `result_id`, `state`, `created_at`, `updated_at`
+
+Do not create these production structures until A2 is reviewed. At the approved migration checkpoint, first make a restricted backup or named Sheet version, keep all administrators inactive, copy `WriteSafety.gs` and the other reviewed A2 files into Apps Script, run `setupZinaCms()`, and verify the exact headers before creating a deployment version. Setup appends `ArticleCategories.updated_at` at the far right and creates the two missing worksheets; it does not reorder or delete existing rows. Existing category rows may initially have blank `updated_at`; the API exposes and compares `created_at` as their initial concurrency version, and the first successful category update writes `updated_at`.
+
+`AuditLog` and `Idempotency` must remain private with the CMS spreadsheet. Neither sheet stores email addresses, tokens, OAuth client IDs, request bodies, content payloads, deployment URLs, or credentials. Idempotency keys and normalized request state are stored only as SHA-256 fingerprints plus minimal action/target/result state.
+
 ## Run the A1 self-tests
 
 Select `runA1SelfTests` in the Apps Script function selector and click **Run**. (`runPhase2SelfTests` remains as a compatibility alias.) The tests exercise routing, validation, token shape, audience, issuer, expiry, issuance age, verified and Google-authoritative email, subject matching, duplicate/inactive administrators, verification caches, immediate administrator revocation, verification budget enforcement, and response redaction using fake claims and placeholder values. They do not change spreadsheet rows or Drive files, do not contact Google, and do not require a real token, client ID, or administrator email.
 
 The function returns a success envelope when all tests pass and throws a summarized error if any test fails.
+
+For A2, `runA2SelfTests()` and the compatibility `runPhase2SelfTests()` execute the expanded local-only suite. The suite uses synthetic identities, timestamps, locks, fingerprints, and payloads; it performs no Sheet mutation and no external request.
 
 ## API request format
 
@@ -92,6 +107,50 @@ Protected writes use `doPost`. The future static website can send JSON as `text/
   "payload": { "status": "published" }
 }
 ```
+
+A2 changes the protected mutation contract. Safety metadata is top-level, not inside `payload`:
+
+- Create actions require `idempotencyKey` and reject `expectedUpdatedAt`.
+- Update, status, sort-order, and homepage actions require `expectedUpdatedAt` and reject `idempotencyKey`.
+- Delete actions require both `expectedUpdatedAt` and `idempotencyKey`.
+- For an existing homepage row, `expectedUpdatedAt` is its returned `updatedAt`. A first-ever homepage creation uses an explicitly present `expectedUpdatedAt: null`.
+- `expectedUpdatedAt` must exactly match the returned UTC ISO timestamp. Clients must reload after `CONFLICT` or `WRITE_STATE_UNCERTAIN`.
+
+Example update metadata:
+
+```json
+{
+  "action": "setEventStatus",
+  "idToken": "fresh Google ID token",
+  "id": "record UUID",
+  "expectedUpdatedAt": "2026-08-09T12:00:00.000Z",
+  "payload": { "status": "published" }
+}
+```
+
+Example delete metadata:
+
+```json
+{
+  "action": "deleteEvent",
+  "idToken": "fresh Google ID token",
+  "id": "record UUID",
+  "expectedUpdatedAt": "2026-08-09T12:00:00.000Z",
+  "idempotencyKey": "fresh-random-url-safe-value"
+}
+```
+
+The examples contain placeholders only. Never copy a real token, administrator identifier, URL, or record into documentation or source control.
+
+All mutations authenticate and authorize before attempting the script write lock. Under the lock, the backend rereads and compares the target version before changing it. A stale version returns `CONFLICT`. Lock contention returns `WRITE_LOCK_TIMEOUT`. Reusing an idempotency key for different normalized input returns `IDEMPOTENCY_CONFLICT`. If the data mutation succeeds but the audit append fails, the backend returns `WRITE_STATE_UNCERTAIN`; reload before deciding whether to retry.
+
+Hard deletion remains available because changing to archive semantics would alter the public CMS behavior. It is restricted by exact target ID, current version, a fresh idempotency key, active administrator authorization, a write lock, and an audit entry.
+
+## A2 content-safety policy
+
+Article content and event descriptions may contain only the allowlisted formatting elements `p`, `br`, `strong`, `b`, `em`, `i`, `u`, `s`, `ol`, `ul`, `li`, `blockquote`, `h1`, `h2`, `h3`, `a`, and `span`. Only restricted Quill formatting classes are accepted. Links must use HTTPS; link targets and relationships are tightly constrained. Scripts, embedded content, images, styles, event handlers, comments, doctypes, malformed nesting, unknown attributes, and dangerous URLs are rejected.
+
+Titles, category labels, event locations, team fields, Drive identifiers, and homepage JSON strings are plain text and reject markup/control characters. Homepage JSON is depth- and key-constrained. Formula-injection neutralization covers leading whitespace and control characters before `=`, `+`, `-`, or `@`, and every written cell is set to text format before its value is assigned. Frontend output encoding remains necessary defense in depth when frontend integration begins.
 
 Every protected request must contain a fresh Google ID token. An `origin` value supplied by a browser is not accepted and would not be a security boundary. Verified Google identity plus the active `Admins` allowlist is the authorization boundary.
 

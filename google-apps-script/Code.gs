@@ -22,10 +22,10 @@ const ZINA_CMS = Object.freeze({
       filter: true
     },
     ArticleCategories: {
-      headers: ['id', 'slug', 'name_ro', 'name_en', 'name_de', 'created_at'],
-      widths: [190, 160, 200, 200, 200, 165],
+      headers: ['id', 'slug', 'name_ro', 'name_en', 'name_de', 'created_at', 'updated_at'],
+      widths: [190, 160, 200, 200, 200, 165, 165],
       wrap: ['name_ro', 'name_en', 'name_de'],
-      timestamps: ['created_at'],
+      timestamps: ['created_at', 'updated_at'],
       filter: true
     },
     Events: {
@@ -71,6 +71,18 @@ const ZINA_CMS = Object.freeze({
       widths: [230, 260, 440, 165],
       wrap: ['value', 'description'],
       timestamps: ['updated_at'],
+      filter: true
+    },
+    AuditLog: {
+      headers: ['timestamp', 'action', 'google_sub', 'record_type', 'record_id', 'outcome', 'error_code'],
+      widths: [165, 220, 240, 150, 190, 120, 200],
+      timestamps: ['timestamp'],
+      filter: true
+    },
+    Idempotency: {
+      headers: ['id', 'request_hash', 'action', 'record_type', 'target_id', 'result_id', 'state', 'created_at', 'updated_at'],
+      widths: [320, 320, 220, 150, 190, 190, 120, 165, 165],
+      timestamps: ['created_at', 'updated_at'],
       filter: true
     }
   })

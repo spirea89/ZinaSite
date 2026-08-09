@@ -77,6 +77,51 @@ function runA1SelfTests() {
   test('tokeninfo outage is sanitized', function () { const fixture = authFixture({ response: { statusCode: 503, body: 'private upstream detail' } }); let failure; try { verifyGoogleIdToken_('aaa.bbb.ccc', fixture.dependencies); } catch (error) { failure = failureEnvelope_(error); } const json = JSON.stringify(failure); expect(failure.error.code === 'AUTHENTICATION_UNAVAILABLE' && json.indexOf('private upstream detail') === -1 && json.indexOf('aaa.bbb.ccc') === -1, 'Authentication outage leaked sensitive details.'); });
   test('tokeninfo rate limit is sanitized', function () { const fixture = authFixture({ response: { statusCode: 429, body: 'private upstream detail' } }); let failure; try { verifyGoogleIdToken_('aaa.bbb.ccc', fixture.dependencies); } catch (error) { failure = failureEnvelope_(error); } const json = JSON.stringify(failure); expect(failure.error.code === 'AUTHENTICATION_RATE_LIMITED' && json.indexOf('private upstream detail') === -1 && json.indexOf('aaa.bbb.ccc') === -1, 'Rate-limit error leaked sensitive details.'); });
 
+  const version = '2026-08-09T12:00:00.000Z';
+  test('successful update accepts correct expectedUpdatedAt', function () { assertExpectedUpdatedAt_({ updated_at: version }, version); });
+  test('stale update is rejected', function () { expectCode('CONFLICT', function () { assertExpectedUpdatedAt_({ updated_at: version }, '2026-08-09T11:59:59.000Z'); }); });
+  test('stale status change is rejected', function () { expectCode('CONFLICT', function () { assertExpectedUpdatedAt_({ updated_at: version }, '2026-08-09T11:59:58.000Z'); }); });
+  test('stale delete is rejected', function () { expectCode('CONFLICT', function () { assertExpectedUpdatedAt_({ updated_at: version }, '2026-08-09T11:59:57.000Z'); }); });
+  test('missing concurrency metadata is rejected', function () { expectCode('INVALID_CONCURRENCY_VALUE', function () { expectedUpdatedAtValue_(undefined, false); }); });
+  test('malformed concurrency metadata is rejected', function () { expectCode('INVALID_CONCURRENCY_VALUE', function () { expectedUpdatedAtValue_('2026-08-09', false); }); });
+  test('missing create idempotency key is rejected', function () { expectCode('INVALID_IDEMPOTENCY_KEY', function () { idempotencyKeyValue_(); }); });
+
+  test('duplicate create retry resolves to one result ID', function () {
+    const spec = { action: 'createEvent', recordType: 'Event', recordId: '' };
+    const first = resolveIdempotencyRecord_([], spec, 'key-hash', 'request-hash', 'record-id');
+    const stored = [{ request_hash: 'request-hash', action: 'createEvent', record_type: 'Event', target_id: '', result_id: first.resultId, state: 'completed' }];
+    const retry = resolveIdempotencyRecord_(stored, spec, 'key-hash', 'request-hash', 'different-proposed-id');
+    expect(first.replay === false && retry.replay === true && retry.resultId === 'record-id', 'Duplicate retry did not reuse the original result ID.');
+  });
+  test('idempotency key reused for another action is rejected', function () {
+    const stored = [{ request_hash: 'request-hash', action: 'createEvent', record_type: 'Event', target_id: '', result_id: 'record-id', state: 'completed' }];
+    expectCode('IDEMPOTENCY_CONFLICT', function () { resolveIdempotencyRecord_(stored, { action: 'deleteEvent', recordType: 'Event', recordId: 'record-id' }, 'key-hash', 'different-hash', ''); });
+  });
+  test('lock contention returns stable error', function () {
+    expectCode('WRITE_LOCK_TIMEOUT', function () { runWriteMutation_({ action: 'updateEvent', adminSub: 'subject-1', recordType: 'Event', recordId: 'record-id' }, function () { throw new Error('must not execute'); }, { writeLock: { tryLock: function () { return false; }, releaseLock: function () { throw new Error('must not release'); } }, appendAudit: function () {} }); });
+  });
+  test('audit record contains only safe fields', function () {
+    const record = auditRecord_({ action: 'updateEvent', adminSub: 'subject-1', recordType: 'Event', recordId: 'record-id', email: 'private' + '@example.org', token: 'secret' }, 'failed', 'CONFLICT', version);
+    const keys = Object.keys(record).sort().join(',');
+    expect(keys === 'action,error_code,google_sub,outcome,record_id,record_type,timestamp', 'Audit record shape is unsafe.');
+    const json = JSON.stringify(record);
+    expect(json.indexOf('private' + '@example.org') === -1 && json.indexOf('secret') === -1, 'Audit record leaked sensitive data.');
+  });
+  test('partial audit failure returns uncertain state', function () {
+    const lock = { tryLock: function () { return true; }, releaseLock: function () {} };
+    expectCode('WRITE_STATE_UNCERTAIN', function () { runWriteMutation_({ action: 'updateEvent', adminSub: 'subject-1', recordType: 'Event', recordId: 'record-id' }, function () { return { id: 'record-id' }; }, { writeLock: lock, nowIso: function () { return version; }, appendAudit: function () { throw new Error('private audit failure'); } }); });
+  });
+
+  test('legitimate rich text is preserved', function () { const html = '<p>Hello <strong>world</strong><br></p>'; expect(safeRichHtmlValue_(html, 'content', { required: true, max: 1000 }) === html, 'Legitimate formatting was not preserved.'); });
+  test('script HTML is rejected', function () { expectCode('UNSAFE_HTML', function () { safeRichHtmlValue_('<script>alert(1)</script>', 'content', { max: 1000 }); }); });
+  test('event-handler HTML is rejected', function () { expectCode('UNSAFE_HTML', function () { safeRichHtmlValue_('<p onclick="alert(1)">Text</p>', 'content', { max: 1000 }); }); });
+  test('dangerous rich-text URL is rejected', function () { expectCode('INVALID_URL', function () { safeRichHtmlValue_('<a href="javascript:alert(1)">Text</a>', 'content', { max: 1000 }); }); });
+  test('homepage embedded HTML is rejected', function () { expectCode('UNSAFE_CONTENT', function () { validateHomepageContentNode_({ heading: '<img src=x onerror=alert(1)>' }, 'content', 0); }); });
+  test('formula injection with leading whitespace is neutralized', function () { expect(safePlainCell_('\t=IMPORTDATA("https://example.org")').charAt(0) === "'", 'Leading-whitespace formula was not neutralized.'); });
+  test('ordinary Sheet text is unchanged', function () { expect(safePlainCell_('Normal text') === 'Normal text', 'Ordinary text was altered.'); });
+  test('write metadata unknown fields are rejected', function () { expectCode('UNKNOWN_FIELD', function () { createArguments_({ id: 'unexpected', payload: {}, idempotencyKey: 'abcdefghijklmnop' }); }); });
+  test('write safety errors are sanitized', function () { const envelope = failureEnvelope_(apiError_('CONFLICT', 'Record was modified by another administrator.')); const json = JSON.stringify(envelope); expect(envelope.error.code === 'CONFLICT' && json.indexOf('stack') === -1 && json.indexOf('token') === -1, 'Write-safety error was not sanitized.'); });
+
   test('unknown payload fields are rejected', function () { expectCode('UNKNOWN_FIELD', function () { validateArticle_({ title: 'T', content: 'C', status: 'draft', unexpected: true }, false); }); });
   test('invalid status is rejected', function () { expectCode('INVALID_STATUS', function () { statusValue_('private'); }); });
   test('invalid ID is rejected', function () { expectCode('INVALID_ID', function () { idValue_('bad', 'id', true); }); });
@@ -92,5 +137,9 @@ function runA1SelfTests() {
 }
 
 function runPhase2SelfTests() {
+  return runA1SelfTests();
+}
+
+function runA2SelfTests() {
   return runA1SelfTests();
 }
