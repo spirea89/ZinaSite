@@ -1,6 +1,6 @@
 # ZiNa CMS Google Apps Script bootstrap
 
-This directory contains the spreadsheet/Drive bootstrap and the Apps Script backend API for a Google spreadsheet named **ZiNa CMS**. Authentication hardening A1 adds stricter Google ID-token and administrator checks, but does not deploy the API, connect the website, upload images, migrate data, or change the existing Supabase site.
+This directory contains the spreadsheet bootstrap and Apps Script backend API for a Google spreadsheet named **ZiNa CMS**. Media publishing uses a separate public GitHub repository; the main ZiNaSite repository and spreadsheet contain no published media binaries.
 
 ## Install the bootstrap script
 
@@ -15,14 +15,7 @@ Also create Apps Script files named `Api.gs`, `Auth.gs`, `Repository.gs`, `Valid
 
 ## Authorization prompts
 
-The first run asks you to authorize the script to:
-
-- edit only the spreadsheet to which the script is bound; and
-- inspect the spreadsheet's Google Drive parent folder and create/reuse the ZiNa media folders there.
-
-Google may display an "unverified app" warning because this is your private script rather than a publicly verified application. Confirm that you are authorizing the Apps Script project you just created. Do not continue if the project name or requested access is unexpected.
-
-The Drive permission is broad because Apps Script's built-in `DriveApp` service does not offer a folder-limited OAuth scope. The code uses it only for the bound spreadsheet's parent folder and the ZiNa folders beneath it.
+The first run asks permission to edit only the bound spreadsheet. Google may display an "unverified app" warning because this is your private script rather than a publicly verified application. Confirm that you are authorizing the expected project and do not continue if the requested access is unexpected.
 
 Phase 2 also requests permission to contact an external HTTPS service. It is used only to send Google ID tokens to Google's `tokeninfo` endpoint for verification.
 
@@ -43,22 +36,11 @@ After a successful run, verify that the spreadsheet contains these worksheets:
 
 Each worksheet should have a formatted, frozen header row. Status columns should offer `draft` and `published`; the Admins `active` column should contain checkboxes.
 
-In the same Google Drive parent folder as the spreadsheet, verify this folder structure:
-
-```text
-ZiNa CMS Media/
-├── Homepage/
-├── Team/
-└── Articles/
-```
-
-The `Settings` worksheet records the Drive IDs for these four folders. The script does not make a folder public or publicly editable.
-
 ## Running setup again
 
-It is safe to run `setupZinaCms()` repeatedly. It reuses correctly named worksheets and uniquely named Drive folders, validates existing headers, and appends newly required columns only at the end. It never deletes worksheets or content rows and never silently reorders columns.
+It is safe to run `setupZinaCms()` repeatedly. It reuses correctly named worksheets, validates existing headers, and appends newly required columns only at the end. It never deletes worksheets or content rows and never silently reorders columns.
 
-If it finds duplicate folders, duplicate/conflicting headers, an existing folder setting that points somewhere else, or no unambiguous writable parent for the spreadsheet, it stops with a clear error. Correct the ambiguity manually before trying again.
+If it finds duplicate or conflicting headers, it stops without overwriting data. Correct the ambiguity manually before trying again.
 
 ## Configure Google authentication for later API testing
 
@@ -171,5 +153,21 @@ Never paste passwords, password hashes, OAuth access or refresh tokens, ID token
 ## Deferred phases
 
 Web-app deployment changes, website Google Sign-In integration, production administrator configuration, write-specific hardening, authenticated media uploads, data migration, website integration, and removal of Supabase are intentionally deferred. The current Supabase implementation remains untouched and operational.
+
+## A5B isolated GitHub Pages media prototype
+
+A5B retains the four protected media actions `listMedia`, `uploadMedia`, `replaceMedia`, and `deleteMedia`, replacing only the A5 Drive adapter with the GitHub Contents API. Production media remains on Supabase until a separate cutover approval.
+
+The target `Media` schema is: `id`, `entity_type`, `entity_id`, `usage`, `repository_path`, `github_blob_sha`, `filename`, `stored_filename`, `mime_type`, `file_size`, `public_url`, `alt_text_ro`, `alt_text_en`, `alt_text_de`, `status`, `created_at`, `updated_at`. Existing A5 test sheets may retain deprecated Drive columns; setup appends the GitHub columns without deleting or reordering data. Production migration must be reviewed separately.
+
+Only JPEG, PNG, and WebP files up to 5 MB are accepted. Strict Base64, size, filename extension, MIME, and magic/trailer bytes are checked. Repository owner, name, branch, Pages base URL, and credential come only from Script Properties. Clients cannot supply repository names, branches, paths, SHAs, or GitHub URLs. Every replacement/deletion validates the stored path against its server-owned `media/<usage>/<uuid>.<ext>` prefix.
+
+Uploads are idempotent. Replacement publishes an immutable new UUID path, updates metadata, and only then deletes the previous path. Deletion soft-deletes the Media row and then removes the exact recorded GitHub path. Cleanup failure returns `cleanupRequired` without losing a replacement.
+
+Apps Script cannot reliably decode and re-encode images to strip EXIF or prove complete image validity using built-in zero-billing services. Magic-byte validation is therefore not equivalent to a secure image decoder. A browser may re-encode via Canvas as defense in depth, but server-side validation cannot trust that step. Production should use only intentionally public, privacy-reviewed images and strip metadata before upload.
+
+Configure these Script Properties only in the test/production Apps Script environment, never Git or Sheets: `GITHUB_MEDIA_OWNER`, `GITHUB_MEDIA_REPOSITORY`, `GITHUB_MEDIA_BRANCH`, `GITHUB_MEDIA_PUBLIC_BASE_URL`, and `GITHUB_MEDIA_TOKEN`. Use a fine-grained token restricted to the public media repository with repository Contents read/write only. Rotation is: create a new restricted token, replace the Script Property, test one controlled publish, then revoke the old token. No GitHub credential reaches the browser or API response.
+
+GitHub Pages—not `raw.githubusercontent.com`—is the public contract. A future custom domain should use `media.zusammeninaustria.com`; DNS and Pages domain verification are separate deployment steps. Apps Script cannot reliably strip EXIF, so administrators must publish privacy-reviewed images and should re-encode locally before upload.
 
 When deployment is eventually approved, deployment settings and access level must be reviewed deliberately in Apps Script. Do not deploy the project during Phase 2.

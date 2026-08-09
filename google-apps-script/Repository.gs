@@ -5,6 +5,7 @@ const SHEET_FIELDS = Object.freeze({
   Admins: ['email', 'google_sub', 'display_name', 'active', 'created_at', 'updated_at'],
   TeamMembers: ['id', 'name', 'role_en', 'role_ro', 'role_de', 'bio_en', 'bio_ro', 'bio_de', 'image_url', 'drive_file_id', 'sort_order', 'created_at', 'updated_at'],
   HomepageContent: ['id', 'content', 'hero_image_url', 'hero_drive_file_id', 'hero_image_position_x', 'hero_image_position_y', 'updated_at', 'updated_by'],
+  Media: ['id', 'entity_type', 'entity_id', 'usage', 'repository_path', 'github_blob_sha', 'filename', 'stored_filename', 'mime_type', 'file_size', 'public_url', 'alt_text_ro', 'alt_text_en', 'alt_text_de', 'status', 'created_at', 'updated_at'],
   AuditLog: ['timestamp', 'action', 'google_sub', 'record_type', 'record_id', 'outcome', 'error_code'],
   Idempotency: ['id', 'request_hash', 'action', 'record_type', 'target_id', 'result_id', 'state', 'created_at', 'updated_at']
 });

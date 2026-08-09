@@ -28,7 +28,9 @@ The Google provider caches the `updatedAt` value returned by protected reads and
 
 ## Media limitation
 
-Google media upload is intentionally unavailable in A4. Existing Supabase Storage uploads remain unchanged in the Supabase provider. When Google is selected, choosing a new team or homepage image produces `MEDIA_NOT_AVAILABLE`; existing image URLs remain editable through the CMS records.
+The A5B isolated provider can upload, list, replace, and soft-delete JPEG, PNG, and WebP files through protected Apps Script actions into a separate public GitHub media repository. `admin-media-prototype.html` exposes these controls only when the Google test provider is explicitly selected. Existing Supabase Storage uploads remain unchanged in the default provider.
+
+Real Apps Script URLs and OAuth configuration remain runtime-only. GitHub repository configuration and the write credential are backend-only Script Properties. Published URLs use GitHub Pages and never depend on ZiNaSite repository visibility. Production remains on Supabase until explicit media cutover approval.
 
 ## Content security
 

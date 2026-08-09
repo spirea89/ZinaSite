@@ -5,13 +5,6 @@
 
 const ZINA_CMS = Object.freeze({
   timezone: 'Europe/Vienna',
-  mediaRootName: 'ZiNa CMS Media',
-  mediaFolders: Object.freeze({
-    media_root_folder_id: null,
-    homepage_media_folder_id: 'Homepage',
-    team_media_folder_id: 'Team',
-    articles_media_folder_id: 'Articles'
-  }),
   sheets: Object.freeze({
     Articles: {
       headers: ['id', 'title', 'content', 'title_en', 'content_en', 'title_de', 'content_de', 'category_id', 'status', 'created_at', 'updated_at'],
@@ -60,9 +53,9 @@ const ZINA_CMS = Object.freeze({
       filter: false
     },
     Media: {
-      headers: ['id', 'entity_type', 'entity_id', 'usage', 'drive_file_id', 'filename', 'mime_type', 'file_size', 'public_display_url', 'alt_text_ro', 'alt_text_en', 'alt_text_de', 'created_at', 'updated_at'],
-      widths: [190, 140, 190, 160, 190, 240, 150, 110, 300, 240, 240, 240, 165, 165],
-      wrap: ['filename', 'public_display_url', 'alt_text_ro', 'alt_text_en', 'alt_text_de'],
+      headers: ['id', 'entity_type', 'entity_id', 'usage', 'repository_path', 'github_blob_sha', 'filename', 'stored_filename', 'mime_type', 'file_size', 'public_url', 'alt_text_ro', 'alt_text_en', 'alt_text_de', 'status', 'created_at', 'updated_at'],
+      widths: [190, 140, 190, 160, 300, 320, 240, 240, 150, 110, 300, 240, 240, 240, 110, 165, 165],
+      wrap: ['repository_path', 'filename', 'stored_filename', 'public_url', 'alt_text_ro', 'alt_text_en', 'alt_text_de'],
       timestamps: ['created_at', 'updated_at'],
       filter: true
     },
@@ -100,16 +93,9 @@ function setupZinaCms() {
     configuredSheets[sheetName] = ensureWorksheet_(spreadsheet, sheetName, ZINA_CMS.sheets[sheetName]);
   });
 
-  const folderIds = ensureMediaFolders_(spreadsheet);
-  const settingsSheet = configuredSheets.Settings;
-  ensureSetting_(settingsSheet, 'media_root_folder_id', folderIds.media_root_folder_id, 'Google Drive folder containing all ZiNa CMS media.');
-  ensureSetting_(settingsSheet, 'homepage_media_folder_id', folderIds.homepage_media_folder_id, 'Google Drive folder for homepage images.');
-  ensureSetting_(settingsSheet, 'team_media_folder_id', folderIds.team_media_folder_id, 'Google Drive folder for team member images.');
-  ensureSetting_(settingsSheet, 'articles_media_folder_id', folderIds.articles_media_folder_id, 'Google Drive folder for article images.');
-
   SpreadsheetApp.flush();
-  Logger.log('ZiNa CMS setup complete. Worksheets and media folders are ready.');
-  return { spreadsheetId: spreadsheet.getId(), folderIds: folderIds };
+  Logger.log('ZiNa CMS setup complete. Worksheets are ready.');
+  return { spreadsheetId: spreadsheet.getId() };
 }
 
 function ensureWorksheet_(spreadsheet, sheetName, config) {
@@ -205,66 +191,4 @@ function applyColumnFormatting_(sheet, config, headerMap) {
       range.setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().setAllowInvalid(false).build());
     }
   });
-}
-
-function ensureMediaFolders_(spreadsheet) {
-  let spreadsheetFile;
-  try {
-    spreadsheetFile = DriveApp.getFileById(spreadsheet.getId());
-  } catch (error) {
-    throw new Error('Cannot access the bound spreadsheet in Google Drive. Grant the requested Drive permission and ensure you can edit its parent folder. Details: ' + error.message);
-  }
-
-  const parents = spreadsheetFile.getParents();
-  if (!parents.hasNext()) {
-    throw new Error('Cannot determine the bound spreadsheet\'s parent Drive folder. No media folders were created elsewhere.');
-  }
-  const parent = parents.next();
-  if (parents.hasNext()) {
-    throw new Error('The bound spreadsheet has more than one parent Drive location. Move it to one unambiguous writable folder and run setup again.');
-  }
-
-  const root = findOrCreateUniqueFolder_(parent, ZINA_CMS.mediaRootName);
-  const result = { media_root_folder_id: root.getId() };
-  Object.keys(ZINA_CMS.mediaFolders).forEach(function (settingKey) {
-    const folderName = ZINA_CMS.mediaFolders[settingKey];
-    if (folderName) result[settingKey] = findOrCreateUniqueFolder_(root, folderName).getId();
-  });
-  return result;
-}
-
-function findOrCreateUniqueFolder_(parent, folderName) {
-  let folders;
-  try {
-    folders = parent.getFoldersByName(folderName);
-  } catch (error) {
-    throw new Error('Cannot read folders in Drive location "' + parent.getName() + '". Setup stopped: ' + error.message);
-  }
-  if (folders.hasNext()) {
-    const folder = folders.next();
-    if (folders.hasNext()) {
-      throw new Error('Multiple folders named "' + folderName + '" exist in the expected Drive location. Remove the ambiguity manually; setup will not create another.');
-    }
-    return folder;
-  }
-  try {
-    return parent.createFolder(folderName);
-  } catch (error) {
-    throw new Error('Cannot create Drive folder "' + folderName + '" in "' + parent.getName() + '". Verify edit access. Details: ' + error.message);
-  }
-}
-
-function ensureSetting_(sheet, key, value, description) {
-  const values = sheet.getLastRow() > 1
-    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getDisplayValues()
-    : [];
-  const matches = values.filter(function (row) { return row[0].trim() === key; });
-  if (matches.length > 1) throw new Error('Settings contains duplicate key "' + key + '". Resolve it manually.');
-  if (matches.length === 1) {
-    if (matches[0][1].trim() !== String(value)) {
-      throw new Error('Settings key "' + key + '" already points to a different folder. Setup will not overwrite it.');
-    }
-    return;
-  }
-  sheet.appendRow([key, value, description, new Date()]);
 }

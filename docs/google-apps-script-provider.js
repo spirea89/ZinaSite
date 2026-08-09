@@ -3,7 +3,7 @@
 
   const API_VERSION = 'v1';
   const records = {
-    articles: new Map(), categories: new Map(), events: new Map(), team: new Map()
+    articles: new Map(), categories: new Map(), events: new Map(), team: new Map(), media: new Map()
   };
   let homepage = null;
   const uncertainOperations = new Map();
@@ -85,6 +85,7 @@
     if (/Event/.test(action)) return api.getAllEvents();
     if (/TeamMember/.test(action)) return api.getTeamMembers(true);
     if (/Homepage/.test(action)) return api.getHomepageContent(true);
+    if (/Media/.test(action)) return api.listMedia();
     return null;
   }
 
@@ -138,6 +139,26 @@
     return uncertainOperations.get(key) || { key, idempotencyKey: newIdempotencyKey() };
   }
 
+  function readFileAsBase64(file) {
+    if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return Promise.reject(new ZinaApiError('UNSUPPORTED_MEDIA_TYPE', 'Choose a JPEG, PNG, or WebP image.'));
+    if (file.size > 5 * 1024 * 1024) return Promise.reject(new ZinaApiError('MEDIA_TOO_LARGE', 'Image must not exceed 5 MB.'));
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new ZinaApiError('MALFORMED_MEDIA', 'The selected image could not be read.'));
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const separator = result.indexOf(',');
+        if (separator < 0) reject(new ZinaApiError('MALFORMED_MEDIA', 'The selected image could not be read.'));
+        else resolve(result.slice(separator + 1));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function mediaPayload(file, options = {}) {
+    return { usage: options.usage, entityType: options.entityType || options.usage, entityId: options.entityId || '', originalFilename: file.name, declaredMimeType: file.type, base64Data: await readFileAsBase64(file), altTextRo: options.altTextRo || '', altTextEn: options.altTextEn || '', altTextDe: options.altTextDe || '' };
+  }
+
   const api = {
     ensureConfigured: config,
     async getArticlesPage(page = 1, limit = 9) { return publicCall('listPublishedArticles', { page, limit }); },
@@ -165,8 +186,11 @@
     async deleteTeamMember(id) { const payload = { expectedUpdatedAt: timestamp(records.team, id) }; const op = operation('deleteTeamMember', id, payload); const value = await protectedCall('deleteTeamMember', { id, expectedUpdatedAt: payload.expectedUpdatedAt, idempotencyKey: op.idempotencyKey }, op); records.team.delete(id); return value; },
     async getHomepageContent(admin = false) { homepage = admin ? await protectedCall('getHomepageContent') : await publicCall('getPublishedHomepageContent'); return homepage; },
     async updateHomepageContent(content, heroImageUrl, heroImagePosition) { const payload = { content, heroImageUrl: heroImageUrl || '', heroDriveFileId: homepage?.heroDriveFileId || '', heroImagePosition }; const value = await protectedCall('updateHomepageContent', { payload, expectedUpdatedAt: homepage?.updatedAt ?? null }); homepage = value; return value; },
-    async uploadMedia() { throw new ZinaApiError('MEDIA_NOT_AVAILABLE', 'Google media uploads are not enabled in A4. Keep the existing image URL or cancel the file selection.'); },
-    _test: { newIdempotencyKey, canonical, records, uncertainOperations, ZinaApiError }
+    async listMedia() { return cache(await protectedCall('listMedia'), records.media); },
+    async uploadMedia(file, options) { const payload = await mediaPayload(file, options); const op = operation('uploadMedia', '', { usage: payload.usage, entityType: payload.entityType, entityId: payload.entityId, originalFilename: payload.originalFilename, declaredMimeType: payload.declaredMimeType, size: file.size }); const value = await protectedCall('uploadMedia', { payload, idempotencyKey: op.idempotencyKey }, op); records.media.set(value.id, value); return value; },
+    async replaceMedia(id, file, options) { const payload = await mediaPayload(file, options); const value = await protectedCall('replaceMedia', { id, payload, expectedUpdatedAt: timestamp(records.media, id) }); records.media.set(id, value); return value; },
+    async deleteMedia(id) { const payload = { expectedUpdatedAt: timestamp(records.media, id) }; const op = operation('deleteMedia', id, payload); const value = await protectedCall('deleteMedia', { id, expectedUpdatedAt: payload.expectedUpdatedAt, idempotencyKey: op.idempotencyKey }, op); records.media.set(id, value); return value; },
+    _test: { newIdempotencyKey, canonical, records, uncertainOperations, ZinaApiError, readFileAsBase64 }
   };
 
   root.GoogleAppsScriptProvider = Object.freeze(api);

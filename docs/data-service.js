@@ -745,7 +745,7 @@ const DataService = {
   },
 
   async uploadTeamImage(file) {
-    if (useGoogleProvider()) return googleProvider().uploadMedia(file);
+    if (useGoogleProvider()) return (await googleProvider().uploadMedia(file, { usage: 'team', entityType: 'team' })).publicUrl;
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -882,7 +882,7 @@ const DataService = {
 
   // Upload a homepage image to the public, admin-write-only media bucket.
   async uploadHomepageImage(file) {
-    if (useGoogleProvider()) return googleProvider().uploadMedia(file);
+    if (useGoogleProvider()) return (await googleProvider().uploadMedia(file, { usage: 'homepage', entityType: 'homepage' })).publicUrl;
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');

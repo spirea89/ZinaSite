@@ -26,11 +26,15 @@ function makeContext(handler) {
       handleRejectedToken: code => authEvents.push(code)
     }
   };
+  class FileReader {
+    readAsDataURL(file) { this.result = `data:${file.type};base64,${file.base64 || 'AA=='}`; queueMicrotask(() => this.onload()); }
+  }
   const context = vm.createContext({
     window,
     URL,
     Uint8Array,
     console,
+    FileReader,
     fetch: async (url, options = {}) => {
       const request = { url: String(url), options, body: options.body ? JSON.parse(options.body) : null };
       calls.push(request);
@@ -196,4 +200,89 @@ test('inactive administrator and backend validation errors stay sanitized', asyn
 
   const invalid = makeContext(() => failure('UNSAFE_HTML', 'content contains unsafe HTML.'));
   await assert.rejects(() => invalid.api.createArticle({ title: 'A', content: '<script>x</script>', status: 'draft' }), error => error.code === 'UNSAFE_HTML' && !/stack/i.test(error.message));
+});
+
+test('media provider uploads, replaces, and soft-deletes with safety metadata', async () => {
+  const t1 = '2026-08-09T10:00:00.000Z';
+  const t2 = '2026-08-09T10:01:00.000Z';
+  const first = { id: 'media-1', usage: 'team', status: 'active', updatedAt: t1, publicUrl: 'https://example.test/image' };
+  const replacement = { ...first, updatedAt: t2 };
+  const deleted = { ...replacement, status: 'deleted', publicUrl: '', updatedAt: '2026-08-09T10:02:00.000Z' };
+  const { api, calls } = makeContext(request => {
+    const action = request.body.action;
+    if (action === 'listMedia') return envelope([first]);
+    if (action === 'uploadMedia') return envelope(first);
+    if (action === 'replaceMedia') return envelope(replacement);
+    if (action === 'deleteMedia') return envelope(deleted);
+    throw new Error(`unexpected action ${action}`);
+  });
+  const file = { name: 'portrait.png', type: 'image/png', size: 4, base64: 'iVBORw==' };
+  await api.listMedia();
+  await api.uploadMedia(file, { usage: 'team', entityType: 'team' });
+  await api.replaceMedia(first.id, file, { usage: 'team', entityType: 'team' });
+  await api.deleteMedia(first.id);
+  const upload = calls.find(call => call.body.action === 'uploadMedia').body;
+  const replace = calls.find(call => call.body.action === 'replaceMedia').body;
+  const remove = calls.find(call => call.body.action === 'deleteMedia').body;
+  assert.match(upload.idempotencyKey, /^[a-f0-9]{48}$/);
+  assert.equal(upload.payload.base64Data, file.base64);
+  assert.equal(replace.expectedUpdatedAt, t1);
+  assert.equal(remove.expectedUpdatedAt, t2);
+  assert.match(remove.idempotencyKey, /^[a-f0-9]{48}$/);
+  assert.equal('idToken' in upload, true);
+});
+
+test('media provider rejects unsupported and oversized files before HTTP', async () => {
+  const { api, calls } = makeContext(() => { throw new Error('must not call'); });
+  await assert.rejects(() => api.uploadMedia({ name: 'x.svg', type: 'image/svg+xml', size: 10 }, { usage: 'team' }), error => error.code === 'UNSUPPORTED_MEDIA_TYPE');
+  await assert.rejects(() => api.uploadMedia({ name: 'x.png', type: 'image/png', size: 5 * 1024 * 1024 + 1 }, { usage: 'team' }), error => error.code === 'MEDIA_TOO_LARGE');
+  assert.equal(calls.length, 0);
+});
+
+test('uncertain media upload retry reuses its idempotency key', async () => {
+  let attempts = 0;
+  const { api, calls } = makeContext(request => {
+    if (request.body.action !== 'uploadMedia') throw new Error('unexpected action');
+    attempts += 1;
+    if (attempts === 1) return new Error('connection lost');
+    return envelope({ id: 'media-1', status: 'active', updatedAt: '2026-08-09T10:00:00.000Z' });
+  });
+  const file = { name: 'portrait.png', type: 'image/png', size: 4, base64: 'iVBORw==' };
+  await assert.rejects(() => api.uploadMedia(file, { usage: 'team', entityType: 'team' }));
+  await api.uploadMedia(file, { usage: 'team', entityType: 'team' });
+  assert.equal(calls[0].body.idempotencyKey, calls[1].body.idempotencyKey);
+});
+
+test('stale media replacement reloads metadata and requires review', async () => {
+  const old = { id: 'media-1', status: 'active', updatedAt: '2026-08-09T10:00:00.000Z' };
+  const latest = { ...old, updatedAt: '2026-08-09T10:02:00.000Z' };
+  let lists = 0;
+  const { api } = makeContext(request => {
+    if (request.body.action === 'listMedia') return envelope(lists++ ? [latest] : [old]);
+    if (request.body.action === 'replaceMedia') return failure('CONFLICT');
+    throw new Error('unexpected action');
+  });
+  const file = { name: 'portrait.png', type: 'image/png', size: 4, base64: 'iVBORw==' };
+  await api.listMedia();
+  await assert.rejects(() => api.replaceMedia(old.id, file, { usage: 'team', entityType: 'team' }), error => error.code === 'CONFLICT' && error.requiresReview && error.latestData[0].updatedAt === latest.updatedAt);
+});
+
+test('uncertain media delete retry keeps the same destructive request key', async () => {
+  const active = { id: 'media-1', status: 'active', updatedAt: '2026-08-09T10:00:00.000Z' };
+  let deletes = 0;
+  const { api, calls } = makeContext(request => {
+    if (request.body.action === 'listMedia') return envelope([active]);
+    if (request.body.action === 'deleteMedia') {
+      deletes += 1;
+      if (deletes === 1) return new Error('connection lost');
+      return envelope({ ...active, status: 'deleted', publicUrl: '', updatedAt: '2026-08-09T10:01:00.000Z' });
+    }
+    throw new Error('unexpected action');
+  });
+  await api.listMedia();
+  await assert.rejects(() => api.deleteMedia(active.id));
+  await api.deleteMedia(active.id);
+  const requests = calls.filter(call => call.body?.action === 'deleteMedia');
+  assert.equal(requests[0].body.idempotencyKey, requests[1].body.idempotencyKey);
+  assert.equal(requests[0].body.expectedUpdatedAt, active.updatedAt);
 });

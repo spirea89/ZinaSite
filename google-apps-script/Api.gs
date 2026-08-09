@@ -1,5 +1,5 @@
 const PUBLIC_ACTIONS = Object.freeze(['health','listPublishedArticles','getPublishedArticle','listArticleCategories','listPublishedEvents','getPublishedEvent','listPublishedTeamMembers','getPublishedHomepageContent']);
-const ADMIN_ACTIONS = Object.freeze(['listAllArticles','createArticle','updateArticle','deleteArticle','setArticleStatus','listArticleCategories','createArticleCategory','updateArticleCategory','deleteArticleCategory','listAllEvents','createEvent','updateEvent','deleteEvent','setEventStatus','listTeamMembers','createTeamMember','updateTeamMember','deleteTeamMember','updateTeamMemberSortOrder','getHomepageContent','updateHomepageContent']);
+const ADMIN_ACTIONS = Object.freeze(['listAllArticles','createArticle','updateArticle','deleteArticle','setArticleStatus','listArticleCategories','createArticleCategory','updateArticleCategory','deleteArticleCategory','listAllEvents','createEvent','updateEvent','deleteEvent','setEventStatus','listTeamMembers','createTeamMember','updateTeamMember','deleteTeamMember','updateTeamMemberSortOrder','getHomepageContent','updateHomepageContent','listMedia','uploadMedia','replaceMedia','deleteMedia']);
 
 function doGet(e) {
   try { return jsonOutput_(successEnvelope_(routePublicAction_(e && e.parameter ? e.parameter : {}))); }
@@ -17,7 +17,7 @@ function jsonOutput_(envelope) { return ContentService.createTextOutput(JSON.str
 
 function parsePostRequest_(e) {
   if (!e || !e.postData || typeof e.postData.contents !== 'string') throw apiError_('INVALID_REQUEST', 'A request body is required.');
-  if (e.postData.contents.length > 250000) throw apiError_('INVALID_REQUEST', 'Request body is too large.');
+  if (e.postData.contents.length > 7200000) throw apiError_('INVALID_REQUEST', 'Request body is too large.');
   let request;
   try { request = JSON.parse(e.postData.contents); } catch (_) { throw apiError_('INVALID_JSON', 'Request body must be valid JSON.'); }
   assertObject_(request, 'request');
@@ -81,5 +81,9 @@ function executeAdminAction_(request, admin, dependencies) {
   if(action==='updateTeamMemberSortOrder'){const a=updateArguments_(request),p=assertObject_(a.payload,'payload');rejectUnknownFields_(p,['sortOrder']);return updateTeam_(a.id,{sortOrder:numberValue_(p.sortOrder,'sortOrder',-100000,100000)},a.expectedUpdatedAt,admin,dependencies,'updateTeamMemberSortOrder');}
   if(action==='getHomepageContent'){noArguments_(request);return homepageContent_();}
   if(action==='updateHomepageContent'){const a=homepageArguments_(request);return updateHomepage_(validateHomepage_(a.payload),a.expectedUpdatedAt,admin,dependencies);}
+  if(action==='listMedia'){noArguments_(request);return listMedia_();}
+  if(action==='uploadMedia'){const a=createArguments_(request);return uploadMedia_(validateMediaUpload_(a.payload),a.idempotencyKey,admin,dependencies);}
+  if(action==='replaceMedia'){const a=updateArguments_(request);return replaceMedia_(a.id,validateMediaUpload_(a.payload),a.expectedUpdatedAt,admin,dependencies);}
+  if(action==='deleteMedia'){const a=deleteArguments_(request);return deleteMedia_(a.id,a.expectedUpdatedAt,a.idempotencyKey,admin,dependencies);}
   throw apiError_('UNKNOWN_ADMIN_ACTION','Unknown API action.');
 }
