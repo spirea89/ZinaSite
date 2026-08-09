@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "test": "node --test test/*.test.js",
+    "check:frontend": "node --check public/zina-config.js && node --check public/google-auth-provider.js && node --check public/google-apps-script-provider.js && node --check public/auth-service.js && node --check public/data-service.js && node --check public/rich-html-sanitizer.js",
     "sync-docs": "node sync-docs.js",
     "setup-sync": "node setup-sync-hook.js"
   },

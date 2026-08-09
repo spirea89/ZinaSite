@@ -11,6 +11,11 @@
   <link rel="stylesheet" href="styles.css">
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="zina-runtime-config.js"></script>
+  <script src="zina-config.js"></script>
+  <script src="google-auth-provider.js"></script>
+  <script src="google-apps-script-provider.js"></script>
+  <script src="rich-html-sanitizer.js"></script>
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 </head>
 <body>
@@ -179,6 +184,7 @@
 
     function initQuill() {
       if (quill) return quill;
+      const googleBackend = window.ZinaConfig?.isGoogle();
       quill = new Quill('#editor-container', {
         theme: 'snow',
         modules: {
@@ -187,9 +193,9 @@
               [{ 'header': [1, 2, 3, false] }],
               ['bold', 'italic', 'underline', 'strike'],
               [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-              [{ 'color': [] }, { 'background': [] }],
+              ...(googleBackend ? [] : [[{ 'color': [] }, { 'background': [] }]]),
               [{ 'align': [] }],
-              ['link', 'image', 'video'],
+              ...(googleBackend ? [['link']] : [['link', 'image', 'video']]),
               ['clean']
             ],
             handlers: {
@@ -322,7 +328,7 @@
         const body = document.createElement('div');
         body.className = 'article-preview';
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = article.contentEn || article.content || '';
+        tempDiv.innerHTML = ZinaRichHtml.sanitize(article.contentEn || article.content || '');
         body.textContent = (tempDiv.textContent || tempDiv.innerText || '').length > 200 ? (tempDiv.textContent || tempDiv.innerText || '').substring(0, 200) + '...' : (tempDiv.textContent || tempDiv.innerText || '');
         const buttons = document.createElement('div');
         buttons.className = 'actions space-between';
@@ -341,9 +347,9 @@
             const englishContent = article.contentEn || article.content || '';
             if (englishContent) {
               const t = document.createElement('div');
-              t.innerHTML = englishContent;
+              t.innerHTML = ZinaRichHtml.sanitize(englishContent);
               const hasHtml = t.children.length > 0 || t.innerHTML !== englishContent;
-              if (hasHtml) quill.root.innerHTML = englishContent;
+              if (hasHtml) quill.root.innerHTML = ZinaRichHtml.sanitize(englishContent);
               else quill.setText(englishContent);
               contentInput.value = quill.root.innerHTML;
             } else { quill.setContents([]); contentInput.value = ''; }
@@ -356,15 +362,24 @@
         publish.className = 'button';
         publish.textContent = article.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
         publish.onclick = async () => {
-          await saveArticle({ ...article, status: article.status === 'published' ? 'draft' : 'published' });
+          try {
+            await DataService.setArticleStatus(article.id, article.status === 'published' ? 'draft' : 'published');
+            await loadArticles();
+          } catch (error) {
+            alert(error.message || 'Statusul nu a putut fi schimbat.');
+          }
         };
         const del = document.createElement('button');
         del.className = 'button danger';
         del.textContent = 'Șterge';
         del.onclick = async () => {
           if (!confirm('Sigur vrei să ștergi acest articol?')) return;
-          await DataService.deleteArticle(article.id);
-          loadArticles();
+          try {
+            await DataService.deleteArticle(article.id);
+            await loadArticles();
+          } catch (error) {
+            alert(error.message || 'Articolul nu a putut fi șters.');
+          }
         };
         buttons.appendChild(edit);
         buttons.appendChild(publish);
@@ -396,7 +411,7 @@
         loadArticles();
       } catch (err) {
         console.error(err);
-        alert('Eroare la salvarea articolului.');
+        alert(err.message || 'Eroare la salvarea articolului.');
       }
     }
 
@@ -465,7 +480,7 @@
 
     (async function init() {
       let n = 0;
-      while (typeof window.supabase === 'undefined' && n < 50) { await new Promise(r => setTimeout(r, 100)); n++; }
+      while (!window.ZinaConfig?.isGoogle() && typeof window.supabase === 'undefined' && n < 50) { await new Promise(r => setTimeout(r, 100)); n++; }
       await checkAuth();
     })();
   </script>

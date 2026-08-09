@@ -1,9 +1,47 @@
 const express = require('express');
 const path = require('path');
-const supabase = require('./supabase');
+let supabaseClient = null;
+function getSupabase() {
+  if (!supabaseClient) supabaseClient = require('./supabase');
+  return supabaseClient;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.get('/zina-runtime-config.js', (req, res) => {
+  const runtimeConfig = {
+    backendProvider: process.env.ZINA_BACKEND_PROVIDER || 'supabase',
+    publicAppsScriptApiUrl: process.env.ZINA_PUBLIC_APPS_SCRIPT_API_URL || '',
+    protectedAppsScriptApiUrl: process.env.ZINA_PROTECTED_APPS_SCRIPT_API_URL || '',
+    googleOAuthClientId: process.env.ZINA_GOOGLE_OAUTH_CLIENT_ID || ''
+  };
+  res.type('application/javascript').set('Cache-Control', 'no-store').send(
+    `window.__ZINA_RUNTIME_CONFIG = Object.freeze(${JSON.stringify(runtimeConfig).replace(/</g, '\\u003c')});`
+  );
+});
+
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.quilljs.com https://accounts.google.com",
+      "style-src 'self' 'unsafe-inline' https://cdn.quilljs.com https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data: blob: https:",
+      "frame-src https://accounts.google.com https://www.youtube.com https://player.vimeo.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://script.google.com https://script.googleusercontent.com https://accounts.google.com https://oauth2.googleapis.com"
+    ].join('; ')
+  });
+  next();
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '1mb' }));
@@ -11,7 +49,7 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/api/articles', async (req, res) => {
   try {
     const { status } = req.query;
-    let query = supabase.from('articles').select('*').order('created_at', { ascending: false });
+    let query = getSupabase().from('articles').select('*').order('created_at', { ascending: false });
     
     if (status) {
       query = query.eq('status', status);
@@ -43,7 +81,7 @@ app.get('/api/articles', async (req, res) => {
 
 app.get('/api/admin/articles', async (req, res) => {
   try {
-    const { data: articles, error } = await supabase
+    const { data: articles, error } = await getSupabase()
       .from('articles')
       .select('*')
       .order('created_at', { ascending: false });
@@ -79,7 +117,7 @@ app.post('/api/articles', async (req, res) => {
     }
 
     const now = new Date().toISOString();
-    const { data: article, error } = await supabase
+    const { data: article, error } = await getSupabase()
       .from('articles')
       .insert({
         title,
@@ -123,7 +161,7 @@ app.put('/api/articles/:id', async (req, res) => {
     }
 
     const updatedAt = new Date().toISOString();
-    const { data: article, error } = await supabase
+    const { data: article, error } = await getSupabase()
       .from('articles')
       .update({
         title,
@@ -163,7 +201,7 @@ app.put('/api/articles/:id', async (req, res) => {
 app.delete('/api/articles/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('articles')
       .delete()
       .eq('id', id)
@@ -189,7 +227,7 @@ app.delete('/api/articles/:id', async (req, res) => {
 app.get('/api/events', async (req, res) => {
   try {
     const { status } = req.query;
-    let query = supabase.from('events').select('*').order('start_date', { ascending: true });
+    let query = getSupabase().from('events').select('*').order('start_date', { ascending: true });
     
     if (status) {
       query = query.eq('status', status);
@@ -225,7 +263,7 @@ app.get('/api/events', async (req, res) => {
 
 app.get('/api/admin/events', async (req, res) => {
   try {
-    const { data: events, error } = await supabase
+    const { data: events, error } = await getSupabase()
       .from('events')
       .select('*')
       .order('start_date', { ascending: false });
@@ -265,7 +303,7 @@ app.post('/api/events', async (req, res) => {
     }
 
     const now = new Date().toISOString();
-    const { data: event, error } = await supabase
+    const { data: event, error } = await getSupabase()
       .from('events')
       .insert({
         title,
@@ -317,7 +355,7 @@ app.put('/api/events/:id', async (req, res) => {
     }
 
     const updatedAt = new Date().toISOString();
-    const { data: event, error } = await supabase
+    const { data: event, error } = await getSupabase()
       .from('events')
       .update({
         title,
@@ -364,7 +402,7 @@ app.put('/api/events/:id', async (req, res) => {
 app.delete('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('events')
       .delete()
       .eq('id', id)
