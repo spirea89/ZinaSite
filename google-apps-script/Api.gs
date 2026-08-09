@@ -22,7 +22,7 @@ function parsePostRequest_(e) {
   try { request = JSON.parse(e.postData.contents); } catch (_) { throw apiError_('INVALID_JSON', 'Request body must be valid JSON.'); }
   assertObject_(request, 'request');
   rejectUnknownFields_(request, ['action','idToken','id','payload']);
-  return { action:stringValue_(request.action,'action',{required:true,max:100}), idToken:stringValue_(request.idToken,'idToken',{required:true,max:10000}), id:request.id, payload:request.payload };
+  return { action:stringValue_(request.action,'action',{required:true,max:100}), idToken:googleIdTokenValue_(request.idToken), id:request.id, payload:request.payload };
 }
 
 function assertAllowedAction_(action, allowlist, publicRoute) {

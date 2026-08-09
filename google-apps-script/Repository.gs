@@ -2,7 +2,7 @@ const SHEET_FIELDS = Object.freeze({
   Articles: ['id', 'title', 'content', 'title_en', 'content_en', 'title_de', 'content_de', 'category_id', 'status', 'created_at', 'updated_at'],
   ArticleCategories: ['id', 'slug', 'name_ro', 'name_en', 'name_de', 'created_at'],
   Events: ['id', 'title', 'description', 'title_en', 'description_en', 'title_de', 'description_de', 'start_date', 'end_date', 'location', 'registration_url', 'status', 'created_at', 'updated_at'],
-  Admins: ['email', 'display_name', 'active', 'created_at', 'updated_at'],
+  Admins: ['email', 'google_sub', 'display_name', 'active', 'created_at', 'updated_at'],
   TeamMembers: ['id', 'name', 'role_en', 'role_ro', 'role_de', 'bio_en', 'bio_ro', 'bio_de', 'image_url', 'drive_file_id', 'sort_order', 'created_at', 'updated_at'],
   HomepageContent: ['id', 'content', 'hero_image_url', 'hero_drive_file_id', 'hero_image_position_x', 'hero_image_position_y', 'updated_at', 'updated_by']
 });
@@ -89,11 +89,19 @@ function listArticles_(publishedOnly) { const categories = listCategories_(); re
 function listEvents_(publishedOnly) { return readRows_('Events').filter(function (r) { return !publishedOnly || isPublishedRecord_(r); }).map(eventFromRow_).sort(function (a, b) { return (publishedOnly ? a.startDate.localeCompare(b.startDate) : b.startDate.localeCompare(a.startDate)) || a.id.localeCompare(b.id); }); }
 function listTeam_() { return readRows_('TeamMembers').map(teamFromRow_).sort(function (a, b) { return a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id); }); }
 
-function findAdminByEmail_(email) {
-  const matches = readRows_('Admins').filter(function (row) { return String(row.email || '').trim().toLowerCase() === email; });
+function adminFromRows_(rows, email) {
+  const matches = rows.filter(function (row) { return String(row.email || '').trim().toLowerCase() === email; });
   if (matches.length !== 1) return null;
   const active = matches[0].active;
-  return { active: active === true || String(active).toLowerCase() === 'true' };
+  return {
+    email: String(matches[0].email || '').trim().toLowerCase(),
+    googleSub: String(matches[0].google_sub || '').trim(),
+    active: active === true || String(active).toLowerCase() === 'true'
+  };
+}
+
+function findAdminByEmail_(email) {
+  return adminFromRows_(readRows_('Admins'), email);
 }
 
 function paginateRecords_(records, pageInfo) { const start = (pageInfo.page - 1) * pageInfo.limit; return { items: records.slice(start, start + pageInfo.limit), total: records.length, page: pageInfo.page, limit: pageInfo.limit }; }

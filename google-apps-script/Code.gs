@@ -38,8 +38,8 @@ const ZINA_CMS = Object.freeze({
       filter: true
     },
     Admins: {
-      headers: ['email', 'display_name', 'active', 'created_at', 'updated_at'],
-      widths: [260, 220, 90, 165, 165],
+      headers: ['email', 'google_sub', 'display_name', 'active', 'created_at', 'updated_at'],
+      widths: [260, 240, 220, 90, 165, 165],
       wrap: ['display_name'],
       timestamps: ['created_at', 'updated_at'],
       booleans: ['active'],

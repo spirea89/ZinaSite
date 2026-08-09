@@ -1,6 +1,6 @@
 # ZiNa CMS Google Apps Script bootstrap
 
-This directory contains the spreadsheet/Drive bootstrap and the Phase 2 backend API for a Google spreadsheet named **ZiNa CMS**. Phase 2 adds backend code and non-destructive self-tests, but does not deploy the API, connect the website, upload images, migrate data, or change the existing Supabase site.
+This directory contains the spreadsheet/Drive bootstrap and the Apps Script backend API for a Google spreadsheet named **ZiNa CMS**. Authentication hardening A1 adds stricter Google ID-token and administrator checks, but does not deploy the API, connect the website, upload images, migrate data, or change the existing Supabase site.
 
 ## Install the bootstrap script
 
@@ -68,11 +68,13 @@ In Apps Script:
 2. Under **Script properties**, add a property named `GOOGLE_OAUTH_CLIENT_ID`.
 3. Paste the web client ID as its value and save it.
 
-Do not put the client ID in a worksheet or commit it to this repository. The backend fails closed when this property is absent. Administrator email addresses are managed later in the private `Admins` worksheet, not in source files.
+Do not put the client ID in a worksheet or commit it to this repository. The backend fails closed when this property is absent. Administrator identities are managed in the private `Admins` worksheet, not in source files. Every administrator row must have both the normalized Google email and the immutable Google account subject (`google_sub`), plus an explicit `active` checkbox. The backend never discovers or writes these values automatically. Duplicate email rows fail closed.
 
-## Run the Phase 2 self-tests
+Before using A1 against an existing spreadsheet, add the `google_sub` header to `Admins` and populate each approved row manually from a controlled identity-verification procedure. Do not activate an administrator until both identity fields have been independently checked. Running `setupZinaCms()` appends the missing header without deleting rows, but production schema changes remain a deliberate later step.
 
-Select `runPhase2SelfTests` in the Apps Script function selector and click **Run**. The tests exercise routing, validation, claim checks, authorization decisions, and response redaction using fake claims and placeholder values. They do not change spreadsheet rows or Drive files, do not contact Google, and do not require a real token, client ID, or administrator email.
+## Run the A1 self-tests
+
+Select `runA1SelfTests` in the Apps Script function selector and click **Run**. (`runPhase2SelfTests` remains as a compatibility alias.) The tests exercise routing, validation, token shape, audience, issuer, expiry, issuance age, verified and Google-authoritative email, subject matching, duplicate/inactive administrators, verification caches, immediate administrator revocation, verification budget enforcement, and response redaction using fake claims and placeholder values. They do not change spreadsheet rows or Drive files, do not contact Google, and do not require a real token, client ID, or administrator email.
 
 The function returns a success envelope when all tests pass and throws a summarized error if any test fails.
 
@@ -95,11 +97,13 @@ Every protected request must contain a fresh Google ID token. An `origin` value 
 
 Responses consistently contain `ok`, `data`, `error`, and `version`. Errors do not expose stack traces, tokens, configuration values, administrator lists, or spreadsheet internals.
 
-## Token-verification limitation
+## Token verification and operational limits
 
-This testing phase verifies tokens through Google's HTTPS `tokeninfo` endpoint. Google primarily documents `tokeninfo` as a development/debugging facility. Verification is isolated in `verifyGoogleIdToken_` so it can be replaced with a production-grade JWT verifier or authenticated proxy before launch.
+The approved zero-billing design verifies tokens through Google's HTTPS `tokeninfo` endpoint. This is a pragmatic exception for a low-volume, approximately three-administrator nonprofit CMS; Google presents `tokeninfo` as a debugging endpoint rather than a production verification library, so it remains an external availability and quota dependency.
 
-Do not treat this implementation as the final production verification architecture.
+The backend compensates by failing closed; requiring exact audience and issuer, future expiry, verified and Google-authoritative email, non-empty subject, and a maximum token age of 15 minutes; caching only successful claims under a SHA-256 token fingerprint for at most five minutes and never beyond expiry; negatively caching rejected fingerprints briefly; and enforcing a global daily tokeninfo-call budget. Raw tokens are never cache keys or persistent values. An `Admins` lookup and exact email + `google_sub` + `active` decision still occurs on every protected request, so administrator deactivation takes effect immediately even when token verification is cached.
+
+If tokeninfo is unavailable, rate-limited, malformed, or the local verification budget is exhausted, protected requests are denied with sanitized authentication errors. The verification function remains isolated so a supported verifier can replace it later without changing the action API. Per-subject throttling is intentionally deferred until it can be implemented without retaining identity data or weakening immediate revocation.
 
 ## Keep secrets out of source control
 
@@ -107,6 +111,6 @@ Never paste passwords, password hashes, OAuth access or refresh tokens, ID token
 
 ## Deferred phases
 
-Web-app deployment, website Google Sign-In, administrator email configuration, authenticated media uploads, data migration, production token verification, website integration, and removal of Supabase are intentionally deferred. The current Supabase implementation remains untouched and operational.
+Web-app deployment changes, website Google Sign-In integration, production administrator configuration, write-specific hardening, authenticated media uploads, data migration, website integration, and removal of Supabase are intentionally deferred. The current Supabase implementation remains untouched and operational.
 
 When deployment is eventually approved, deployment settings and access level must be reviewed deliberately in Apps Script. Do not deploy the project during Phase 2.
