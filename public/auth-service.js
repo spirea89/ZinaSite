@@ -42,6 +42,7 @@ function getAuthClient() {
 const AuthService = {
   // Get current session
   async getSession() {
+    if (window.ZinaConfig?.isGoogle()) return window.GoogleAuthProvider.getSession();
     try {
       const client = getAuthClient();
       if (!client) {
@@ -58,12 +59,14 @@ const AuthService = {
 
   // Get current user
   async getCurrentUser() {
+    if (window.ZinaConfig?.isGoogle()) return window.GoogleAuthProvider.getCurrentUser();
     const session = await this.getSession();
     return session?.user || null;
   },
 
   // Sign in with email and password
   async signIn(email, password) {
+    if (window.ZinaConfig?.isGoogle()) return window.GoogleAuthProvider.signIn();
     try {
       const client = getAuthClient();
       if (!client) {
@@ -83,6 +86,7 @@ const AuthService = {
 
   // Sign out
   async signOut() {
+    if (window.ZinaConfig?.isGoogle()) return window.GoogleAuthProvider.signOut();
     try {
       const client = getAuthClient();
       if (!client) {
@@ -99,12 +103,23 @@ const AuthService = {
 
   // Listen to auth state changes
   onAuthStateChange(callback) {
+    if (window.ZinaConfig?.isGoogle()) return window.GoogleAuthProvider.onAuthStateChange(callback);
     const client = getAuthClient();
     if (!client) {
       console.warn('Supabase client not initialized, cannot listen to auth changes');
       return { data: { subscription: null }, unsubscribe: () => {} };
     }
     return client.auth.onAuthStateChange(callback);
+  },
+
+  async getIdToken() {
+    if (!window.ZinaConfig?.isGoogle()) throw new Error('Google authentication is not active.');
+    return window.GoogleAuthProvider.getIdToken();
+  },
+
+  handleRejectedToken() {
+    if (window.ZinaConfig?.isGoogle()) window.GoogleAuthProvider.handleRejectedToken();
   }
 };
 
+window.AuthService = AuthService;

@@ -4,6 +4,15 @@ let supabaseClient = null;
 let useSupabaseDirectly = false;
 let supabaseInitialized = false;
 
+function useGoogleProvider() {
+  return Boolean(window.ZinaConfig?.isGoogle());
+}
+
+function googleProvider() {
+  if (!window.GoogleAppsScriptProvider) throw new Error('Google Apps Script provider is not loaded.');
+  return window.GoogleAppsScriptProvider;
+}
+
 // Supabase configuration (safe to expose - this is the anon/public key)
 // Read from shared config set by auth-service.js (which loads first)
 // Fallback values in case auth-service hasn't loaded yet
@@ -143,11 +152,13 @@ function formatTeamMember(member) {
 const DataService = {
   // Ensure Supabase is initialized before use
   async ensureInitialized() {
+    if (useGoogleProvider()) return googleProvider().ensureConfigured();
     await initializeSupabase();
   },
 
   // Get articles (optionally filtered by status)
   async getArticles(status = null) {
+    if (useGoogleProvider()) return googleProvider().getArticles(status);
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
@@ -185,6 +196,7 @@ const DataService = {
 
   // Get articles with pagination. Returns { items, total }.
   async getArticlesPage(status = 'published', page = 1, pageSize = 9) {
+    if (useGoogleProvider()) return googleProvider().getArticlesPage(page, pageSize);
     await this.ensureInitialized();
     const p = Math.max(1, parseInt(page, 10) || 1);
     const size = Math.min(24, Math.max(1, parseInt(pageSize, 10) || 9));
@@ -219,6 +231,7 @@ const DataService = {
 
   // Get all articles (for admin)
   async getAllArticles() {
+    if (useGoogleProvider()) return googleProvider().getAllArticles();
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, use Supabase (required for authentication)
@@ -265,6 +278,7 @@ const DataService = {
 
   // Create article
   async createArticle(article) {
+    if (useGoogleProvider()) return googleProvider().createArticle(article);
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, must use Supabase (required for authentication)
@@ -311,6 +325,7 @@ const DataService = {
 
   // Update article
   async updateArticle(id, article) {
+    if (useGoogleProvider()) return googleProvider().updateArticle(id, article);
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, must use Supabase (required for authentication)
@@ -357,6 +372,7 @@ const DataService = {
 
   // Delete article
   async deleteArticle(id) {
+    if (useGoogleProvider()) return googleProvider().deleteArticle(id);
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, must use Supabase (required for authentication)
@@ -389,6 +405,7 @@ const DataService = {
 
   // Get events (optionally filtered by status)
   async getEvents(status = null) {
+    if (useGoogleProvider()) return googleProvider().getEvents(status);
     await this.ensureInitialized();
     
     // On GitHub Pages, must use Supabase (no API available)
@@ -445,6 +462,7 @@ const DataService = {
 
   // Get events with pagination. Returns { items, total }. Ordered by start_date asc.
   async getEventsPage(status = 'published', page = 1, pageSize = 9) {
+    if (useGoogleProvider()) return googleProvider().getEventsPage(page, pageSize);
     await this.ensureInitialized();
     const p = Math.max(1, parseInt(page, 10) || 1);
     const size = Math.min(24, Math.max(1, parseInt(pageSize, 10) || 9));
@@ -484,6 +502,7 @@ const DataService = {
 
   // Get all events (for admin)
   async getAllEvents() {
+    if (useGoogleProvider()) return googleProvider().getAllEvents();
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, use Supabase (required for authentication)
@@ -530,6 +549,7 @@ const DataService = {
 
   // Create event
   async createEvent(event) {
+    if (useGoogleProvider()) return googleProvider().createEvent(event);
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, must use Supabase (required for authentication)
@@ -579,6 +599,7 @@ const DataService = {
 
   // Update event
   async updateEvent(id, event) {
+    if (useGoogleProvider()) return googleProvider().updateEvent(id, event);
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, must use Supabase (required for authentication)
@@ -628,6 +649,7 @@ const DataService = {
 
   // Delete event
   async deleteEvent(id) {
+    if (useGoogleProvider()) return googleProvider().deleteEvent(id);
     await this.ensureInitialized();
     
     // On GitHub Pages or admin page, must use Supabase (required for authentication)
@@ -659,6 +681,7 @@ const DataService = {
   },
 
   async getTeamMembers() {
+    if (useGoogleProvider()) return googleProvider().getTeamMembers(isAdminPage);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) return [];
@@ -671,6 +694,7 @@ const DataService = {
   },
 
   async createTeamMember(member) {
+    if (useGoogleProvider()) return googleProvider().createTeamMember(member);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -690,6 +714,7 @@ const DataService = {
   },
 
   async updateTeamMember(id, member) {
+    if (useGoogleProvider()) return googleProvider().updateTeamMember(id, member);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -710,6 +735,7 @@ const DataService = {
   },
 
   async deleteTeamMember(id) {
+    if (useGoogleProvider()) return googleProvider().deleteTeamMember(id);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -719,6 +745,7 @@ const DataService = {
   },
 
   async uploadTeamImage(file) {
+    if (useGoogleProvider()) return (await googleProvider().uploadMedia(file, { usage: 'team', entityType: 'team' })).publicUrl;
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -734,6 +761,7 @@ const DataService = {
   },
 
   async getCategories() {
+    if (useGoogleProvider()) return googleProvider().getCategories(isAdminPage);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) return [];
@@ -746,6 +774,7 @@ const DataService = {
   },
 
   async createCategory(category) {
+    if (useGoogleProvider()) return googleProvider().createCategory(category);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -763,6 +792,7 @@ const DataService = {
   },
 
   async updateCategory(id, category) {
+    if (useGoogleProvider()) return googleProvider().updateCategory(id, category);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -776,6 +806,7 @@ const DataService = {
   },
 
   async deleteCategory(id) {
+    if (useGoogleProvider()) return googleProvider().deleteCategory(id);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -786,6 +817,7 @@ const DataService = {
 
   // Get editable homepage content. Returns null until the optional homepage schema is installed.
   async getHomepageContent() {
+    if (useGoogleProvider()) return googleProvider().getHomepageContent(isAdminPage);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) return null;
@@ -811,6 +843,7 @@ const DataService = {
 
   // Save homepage content. Supabase RLS restricts this operation to authenticated users.
   async updateHomepageContent(content, heroImageUrl = null, heroImagePosition = { x: 64, y: 50 }) {
+    if (useGoogleProvider()) return googleProvider().updateHomepageContent(content, heroImageUrl, heroImagePosition);
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -849,6 +882,7 @@ const DataService = {
 
   // Upload a homepage image to the public, admin-write-only media bucket.
   async uploadHomepageImage(file) {
+    if (useGoogleProvider()) return (await googleProvider().uploadMedia(file, { usage: 'homepage', entityType: 'homepage' })).publicUrl;
     await this.ensureInitialized();
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase client not initialized.');
@@ -867,5 +901,26 @@ const DataService = {
 
     const { data } = client.storage.from('homepage-media').getPublicUrl(path);
     return data.publicUrl;
+  },
+
+  async setArticleStatus(id, status) {
+    if (useGoogleProvider()) return googleProvider().setArticleStatus(id, status);
+    const article = (await this.getAllArticles()).find(item => item.id === id);
+    if (!article) throw new Error('Article not found.');
+    return this.updateArticle(id, { ...article, status });
+  },
+
+  async setEventStatus(id, status) {
+    if (useGoogleProvider()) return googleProvider().setEventStatus(id, status);
+    const event = (await this.getAllEvents()).find(item => item.id === id);
+    if (!event) throw new Error('Event not found.');
+    return this.updateEvent(id, { ...event, status });
+  },
+
+  async updateTeamMemberSortOrder(id, sortOrder) {
+    if (useGoogleProvider()) return googleProvider().updateTeamMemberSortOrder(id, sortOrder);
+    const member = (await this.getTeamMembers()).find(item => item.id === id);
+    if (!member) throw new Error('Team member not found.');
+    return this.updateTeamMember(id, { ...member, sortOrder });
   }
 };

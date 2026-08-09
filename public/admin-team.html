@@ -8,6 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="zina-runtime-config.js"></script>
+  <script src="zina-config.js"></script>
+  <script src="google-auth-provider.js"></script>
+  <script src="google-apps-script-provider.js"></script>
+  <script src="rich-html-sanitizer.js"></script>
 </head>
 <body>
   <nav class="navbar"><div class="nav-container">
@@ -78,7 +83,7 @@
     document.getElementById('login-form').addEventListener('submit',async event=>{event.preventDefault();const errorBox=document.getElementById('login-error');errorBox.style.display='none';try{const result=await AuthService.signIn(document.getElementById('login-email').value,document.getElementById('login-password').value);if(result.user)showPanel(result.user);}catch(error){errorBox.textContent=error.message;errorBox.style.display='block';}});
     document.getElementById('logout-btn').addEventListener('click',async()=>{await AuthService.signOut();location.href='admin.html';});
     AuthService.onAuthStateChange((event,session)=>{if((event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED')&&session?.user)showPanel(session.user);else if(event==='SIGNED_OUT'){activeUserId=null;adminHeader.style.display='none';adminContent.style.display='none';loginModal.style.display='flex';}});
-    (async()=>{let n=0;while(typeof window.supabase==='undefined'&&n<50){await new Promise(resolve=>setTimeout(resolve,100));n++;}const user=await AuthService.getCurrentUser();if(user)showPanel(user);else loginModal.style.display='flex';})();
+    (async()=>{let n=0;while(!window.ZinaConfig?.isGoogle()&&typeof window.supabase==='undefined'&&n<50){await new Promise(resolve=>setTimeout(resolve,100));n++;}const user=await AuthService.getCurrentUser();if(user)showPanel(user);else loginModal.style.display='flex';})();
   </script>
 </body>
 </html>

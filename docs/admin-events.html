@@ -10,6 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="zina-runtime-config.js"></script>
+  <script src="zina-config.js"></script>
+  <script src="google-auth-provider.js"></script>
+  <script src="google-apps-script-provider.js"></script>
+  <script src="rich-html-sanitizer.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -282,23 +287,24 @@
         publish.className = 'button';
         publish.textContent = event.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
         publish.onclick = async () => {
-          await saveEvent({
-            id: event.id,
-            ...event,
-            startDate: event.startDate,
-            endDate: event.endDate,
-            location: event.location,
-            registrationUrl: event.registrationUrl,
-            status: event.status === 'published' ? 'draft' : 'published',
-          });
+          try {
+            await DataService.setEventStatus(event.id, event.status === 'published' ? 'draft' : 'published');
+            await loadEvents();
+          } catch (error) {
+            alert(error.message || 'Statusul nu a putut fi schimbat.');
+          }
         };
         const del = document.createElement('button');
         del.className = 'button danger';
         del.textContent = 'Șterge';
         del.onclick = async () => {
           if (!confirm('Sigur vrei să ștergi acest eveniment?')) return;
-          await DataService.deleteEvent(event.id);
-          loadEvents();
+          try {
+            await DataService.deleteEvent(event.id);
+            await loadEvents();
+          } catch (error) {
+            alert(error.message || 'Evenimentul nu a putut fi șters.');
+          }
         };
         buttons.appendChild(edit);
         buttons.appendChild(publish);
@@ -320,7 +326,7 @@
         loadEvents();
       } catch (err) {
         console.error(err);
-        alert('Eroare la salvarea evenimentului.');
+        alert(err.message || 'Eroare la salvarea evenimentului.');
       }
     }
 
@@ -355,7 +361,7 @@
 
     (async function init() {
       let n = 0;
-      while (typeof window.supabase === 'undefined' && n < 50) { await new Promise(r => setTimeout(r, 100)); n++; }
+      while (!window.ZinaConfig?.isGoogle() && typeof window.supabase === 'undefined' && n < 50) { await new Promise(r => setTimeout(r, 100)); n++; }
       await checkAuth();
     })();
   </script>
