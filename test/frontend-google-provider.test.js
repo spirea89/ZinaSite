@@ -16,9 +16,9 @@ function makeContext(handler) {
   const window = {
     __ZINA_RUNTIME_CONFIG: {
       backendProvider: 'google-apps-script',
-      publicAppsScriptApiUrl: 'https://example.test/public',
-      protectedAppsScriptApiUrl: 'https://example.test/protected',
-      googleOAuthClientId: 'test-client.apps.googleusercontent.com'
+      publicAppsScriptApiUrl: 'https://script.google.com/macros/s/test-public/exec',
+      protectedAppsScriptApiUrl: 'https://script.google.com/macros/s/test-protected/exec',
+      googleOAuthClientId: '123456-test-client.apps.googleusercontent.com'
     },
     crypto: webcrypto,
     AuthService: {
@@ -49,12 +49,19 @@ function makeContext(handler) {
   return { api: window.GoogleAppsScriptProvider, calls, authEvents, window };
 }
 
-test('production configuration defaults to Supabase with no Google identifiers', () => {
-  const window = {};
+test('production configuration defaults to Google and fails closed without runtime values', () => {
+  const window = { __ZINA_RUNTIME_CONFIG: {} };
   const context = vm.createContext({ window });
   vm.runInContext(fs.readFileSync(path.join(PUBLIC, 'zina-config.js'), 'utf8'), context);
-  assert.equal(window.ZinaConfig.get().backendProvider, 'supabase');
-  assert.equal(window.ZinaConfig.get().googleOAuthClientId, '');
+  assert.equal(window.ZinaConfig.defaults.backendProvider, 'google-apps-script');
+  assert.throws(() => window.ZinaConfig.get(), /Google production configuration is missing or invalid/);
+});
+
+test('Supabase cannot be selected as a frontend fallback', () => {
+  const window = { __ZINA_RUNTIME_CONFIG: { backendProvider: 'supabase' } };
+  const context = vm.createContext({ window });
+  vm.runInContext(fs.readFileSync(path.join(PUBLIC, 'zina-config.js'), 'utf8'), context);
+  assert.throws(() => window.ZinaConfig.get(), /Invalid ZiNa backend provider/);
 });
 
 test('protected updates put concurrency metadata at the top level', async () => {

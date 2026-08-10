@@ -152,11 +152,11 @@ Never paste passwords, password hashes, OAuth access or refresh tokens, ID token
 
 ## Deferred phases
 
-Web-app deployment changes, website Google Sign-In integration, production administrator configuration, write-specific hardening, authenticated media uploads, data migration, website integration, and removal of Supabase are intentionally deferred. The current Supabase implementation remains untouched and operational.
+The backend, Google Sign-In integration, administrator allowlist, write-safety hardening, authenticated media actions, and website provider have been validated. Google Sheets + Apps Script is the authoritative production CMS. Supabase contained test data only and requires no migration.
 
 ## A5B isolated GitHub Pages media prototype
 
-A5B retains the four protected media actions `listMedia`, `uploadMedia`, `replaceMedia`, and `deleteMedia`, replacing only the A5 Drive adapter with the GitHub Contents API. Production media remains on Supabase until a separate cutover approval.
+A5B retains the four protected media actions `listMedia`, `uploadMedia`, `replaceMedia`, and `deleteMedia`, using the GitHub Contents API. Production media is published to the configured public GitHub media repository and served through GitHub Pages.
 
 The target `Media` schema is: `id`, `entity_type`, `entity_id`, `usage`, `repository_path`, `github_blob_sha`, `filename`, `stored_filename`, `mime_type`, `file_size`, `public_url`, `alt_text_ro`, `alt_text_en`, `alt_text_de`, `status`, `created_at`, `updated_at`. Existing A5 test sheets may retain deprecated Drive columns; setup appends the GitHub columns without deleting or reordering data. Production migration must be reviewed separately.
 

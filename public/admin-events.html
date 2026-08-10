@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="zina-runtime-config.js"></script>
   <script src="zina-config.js"></script>
   <script src="google-auth-provider.js"></script>
@@ -366,8 +365,6 @@
     }
 
     (async function init() {
-      let n = 0;
-      while (!window.ZinaConfig?.isGoogle() && typeof window.supabase === 'undefined' && n < 50) { await new Promise(r => setTimeout(r, 100)); n++; }
       await checkAuth();
     })();
   </script>
