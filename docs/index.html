@@ -122,6 +122,7 @@
 
   <script src="i18n.js"></script>
   <script src="data-service.js"></script>
+  <script src="footer-contacts.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -166,7 +167,7 @@
       }
       if (cachedHeroImage) displayHeroImage(cachedHeroImage);
       try {
-        const homepage = await DataService.getHomepageContent();
+        const homepage = await ZinaFooterContacts.getHomepage();
         const stored = homepage?.content || {};
         const isMultilingual = stored.ro || stored.en || stored.de;
         const localizedContent = isMultilingual
