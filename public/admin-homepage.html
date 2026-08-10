@@ -91,6 +91,18 @@
         </div>
       </section>
 
+      <section class="panel">
+        <h2>Date de contact publice</h2>
+        <p class="muted">Câmpurile completate vor apărea ca linkuri în subsolul paginilor publice. Câmpurile goale nu vor fi afișate.</p>
+        <div class="homepage-fields-grid">
+          <label class="stack"><span>Email</span><input id="contact-email" type="email" maxlength="320" autocomplete="email" placeholder="contact@example.org"></label>
+          <label class="stack"><span>Grup WhatsApp</span><input id="contact-whatsapp" type="url" maxlength="2048" placeholder="https://chat.whatsapp.com/..."></label>
+          <label class="stack"><span>Facebook</span><input id="contact-facebook" type="url" maxlength="2048" placeholder="https://www.facebook.com/..."></label>
+          <label class="stack"><span>LinkedIn</span><input id="contact-linkedin" type="url" maxlength="2048" placeholder="https://www.linkedin.com/company/..."></label>
+          <label class="stack"><span>Număr ZVR</span><input id="contact-zvr" type="text" maxlength="10" inputmode="numeric" pattern="[0-9]{1,10}" placeholder="1234567890"></label>
+        </div>
+      </section>
+
       <div id="homepage-fields"></div>
 
       <div id="homepage-message" class="homepage-message" role="status" aria-live="polite"></div>
@@ -151,6 +163,11 @@
     const positionYInput = document.getElementById('hero-position-y');
     const positionXValue = document.getElementById('hero-position-x-value');
     const positionYValue = document.getElementById('hero-position-y-value');
+    const contactEmailInput = document.getElementById('contact-email');
+    const contactWhatsappInput = document.getElementById('contact-whatsapp');
+    const contactFacebookInput = document.getElementById('contact-facebook');
+    const contactLinkedinInput = document.getElementById('contact-linkedin');
+    const contactZvrInput = document.getElementById('contact-zvr');
     let currentHeroImageUrl = null;
     let activeAdminUserId = null;
     let homepageByLocale = {
@@ -158,6 +175,26 @@
       en: I18n.homepageContent('en'),
       de: I18n.homepageContent('de')
     };
+    let homepageContacts = { email: '', whatsappUrl: '', facebookUrl: '', linkedinUrl: '', zvrNumber: '' };
+
+    function displayContacts(contacts) {
+      homepageContacts = { ...homepageContacts, ...(contacts || {}) };
+      contactEmailInput.value = homepageContacts.email;
+      contactWhatsappInput.value = homepageContacts.whatsappUrl;
+      contactFacebookInput.value = homepageContacts.facebookUrl;
+      contactLinkedinInput.value = homepageContacts.linkedinUrl;
+      contactZvrInput.value = homepageContacts.zvrNumber;
+    }
+
+    function captureContacts() {
+      homepageContacts = {
+        email: contactEmailInput.value.trim(),
+        whatsappUrl: contactWhatsappInput.value.trim(),
+        facebookUrl: contactFacebookInput.value.trim(),
+        linkedinUrl: contactLinkedinInput.value.trim(),
+        zvrNumber: contactZvrInput.value.trim()
+      };
+    }
 
     function updateImagePositionPreview() {
       const x = Number(positionXInput.value);
@@ -252,6 +289,7 @@
           en: { ...I18n.homepageContent('en'), ...(isMultilingual ? stored.en : {}) },
           de: { ...I18n.homepageContent('de'), ...(isMultilingual ? stored.de : {}) }
         };
+        displayContacts(stored.contacts);
         renderFields(homepageByLocale);
         currentHeroImageUrl = saved?.heroImageUrl || null;
         imagePreview.src = currentHeroImageUrl || 'logos/hero-acasa-romania.jpg';
@@ -288,8 +326,9 @@
           let heroImageUrl = currentHeroImageUrl;
           if (fileInput.files[0]) heroImageUrl = await DataService.uploadHomepageImage(fileInput.files[0]);
           captureCurrentFields();
+          captureContacts();
           const heroImagePosition = { x: Number(positionXInput.value), y: Number(positionYInput.value) };
-          await DataService.updateHomepageContent(homepageByLocale, heroImageUrl, heroImagePosition);
+          await DataService.updateHomepageContent({ ...homepageByLocale, contacts: homepageContacts }, heroImageUrl, heroImagePosition);
           currentHeroImageUrl = heroImageUrl;
           if (heroImageUrl) localStorage.setItem('zina-homepage-hero-image', heroImageUrl);
           localStorage.setItem('zina-homepage-hero-position', JSON.stringify(heroImagePosition));

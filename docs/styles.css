@@ -1216,6 +1216,32 @@ textarea {
   font-weight: 400;
 }
 
+.footer-contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.footer-contact-link {
+  color: #f7f1e7;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.footer-contact-text {
+  color: #f7f1e7;
+  font-weight: 600;
+}
+
+.footer-contact-link:hover,
+.footer-contact-link:focus-visible {
+  color: var(--primary-yellow);
+  border-bottom-color: currentColor;
+}
+
 /* Responsive Design */
 @media (max-width: 968px) {
   .content .grid {

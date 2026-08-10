@@ -249,6 +249,9 @@ function validateHomepage_(input) {
   rejectUnknownFields_(value, ['content', 'heroImageUrl', 'heroDriveFileId', 'heroImagePosition']);
   const content = assertObject_(value.content, 'content');
   const sanitizedContent = validateHomepageContentNode_(content, 'content', 0);
+  if (Object.prototype.hasOwnProperty.call(sanitizedContent, 'contacts')) {
+    sanitizedContent.contacts = validateHomepageContacts_(sanitizedContent.contacts);
+  }
   const serialized = JSON.stringify(sanitizedContent);
   if (serialized.length > 200000) throw apiError_('VALIDATION_ERROR', 'content is too large.');
   const position = assertObject_(value.heroImagePosition, 'heroImagePosition');
@@ -260,6 +263,24 @@ function validateHomepage_(input) {
     heroImagePositionX: numberValue_(position.x, 'heroImagePosition.x', 0, 100),
     heroImagePositionY: numberValue_(position.y, 'heroImagePosition.y', 0, 100)
   };
+}
+
+function validateHomepageContacts_(input) {
+  const value = assertObject_(input, 'content.contacts');
+  rejectUnknownFields_(value, ['email', 'whatsappUrl', 'facebookUrl', 'linkedinUrl', 'zvrNumber']);
+  const email = plainTextValue_(value.email, 'content.contacts.email', { max: 320 });
+  if (email && !/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(email)) {
+    throw apiError_('VALIDATION_ERROR', 'content.contacts.email must be a valid email address.');
+  }
+  const whatsappUrl = urlValue_(value.whatsappUrl, 'content.contacts.whatsappUrl');
+  const facebookUrl = urlValue_(value.facebookUrl, 'content.contacts.facebookUrl');
+  const linkedinUrl = urlValue_(value.linkedinUrl, 'content.contacts.linkedinUrl');
+  const zvrNumber = plainTextValue_(value.zvrNumber, 'content.contacts.zvrNumber', { max: 10 });
+  if (whatsappUrl && !/^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9_-]+(?:[/?#][^\s]*)?$/.test(whatsappUrl)) throw apiError_('INVALID_URL', 'content.contacts.whatsappUrl must be a WhatsApp group invitation URL.');
+  if (facebookUrl && !/^https:\/\/(?:www\.)?facebook\.com\/(?:[^\s]+)$/.test(facebookUrl)) throw apiError_('INVALID_URL', 'content.contacts.facebookUrl must be a Facebook URL.');
+  if (linkedinUrl && !/^https:\/\/(?:www\.)?linkedin\.com\/(?:[^\s]+)$/.test(linkedinUrl)) throw apiError_('INVALID_URL', 'content.contacts.linkedinUrl must be a LinkedIn URL.');
+  if (zvrNumber && !/^[0-9]{1,10}$/.test(zvrNumber)) throw apiError_('VALIDATION_ERROR', 'content.contacts.zvrNumber must contain 1 to 10 digits.');
+  return { email: email, whatsappUrl: whatsappUrl, facebookUrl: facebookUrl, linkedinUrl: linkedinUrl, zvrNumber: zvrNumber };
 }
 
 function validateHomepageContentNode_(value, name, depth) {
