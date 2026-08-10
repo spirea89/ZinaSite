@@ -247,7 +247,7 @@ test('large media is resized and converted to WebP before upload', async () => {
   window.document = {
     createElement(tag) {
       assert.equal(tag, 'canvas');
-      canvas = { width: 0, height: 0, getContext: () => ({ drawImage() {} }), toBlob: callback => callback({ size: 320000 }) };
+      canvas = { width: 0, height: 0, getContext: () => ({ drawImage() {} }), toBlob: callback => callback({ size: 320000, type: 'image/webp' }) };
       return canvas;
     }
   };
@@ -261,6 +261,26 @@ test('large media is resized and converted to WebP before upload', async () => {
   assert.equal(canvas.width, 1200);
   assert.equal(canvas.height, 900);
   assert.equal(closed, true);
+});
+
+test('image optimization preserves the encoder actual MIME type and extension', async () => {
+  const { api, window } = makeContext(() => envelope({ id: 'media-1' }));
+  window.createImageBitmap = async () => ({ width: 2400, height: 1500, close() {} });
+  window.document = {
+    createElement: () => ({
+      width: 0,
+      height: 0,
+      getContext: () => ({ drawImage() {} }),
+      toBlob: callback => callback({ size: 500000, type: 'image/png' })
+    })
+  };
+  window.File = class {
+    constructor(parts, name, options) { this.size = parts[0].size; this.name = name; this.type = options.type; }
+  };
+  const optimized = await api._test.optimizeImageFile({ name: 'hero.png', type: 'image/png', size: 2_000_000 }, 'homepage');
+  assert.equal(optimized.name, 'hero.png');
+  assert.equal(optimized.type, 'image/png');
+  assert.equal(optimized.size, 500000);
 });
 
 test('uncertain media upload retry reuses its idempotency key', async () => {

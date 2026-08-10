@@ -107,6 +107,7 @@
   <script src="auth-service.js"></script>
   <script src="i18n.js"></script>
   <script src="data-service.js"></script>
+  <script src="admin-ui.js"></script>
   <script>
     const DEFAULT_HOMEPAGE = {
       navAbout: 'Despre noi', navArticles: 'Articole', navEvents: 'Evenimente',
@@ -283,25 +284,24 @@
       message.className = 'homepage-message';
       message.textContent = 'Se salvează…';
       const submit = homepageForm.querySelector('button[type="submit"]');
-      submit.disabled = true;
       try {
-        let heroImageUrl = currentHeroImageUrl;
-        if (fileInput.files[0]) heroImageUrl = await DataService.uploadHomepageImage(fileInput.files[0]);
-        captureCurrentFields();
-        const heroImagePosition = { x: Number(positionXInput.value), y: Number(positionYInput.value) };
-        await DataService.updateHomepageContent(homepageByLocale, heroImageUrl, heroImagePosition);
-        currentHeroImageUrl = heroImageUrl;
-        if (heroImageUrl) localStorage.setItem('zina-homepage-hero-image', heroImageUrl);
-        localStorage.setItem('zina-homepage-hero-position', JSON.stringify(heroImagePosition));
-        fileInput.value = '';
-        message.textContent = 'Pagina principală a fost salvată. Modificările sunt vizibile imediat.';
-        message.classList.add('success-message');
+        await AdminUi.withPending(submit, 'Se salvează…', async () => {
+          let heroImageUrl = currentHeroImageUrl;
+          if (fileInput.files[0]) heroImageUrl = await DataService.uploadHomepageImage(fileInput.files[0]);
+          captureCurrentFields();
+          const heroImagePosition = { x: Number(positionXInput.value), y: Number(positionYInput.value) };
+          await DataService.updateHomepageContent(homepageByLocale, heroImageUrl, heroImagePosition);
+          currentHeroImageUrl = heroImageUrl;
+          if (heroImageUrl) localStorage.setItem('zina-homepage-hero-image', heroImageUrl);
+          localStorage.setItem('zina-homepage-hero-position', JSON.stringify(heroImagePosition));
+          fileInput.value = '';
+          message.textContent = 'Pagina principală a fost salvată. Modificările sunt vizibile imediat.';
+          message.classList.add('success-message');
+        });
       } catch (error) {
         console.error(error);
         message.textContent = `Salvarea a eșuat: ${error.message}. Dacă editorul este nou, rulează supabase-homepage-schema.sql în Supabase.`;
         message.classList.add('error-message');
-      } finally {
-        submit.disabled = false;
       }
     });
 

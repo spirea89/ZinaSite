@@ -1016,6 +1016,23 @@ h3 {
 }
 @keyframes zina-spin { to { transform: rotate(360deg); } }
 
+.button.is-pending {
+  cursor: wait;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+.admin-action-spinner {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: zina-spin 0.75s linear infinite;
+}
+
 #editor-container .ql-toolbar {
   border-top-left-radius: var(--radius-md);
   border-top-right-radius: var(--radius-md);
