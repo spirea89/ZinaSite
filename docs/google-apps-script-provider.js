@@ -155,8 +155,47 @@
     });
   }
 
+  async function optimizeImageFile(file, usage) {
+    if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new ZinaApiError('UNSUPPORTED_MEDIA_TYPE', 'Choose a JPEG, PNG, or WebP image.');
+    if (file.size > 5 * 1024 * 1024) throw new ZinaApiError('MEDIA_TOO_LARGE', 'Image must not exceed 5 MB.');
+    const targetBytes = 900 * 1024;
+    if (file.size <= targetBytes) return file;
+    if (!root.createImageBitmap || !root.document?.createElement || !root.File) return file;
+    let bitmap;
+    try {
+      bitmap = await root.createImageBitmap(file);
+      const maxDimension = usage === 'team' ? 1200 : 1920;
+      const initialScale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+      let width = Math.max(1, Math.round(bitmap.width * initialScale));
+      let height = Math.max(1, Math.round(bitmap.height * initialScale));
+      const canvas = root.document.createElement('canvas');
+      const qualities = [0.82, 0.74, 0.66, 0.58];
+      let blob = null;
+      for (const quality of qualities) {
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d', { alpha: true });
+        if (!context) return file;
+        context.drawImage(bitmap, 0, 0, width, height);
+        blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+        if (!blob) return file;
+        if (blob.size <= targetBytes) break;
+        width = Math.max(1, Math.round(width * 0.85));
+        height = Math.max(1, Math.round(height * 0.85));
+      }
+      if (!blob || blob.size >= file.size) return file;
+      const baseName = String(file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+      return new root.File([blob], `${baseName}.webp`, { type: 'image/webp', lastModified: Date.now() });
+    } catch (_) {
+      return file;
+    } finally {
+      if (bitmap?.close) bitmap.close();
+    }
+  }
+
   async function mediaPayload(file, options = {}) {
-    return { usage: options.usage, entityType: options.entityType || options.usage, entityId: options.entityId || '', originalFilename: file.name, declaredMimeType: file.type, base64Data: await readFileAsBase64(file), altTextRo: options.altTextRo || '', altTextEn: options.altTextEn || '', altTextDe: options.altTextDe || '' };
+    const optimized = await optimizeImageFile(file, options.usage);
+    return { payload: { usage: options.usage, entityType: options.entityType || options.usage, entityId: options.entityId || '', originalFilename: optimized.name, declaredMimeType: optimized.type, base64Data: await readFileAsBase64(optimized), altTextRo: options.altTextRo || '', altTextEn: options.altTextEn || '', altTextDe: options.altTextDe || '' }, size: optimized.size };
   }
 
   const api = {
@@ -187,10 +226,10 @@
     async getHomepageContent(admin = false) { homepage = admin ? await protectedCall('getHomepageContent') : await publicCall('getPublishedHomepageContent'); return homepage; },
     async updateHomepageContent(content, heroImageUrl, heroImagePosition) { const payload = { content, heroImageUrl: heroImageUrl || '', heroDriveFileId: homepage?.heroDriveFileId || '', heroImagePosition }; const value = await protectedCall('updateHomepageContent', { payload, expectedUpdatedAt: homepage?.updatedAt ?? null }); homepage = value; return value; },
     async listMedia() { return cache(await protectedCall('listMedia'), records.media); },
-    async uploadMedia(file, options) { const payload = await mediaPayload(file, options); const op = operation('uploadMedia', '', { usage: payload.usage, entityType: payload.entityType, entityId: payload.entityId, originalFilename: payload.originalFilename, declaredMimeType: payload.declaredMimeType, size: file.size }); const value = await protectedCall('uploadMedia', { payload, idempotencyKey: op.idempotencyKey }, op); records.media.set(value.id, value); return value; },
-    async replaceMedia(id, file, options) { const payload = await mediaPayload(file, options); const value = await protectedCall('replaceMedia', { id, payload, expectedUpdatedAt: timestamp(records.media, id) }); records.media.set(id, value); return value; },
+    async uploadMedia(file, options) { const prepared = await mediaPayload(file, options), payload = prepared.payload; const op = operation('uploadMedia', '', { usage: payload.usage, entityType: payload.entityType, entityId: payload.entityId, originalFilename: payload.originalFilename, declaredMimeType: payload.declaredMimeType, size: prepared.size }); const value = await protectedCall('uploadMedia', { payload, idempotencyKey: op.idempotencyKey }, op); records.media.set(value.id, value); return value; },
+    async replaceMedia(id, file, options) { const prepared = await mediaPayload(file, options), payload = prepared.payload; const value = await protectedCall('replaceMedia', { id, payload, expectedUpdatedAt: timestamp(records.media, id) }); records.media.set(id, value); return value; },
     async deleteMedia(id) { const payload = { expectedUpdatedAt: timestamp(records.media, id) }; const op = operation('deleteMedia', id, payload); const value = await protectedCall('deleteMedia', { id, expectedUpdatedAt: payload.expectedUpdatedAt, idempotencyKey: op.idempotencyKey }, op); records.media.set(id, value); return value; },
-    _test: { newIdempotencyKey, canonical, records, uncertainOperations, ZinaApiError, readFileAsBase64 }
+    _test: { newIdempotencyKey, canonical, records, uncertainOperations, ZinaApiError, readFileAsBase64, optimizeImageFile }
   };
 
   root.GoogleAppsScriptProvider = Object.freeze(api);

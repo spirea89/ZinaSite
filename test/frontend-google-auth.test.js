@@ -8,14 +8,14 @@ test('Google ID token is stored only for the current tab and cleared on logout',
   let credentialCallback;
   let localStorageTouched = false;
   const sessionValues = new Map();
-  const target = { replaceChildren() {}, setAttribute() {} };
+  const target = { renderedClasses: [], replaceChildren(child) { if (child?.className) this.renderedClasses.push(child.className); }, setAttribute() {}, removeAttribute() {} };
   const form = { style: {}, insertAdjacentElement(_position, element) { elements['google-signin-container'] = element; } };
   const elements = { 'login-form': form };
   const document = {
     head: { appendChild(script) { script.onload(); } },
     createElement(tag) {
       if (tag === 'script') return {};
-      return { id: '', setAttribute() {}, replaceChildren() {} };
+      return { id: '', setAttribute() {}, replaceChildren() {}, append() {} };
     },
     getElementById(id) { return elements[id] || (id === 'google-signin-container' ? target : null); }
   };
@@ -42,6 +42,7 @@ test('Google ID token is stored only for the current tab and cleared on logout',
 
   await window.GoogleAuthProvider.getSession();
   await credentialCallback({ credential: 'test-token-kept-only-in-closure' });
+  assert.ok(target.renderedClasses.includes('google-signin-loading'));
   assert.equal(await window.GoogleAuthProvider.getIdToken(), 'test-token-kept-only-in-closure');
   assert.equal(sessionValues.get('zina-google-admin-token'), 'test-token-kept-only-in-closure');
   assert.ok(Number(sessionValues.get('zina-google-admin-token-acquired-at')) > 0);
@@ -61,14 +62,14 @@ test('the current-tab session is restored after admin page navigation', async ()
     ['zina-google-admin-token-acquired-at', String(Date.now())],
     ['zina-google-admin-authorized-at', String(Date.now())]
   ]);
-  const target = { replaceChildren() {}, setAttribute() {} };
+  const target = { replaceChildren() {}, setAttribute() {}, removeAttribute() {} };
   const form = { style: {}, insertAdjacentElement(_position, element) { elements['google-signin-container'] = element; } };
   const elements = { 'login-form': form };
   const document = {
     head: { appendChild(script) { script.onload(); } },
     createElement(tag) {
       if (tag === 'script') return {};
-      return { id: '', setAttribute() {}, replaceChildren() {} };
+      return { id: '', setAttribute() {}, replaceChildren() {}, append() {} };
     },
     getElementById(id) { return elements[id] || (id === 'google-signin-container' ? target : null); }
   };
@@ -105,12 +106,12 @@ test('a Google account is not exposed as signed in until the admin allowlist app
   let credentialCallback;
   const sessionValues = new Map();
   const errorBox = { textContent: '', style: {} };
-  const target = { replaceChildren() {}, setAttribute() {} };
+  const target = { replaceChildren() {}, setAttribute() {}, removeAttribute() {} };
   const form = { style: {}, insertAdjacentElement(_position, element) { elements['google-signin-container'] = element; } };
   const elements = { 'login-form': form, 'login-error': errorBox };
   const document = {
     head: { appendChild(script) { script.onload(); } },
-    createElement(tag) { return tag === 'script' ? {} : { id: '', setAttribute() {}, replaceChildren() {} }; },
+    createElement(tag) { return tag === 'script' ? {} : { id: '', setAttribute() {}, replaceChildren() {}, append() {} }; },
     getElementById(id) { return elements[id] || (id === 'google-signin-container' ? target : null); }
   };
   const window = {
@@ -148,12 +149,12 @@ test('an expired current-tab session is discarded', async () => {
     ['zina-google-admin-token', 'expired-token'],
     ['zina-google-admin-token-acquired-at', String(Date.now() - 51 * 60 * 1000)]
   ]);
-  const target = { replaceChildren() {}, setAttribute() {} };
+  const target = { replaceChildren() {}, setAttribute() {}, removeAttribute() {} };
   const form = { style: {}, insertAdjacentElement(_position, element) { elements['google-signin-container'] = element; } };
   const elements = { 'login-form': form };
   const document = {
     head: { appendChild(script) { script.onload(); } },
-    createElement(tag) { return tag === 'script' ? {} : { id: '', setAttribute() {}, replaceChildren() {} }; },
+    createElement(tag) { return tag === 'script' ? {} : { id: '', setAttribute() {}, replaceChildren() {}, append() {} }; },
     getElementById(id) { return elements[id] || (id === 'google-signin-container' ? target : null); }
   };
   const window = {

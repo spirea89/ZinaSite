@@ -46,7 +46,7 @@ function makeContext(handler) {
   for (const file of ['zina-config.js', 'google-apps-script-provider.js']) {
     vm.runInContext(fs.readFileSync(path.join(PUBLIC, file), 'utf8'), context, { filename: file });
   }
-  return { api: window.GoogleAppsScriptProvider, calls, authEvents };
+  return { api: window.GoogleAppsScriptProvider, calls, authEvents, window };
 }
 
 test('production configuration defaults to Supabase with no Google identifiers', () => {
@@ -237,6 +237,30 @@ test('media provider rejects unsupported and oversized files before HTTP', async
   await assert.rejects(() => api.uploadMedia({ name: 'x.svg', type: 'image/svg+xml', size: 10 }, { usage: 'team' }), error => error.code === 'UNSUPPORTED_MEDIA_TYPE');
   await assert.rejects(() => api.uploadMedia({ name: 'x.png', type: 'image/png', size: 5 * 1024 * 1024 + 1 }, { usage: 'team' }), error => error.code === 'MEDIA_TOO_LARGE');
   assert.equal(calls.length, 0);
+});
+
+test('large media is resized and converted to WebP before upload', async () => {
+  const { api, window } = makeContext(() => envelope({ id: 'media-1' }));
+  let closed = false;
+  let canvas;
+  window.createImageBitmap = async () => ({ width: 4000, height: 3000, close() { closed = true; } });
+  window.document = {
+    createElement(tag) {
+      assert.equal(tag, 'canvas');
+      canvas = { width: 0, height: 0, getContext: () => ({ drawImage() {} }), toBlob: callback => callback({ size: 320000 }) };
+      return canvas;
+    }
+  };
+  window.File = class {
+    constructor(parts, name, options) { this.size = parts[0].size; this.name = name; this.type = options.type; this.lastModified = options.lastModified; }
+  };
+  const optimized = await api._test.optimizeImageFile({ name: 'portrait.jpg', type: 'image/jpeg', size: 4_300_000 }, 'team');
+  assert.equal(optimized.name, 'portrait.webp');
+  assert.equal(optimized.type, 'image/webp');
+  assert.equal(optimized.size, 320000);
+  assert.equal(canvas.width, 1200);
+  assert.equal(canvas.height, 900);
+  assert.equal(closed, true);
 });
 
 test('uncertain media upload retry reuses its idempotency key', async () => {
