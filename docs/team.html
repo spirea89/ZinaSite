@@ -72,6 +72,7 @@
             image.src = member.imageUrl;
             image.alt = member.name;
             image.loading = 'lazy';
+            image.decoding = 'async';
             visual.appendChild(image);
           } else {
             visual.classList.add('team-card-placeholder');

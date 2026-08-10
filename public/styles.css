@@ -890,6 +890,19 @@ h3 {
 }
 .translation-input-row > input,
 .translation-input-row > textarea { width: 100%; }
+.translation-input-row > * { min-width: 0; }
+.rich-editor-shell {
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+.rich-editor-shell #editor-container {
+  min-height: 300px;
+  background: white;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  position: relative;
+  z-index: 1;
+}
 .translation-globe { position: relative; }
 .translation-globe > summary {
   width: 2.75rem;
@@ -981,7 +994,27 @@ h3 {
 #editor-container .ql-editor.ql-blank::before {
   color: var(--text-muted);
   font-style: normal;
+  right: 15px;
+  white-space: normal;
 }
+
+.google-signin-loading {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.google-signin-spinner {
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary-blue);
+  border-radius: 50%;
+  animation: zina-spin 0.75s linear infinite;
+}
+@keyframes zina-spin { to { transform: rotate(360deg); } }
 
 #editor-container .ql-toolbar {
   border-top-left-radius: var(--radius-md);

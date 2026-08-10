@@ -132,6 +132,26 @@
       form.insertAdjacentElement('afterend', target);
     }
     await loadGis();
+    function renderSignInButton() {
+      target.removeAttribute('aria-busy');
+      target.replaceChildren();
+      root.google.accounts.id.renderButton(target, { theme: 'outline', size: 'large', text: 'signin_with' });
+    }
+    function showLoginProgress() {
+      const errorBox = document.getElementById('login-error');
+      if (errorBox) errorBox.style.display = 'none';
+      const status = document.createElement('div');
+      status.className = 'google-signin-loading';
+      status.setAttribute('role', 'status');
+      const spinner = document.createElement('span');
+      spinner.className = 'google-signin-spinner';
+      spinner.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.textContent = 'Se verifică accesul…';
+      status.append(spinner, label);
+      target.setAttribute('aria-busy', 'true');
+      target.replaceChildren(status);
+    }
     root.google.accounts.id.initialize({
       client_id: config.googleOAuthClientId,
       auto_select: false,
@@ -139,16 +159,18 @@
       async callback(response) {
         if (!response || typeof response.credential !== 'string') {
           forget('SIGNED_OUT');
+          renderSignInButton();
           return;
         }
+        showLoginProgress();
         idToken = response.credential;
         acquiredAt = Date.now();
         currentUser = null;
         if (await verifyAdministrator()) emit('SIGNED_IN');
+        else renderSignInButton();
       }
     });
-    target.replaceChildren();
-    root.google.accounts.id.renderButton(target, { theme: 'outline', size: 'large', text: 'signin_with' });
+    renderSignInButton();
   }
 
   restoreStoredSession();
