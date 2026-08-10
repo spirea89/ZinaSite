@@ -134,7 +134,7 @@ Article content and event descriptions may contain only the allowlisted formatti
 
 Titles, category labels, event locations, team fields, Drive identifiers, and homepage JSON strings are plain text and reject markup/control characters. Homepage JSON is depth- and key-constrained. Formula-injection neutralization covers leading whitespace and control characters before `=`, `+`, `-`, or `@`, and every written cell is set to text format before its value is assigned. Frontend output encoding remains necessary defense in depth when frontend integration begins.
 
-Public organization contacts are stored inside the existing `HomepageContent.content.contacts` JSON object; no additional worksheet columns are required. Supported optional fields are `email`, `whatsappUrl`, `facebookUrl`, `linkedinUrl`, and `zvrNumber`. Apps Script validates the email address, requires HTTPS URLs, restricts social links to their expected providers, and accepts a ZVR number containing 1 to 10 digits before saving.
+Public organization contacts are stored inside the existing `HomepageContent.content.contacts` JSON object; no additional worksheet columns are required. Supported optional fields are `email`, `whatsappUrl`, `facebookUrl`, `linkedinUrl`, and `zvrNumber`. Apps Script validates the email address, requires HTTPS URLs, accepts WhatsApp group invitation and Channel links, restricts other social links to their expected providers, and accepts a ZVR number containing 1 to 10 digits before saving.
 
 Every protected request must contain a fresh Google ID token. An `origin` value supplied by a browser is not accepted and would not be a security boundary. Verified Google identity plus the active `Admins` allowlist is the authorization boundary.
 

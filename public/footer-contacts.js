@@ -52,7 +52,7 @@
     const values = contacts || {};
     const email = safeEmail(values.email);
     addLink(container, 'Email', email ? `mailto:${email}` : '');
-    addLink(container, 'WhatsApp', safeProviderUrl(values.whatsappUrl, ['chat.whatsapp.com']));
+    addLink(container, 'WhatsApp', safeProviderUrl(values.whatsappUrl, ['chat.whatsapp.com', 'whatsapp.com', 'www.whatsapp.com']));
     addLink(container, 'Facebook', safeProviderUrl(values.facebookUrl, ['facebook.com', 'www.facebook.com']));
     addLink(container, 'LinkedIn', safeProviderUrl(values.linkedinUrl, ['linkedin.com', 'www.linkedin.com']));
     const zvrNumber = /^[0-9]{1,10}$/.test(String(values.zvrNumber || '')) ? String(values.zvrNumber) : '';

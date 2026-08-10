@@ -276,7 +276,7 @@ function validateHomepageContacts_(input) {
   const facebookUrl = urlValue_(value.facebookUrl, 'content.contacts.facebookUrl');
   const linkedinUrl = urlValue_(value.linkedinUrl, 'content.contacts.linkedinUrl');
   const zvrNumber = plainTextValue_(value.zvrNumber, 'content.contacts.zvrNumber', { max: 10 });
-  if (whatsappUrl && !/^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9_-]+(?:[/?#][^\s]*)?$/.test(whatsappUrl)) throw apiError_('INVALID_URL', 'content.contacts.whatsappUrl must be a WhatsApp group invitation URL.');
+  if (whatsappUrl && !/^https:\/\/(?:(?:chat\.whatsapp\.com\/[A-Za-z0-9_-]+)|(?:(?:www\.)?whatsapp\.com\/channel\/[A-Za-z0-9_-]+))(?:[/?#][^\s]*)?$/.test(whatsappUrl)) throw apiError_('INVALID_URL', 'content.contacts.whatsappUrl must be a WhatsApp group or channel URL.');
   if (facebookUrl && !/^https:\/\/(?:www\.)?facebook\.com\/(?:[^\s]+)$/.test(facebookUrl)) throw apiError_('INVALID_URL', 'content.contacts.facebookUrl must be a Facebook URL.');
   if (linkedinUrl && !/^https:\/\/(?:www\.)?linkedin\.com\/(?:[^\s]+)$/.test(linkedinUrl)) throw apiError_('INVALID_URL', 'content.contacts.linkedinUrl must be a LinkedIn URL.');
   if (zvrNumber && !/^[0-9]{1,10}$/.test(zvrNumber)) throw apiError_('VALIDATION_ERROR', 'content.contacts.zvrNumber must contain 1 to 10 digits.');
