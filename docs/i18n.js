@@ -6,7 +6,8 @@
 
   const messages = {
     ro: {
-      about: 'Despre noi', team: 'Echipă', articles: 'Articole', events: 'Evenimente', admin: 'Admin',
+      about: 'Despre noi', team: 'Echipă', articles: 'Articole', events: 'Evenimente', resources: 'Resurse', admin: 'Admin',
+      resourcesTitle: 'Resurse', resourcesDescription: 'Activități și instrumente utile pentru familiile comunității', familyGames: 'Jocuri pentru familie', languageRoulette: 'Language Roulette', languageRouletteDescription: 'Un joc interactiv pentru familii care exersează limba germană prin întrebări, răspunsuri și o roată a norocului.', playLanguageRoulette: 'Joacă Language Roulette →',
       teamTitle: 'Echipa noastră', teamDescription: 'Oamenii care au fondat și construiesc comunitatea ZinA', noTeam: 'Profilurile echipei vor apărea aici în curând.',
       articlesTitle: 'Articole', articlesDescription: 'Știri, sfaturi și resurse pentru comunitatea română din Viena',
       noArticles: 'Nu există articole publicate încă.', readMore: 'Citește mai mult →', allCategories: 'Toate categoriile',
@@ -18,7 +19,8 @@
       footer: 'Comunitatea românilor din Viena', previous: '← Anterior', next: 'Următor →'
     },
     en: {
-      about: 'About us', team: 'Team', articles: 'Articles', events: 'Events', admin: 'Admin',
+      about: 'About us', team: 'Team', articles: 'Articles', events: 'Events', resources: 'Resources', admin: 'Admin',
+      resourcesTitle: 'Resources', resourcesDescription: 'Useful activities and tools for families in our community', familyGames: 'Family Games', languageRoulette: 'Language Roulette', languageRouletteDescription: 'An interactive family game for practising German through questions, answers and a spinning wheel.', playLanguageRoulette: 'Play Language Roulette →',
       teamTitle: 'Our team', teamDescription: 'The people who founded and continue to build the ZinA community', noTeam: 'Team profiles will appear here soon.',
       articlesTitle: 'Articles', articlesDescription: 'News, guidance and resources for Vienna’s Romanian community',
       noArticles: 'No articles have been published yet.', readMore: 'Read more →', allCategories: 'All categories',
@@ -30,7 +32,8 @@
       footer: 'The Romanian community in Vienna', previous: '← Previous', next: 'Next →'
     },
     de: {
-      about: 'Über uns', team: 'Team', articles: 'Artikel', events: 'Veranstaltungen', admin: 'Admin',
+      about: 'Über uns', team: 'Team', articles: 'Artikel', events: 'Veranstaltungen', resources: 'Ressourcen', admin: 'Admin',
+      resourcesTitle: 'Ressourcen', resourcesDescription: 'Hilfreiche Aktivitäten und Werkzeuge für Familien in unserer Gemeinschaft', familyGames: 'Familienspiele', languageRoulette: 'Language Roulette', languageRouletteDescription: 'Ein interaktives Familienspiel, um Deutsch mit Fragen, Antworten und einem Glücksrad zu üben.', playLanguageRoulette: 'Language Roulette spielen →',
       teamTitle: 'Unser Team', teamDescription: 'Die Menschen, die die ZinA-Gemeinschaft gegründet haben und weiter aufbauen', noTeam: 'Die Teamprofile erscheinen hier in Kürze.',
       articlesTitle: 'Artikel', articlesDescription: 'Neuigkeiten, Tipps und Ressourcen für die rumänische Gemeinschaft in Wien',
       noArticles: 'Noch keine Artikel veröffentlicht.', readMore: 'Weiterlesen →', allCategories: 'Alle Kategorien',
