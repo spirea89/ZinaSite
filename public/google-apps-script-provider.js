@@ -184,8 +184,12 @@
         height = Math.max(1, Math.round(height * 0.85));
       }
       if (!blob || blob.size >= file.size) return file;
+      const outputTypes = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+      const outputType = String(blob.type || '').toLowerCase();
+      const outputExtension = outputTypes[outputType];
+      if (!outputExtension) return file;
       const baseName = String(file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
-      return new root.File([blob], `${baseName}.webp`, { type: 'image/webp', lastModified: Date.now() });
+      return new root.File([blob], `${baseName}.${outputExtension}`, { type: outputType, lastModified: Date.now() });
     } catch (_) {
       return file;
     } finally {

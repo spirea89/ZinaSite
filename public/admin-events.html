@@ -137,6 +137,7 @@
 
   <script src="auth-service.js"></script>
   <script src="data-service.js"></script>
+  <script src="admin-ui.js"></script>
   <script>
     const loginModal = document.getElementById('login-modal');
     const loginForm = document.getElementById('login-form');
@@ -288,8 +289,10 @@
         publish.textContent = event.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
         publish.onclick = async () => {
           try {
-            await DataService.setEventStatus(event.id, event.status === 'published' ? 'draft' : 'published');
-            await loadEvents();
+            await AdminUi.withPending(publish, 'Se actualizează…', async () => {
+              await DataService.setEventStatus(event.id, event.status === 'published' ? 'draft' : 'published');
+              await loadEvents();
+            });
           } catch (error) {
             alert(error.message || 'Statusul nu a putut fi schimbat.');
           }
@@ -300,8 +303,10 @@
         del.onclick = async () => {
           if (!confirm('Sigur vrei să ștergi acest eveniment?')) return;
           try {
-            await DataService.deleteEvent(event.id);
-            await loadEvents();
+            await AdminUi.withPending(del, 'Se șterge…', async () => {
+              await DataService.deleteEvent(event.id);
+              await loadEvents();
+            });
           } catch (error) {
             alert(error.message || 'Evenimentul nu a putut fi șters.');
           }
@@ -323,7 +328,7 @@
         if (id) await DataService.updateEvent(id, payload);
         else await DataService.createEvent(payload);
         resetEventForm();
-        loadEvents();
+        await loadEvents();
       } catch (err) {
         console.error(err);
         alert(err.message || 'Eroare la salvarea evenimentului.');
@@ -332,7 +337,8 @@
 
     eventForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      await saveEvent({
+      const submit = e.submitter || eventForm.querySelector('button[type="submit"]');
+      await AdminUi.withPending(submit, 'Se salvează…', () => saveEvent({
         id: eventIdInput.value || undefined,
         title: eventTitleRoInput.value,
         description: eventDescriptionRoInput.value,
@@ -345,7 +351,7 @@
         location: eventLocationInput.value || undefined,
         registrationUrl: eventRegistrationUrlInput.value || undefined,
         status: eventStatusInput.value,
-      });
+      }));
     });
 
     async function loadEvents() {

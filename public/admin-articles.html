@@ -152,6 +152,7 @@
 
   <script src="auth-service.js"></script>
   <script src="data-service.js"></script>
+  <script src="admin-ui.js"></script>
   <script>
     const loginModal = document.getElementById('login-modal');
     const loginForm = document.getElementById('login-form');
@@ -365,8 +366,10 @@
         publish.textContent = article.status === 'published' ? 'Salvează ca ciornă' : 'Publică';
         publish.onclick = async () => {
           try {
-            await DataService.setArticleStatus(article.id, article.status === 'published' ? 'draft' : 'published');
-            await loadArticles();
+            await AdminUi.withPending(publish, 'Se actualizează…', async () => {
+              await DataService.setArticleStatus(article.id, article.status === 'published' ? 'draft' : 'published');
+              await loadArticles();
+            });
           } catch (error) {
             alert(error.message || 'Statusul nu a putut fi schimbat.');
           }
@@ -377,8 +380,10 @@
         del.onclick = async () => {
           if (!confirm('Sigur vrei să ștergi acest articol?')) return;
           try {
-            await DataService.deleteArticle(article.id);
-            await loadArticles();
+            await AdminUi.withPending(del, 'Se șterge…', async () => {
+              await DataService.deleteArticle(article.id);
+              await loadArticles();
+            });
           } catch (error) {
             alert(error.message || 'Articolul nu a putut fi șters.');
           }
@@ -410,7 +415,7 @@
         if (id) await DataService.updateArticle(id, payload);
         else await DataService.createArticle(payload);
         resetForm();
-        loadArticles();
+        await loadArticles();
       } catch (err) {
         console.error(err);
         alert(err.message || 'Eroare la salvarea articolului.');
@@ -420,7 +425,8 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (quill) contentInput.value = quill.root.innerHTML;
-      await saveArticle({ id: idInput.value || undefined, title: titleRoInput.value, content: contentRoInput.value, status: statusInput.value, categoryId: categoryInput.value || null, titleEn: titleInput.value, contentEn: contentInput.value, titleDe: titleDeInput.value, contentDe: contentDeInput.value, useEditor: true });
+      const submit = e.submitter || form.querySelector('button[type="submit"]');
+      await AdminUi.withPending(submit, 'Se salvează…', () => saveArticle({ id: idInput.value || undefined, title: titleRoInput.value, content: contentRoInput.value, status: statusInput.value, categoryId: categoryInput.value || null, titleEn: titleInput.value, contentEn: contentInput.value, titleDe: titleDeInput.value, contentDe: contentDeInput.value, useEditor: true }));
     });
 
     resetButton.addEventListener('click', resetForm);
@@ -465,7 +471,7 @@
           edit.onclick = () => { categoryId.value = category.id; categoryNameRo.value = category.name_ro; categoryNameEn.value = category.name_en; categoryNameDe.value = category.name_de; };
           const del = document.createElement('button');
           del.type = 'button'; del.className = 'button danger'; del.textContent = 'Șterge';
-          del.onclick = async () => { if (confirm('Ștergi categoria? Articolele vor rămâne fără categorie.')) { await DataService.deleteCategory(category.id); loadCategories(); loadArticles(); } };
+          del.onclick = async () => { if (confirm('Ștergi categoria? Articolele vor rămâne fără categorie.')) { await AdminUi.withPending(del, 'Se șterge…', async () => { await DataService.deleteCategory(category.id); await Promise.all([loadCategories(), loadArticles()]); }); } };
           actions.append(edit, del); row.append(name, actions); list.appendChild(row);
         });
         categoryInput.value = selected;
@@ -474,9 +480,12 @@
 
     categoryForm.addEventListener('submit', async event => {
       event.preventDefault();
-      const payload = { nameRo: categoryNameRo.value || categoryNameEn.value, nameEn: categoryNameEn.value, nameDe: categoryNameDe.value || categoryNameEn.value };
-      if (categoryId.value) await DataService.updateCategory(categoryId.value, payload); else await DataService.createCategory(payload);
-      categoryForm.reset(); categoryId.value = ''; loadCategories();
+      const submit = event.submitter || categoryForm.querySelector('button[type="submit"]');
+      await AdminUi.withPending(submit, 'Se salvează…', async () => {
+        const payload = { nameRo: categoryNameRo.value || categoryNameEn.value, nameEn: categoryNameEn.value, nameDe: categoryNameDe.value || categoryNameEn.value };
+        if (categoryId.value) await DataService.updateCategory(categoryId.value, payload); else await DataService.createCategory(payload);
+        categoryForm.reset(); categoryId.value = ''; await loadCategories();
+      });
     });
     document.getElementById('category-reset').addEventListener('click', () => { categoryForm.reset(); categoryId.value = ''; });
 
