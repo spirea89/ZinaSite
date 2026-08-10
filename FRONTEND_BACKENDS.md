@@ -1,37 +1,37 @@
 # Frontend backend providers
 
-ZiNa's static frontend supports two CMS providers during migration:
+## Production architecture
 
-- `supabase` — the default and current production/rollback provider.
-- `google-apps-script` — the A4 test provider for the isolated Google Sheet backend.
+ZiNa production uses the `google-apps-script` frontend provider. Google Sheets stores CMS records, the deployed Google Apps Script Web App supplies public and protected API operations, Google Identity Services supplies administrator ID tokens, and Apps Script enforces the exact active `Admins` allowlist on every protected request.
 
-The tracked `public/zina-runtime-config.js` contains no identifiers and leaves the provider at its safe Supabase default. When the local Express server is used, configuration is supplied at runtime with environment variables:
+Published media is written by Apps Script to the separate public GitHub media repository and served through GitHub Pages. The browser cannot select the media repository, branch, path, blob SHA, or GitHub credential.
 
-```text
-ZINA_BACKEND_PROVIDER=supabase
-ZINA_PUBLIC_APPS_SCRIPT_API_URL=
-ZINA_PROTECTED_APPS_SCRIPT_API_URL=
-ZINA_GOOGLE_OAUTH_CLIENT_ID=
-```
+Supabase is not loaded or supported by the production frontend and cannot become active because Google configuration is missing. The remote Supabase project and historical schema files are left untouched only for separate later cleanup; they are not a rollback database and contain no production data.
 
-Real OAuth client IDs and Apps Script URLs must remain outside Git. The OAuth client ID is public browser configuration, not a secret, but ZiNa still treats its real deployment value as private configuration. No OAuth client secret is used.
+## Production runtime configuration
 
-## Google administrator session
+The tracked `public/zina-runtime-config.js` is intentionally empty and contains no deployment identifiers. `.github/workflows/deploy-pages.yml` builds the Pages artifact and replaces that file using these GitHub Actions secrets:
 
-Google Identity Services is loaded only when the Google provider is selected. The ID token is held in a JavaScript closure and is never written to local storage, session storage, cookies, URLs, logs, or rendered markup. Logout, expiry, or backend rejection clears it. Navigating between the current standalone admin pages requires another Google sign-in because tokens deliberately do not survive page loads.
+- `ZINA_PUBLIC_APPS_SCRIPT_API_URL`
+- `ZINA_PROTECTED_APPS_SCRIPT_API_URL`
+- `ZINA_GOOGLE_OAUTH_CLIENT_ID`
 
-## Write safety
+The workflow always writes `backendProvider: 'google-apps-script'`. It rejects missing or malformed Apps Script URLs and OAuth client IDs before uploading a Pages artifact. `public/zina-config.js` independently validates the same values in the browser. Missing configuration fails with a clear configuration error; it never selects Supabase.
 
-The Google provider caches the `updatedAt` value returned by protected reads and supplies it as top-level `expectedUpdatedAt` metadata. Create and delete requests receive cryptographically random idempotency keys. A key is reused only after an uncertain response for the same action, target, and normalized payload.
+The OAuth client ID and Apps Script URLs are browser-visible configuration, not cryptographic secrets, but real ZiNa values remain outside Git under the project policy. OAuth client secrets, Google tokens, administrator identifiers, spreadsheet IDs, deployment credentials, and GitHub media credentials must never be committed.
 
-`CONFLICT` and `WRITE_STATE_UNCERTAIN` reload current server state and raise a review-required error. They are never silently retried with new safety metadata.
+## Administrator and write safety
 
-## Media limitation
+Google Identity Services obtains a Google ID token. It remains in memory/current-tab session handling only and is cleared on logout, expiry, or backend rejection. Apps Script verifies the token and checks the active administrator row on every protected request.
 
-The A5B isolated provider can upload, list, replace, and soft-delete JPEG, PNG, and WebP files through protected Apps Script actions into a separate public GitHub media repository. `admin-media-prototype.html` exposes these controls only when the Google test provider is explicitly selected. Existing Supabase Storage uploads remain unchanged in the default provider.
+The provider preserves the Apps Script action contract for articles, categories, events, team members, homepage content, and media. Updates and destructive operations use `expectedUpdatedAt`; creates and destructive retries use cryptographic idempotency keys. Conflicts and uncertain write states require review rather than silently overwriting data. Rich HTML is validated by Apps Script and sanitized again before frontend rendering.
 
-Real Apps Script URLs and OAuth configuration remain runtime-only. GitHub repository configuration and the write credential are backend-only Script Properties. Published URLs use GitHub Pages and never depend on ZiNaSite repository visibility. Production remains on Supabase until explicit media cutover approval.
+## Supabase status
 
-## Content security
+Supabase was used only for development and test data. No content migration, synchronization, reconciliation, or production rollback is required. The Supabase frontend client, server API routes, environment configuration, and package dependencies have been removed. Historical SQL and setup documents remain solely as development history until the remote Supabase project is cleaned up separately.
 
-Google Apps Script validates rich HTML before storage. The frontend additionally sanitizes approved article/event markup before inserting it into the DOM. The Express server sends CSP, referrer, permissions, and MIME-sniffing headers. The CSP still needs `unsafe-inline` because the legacy static pages contain inline scripts and styles; removing that exception requires extracting those blocks in a later dedicated hardening checkpoint.
+## Local development
+
+For a production-like local session, run the Express static server with the four Google environment variables from an untracked shell environment. A plain static server will deliberately show a configuration error because it cannot inject production runtime values.
+
+The Express server no longer exposes Supabase `/api` routes. All CMS operations use the selected browser provider; production uses Apps Script.

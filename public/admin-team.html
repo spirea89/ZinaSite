@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="zina-runtime-config.js"></script>
   <script src="zina-config.js"></script>
   <script src="google-auth-provider.js"></script>
@@ -75,7 +74,7 @@
         const title=document.createElement('h3');title.textContent=member.name;const role=document.createElement('p');role.className='muted';role.textContent=member.roleEn;const bio=document.createElement('p');bio.className='article-preview';bio.textContent=member.bioEn;const actions=document.createElement('div');actions.className='actions';
         const edit=document.createElement('button');edit.className='button ghost';edit.textContent='Editează';edit.onclick=()=>{idInput.value=member.id;nameInput.value=member.name;roleEn.value=member.roleEn;roleRo.value=member.roleRo;roleDe.value=member.roleDe;bioEn.value=member.bioEn;bioRo.value=member.bioRo;bioDe.value=member.bioDe;orderInput.value=member.sortOrder;currentImageUrl=member.imageUrl;if(member.imageUrl){preview.src=member.imageUrl;preview.style.display='block';}nameInput.focus();window.scrollTo({top:0,behavior:'smooth'});};
         const del=document.createElement('button');del.className='button danger';del.textContent='Șterge';del.onclick=async()=>{if(confirm('Ștergi acest profil?')){await AdminUi.withPending(del,'Se șterge…',async()=>{await DataService.deleteTeamMember(member.id);await loadTeam();});}};actions.append(edit,del);card.append(title,role,bio,actions);list.appendChild(card);
-      });}catch(error){console.error(error);message.textContent=`Eroare: ${error.message}. Rulează supabase-team-schema.sql în Supabase.`;}
+      });}catch(error){console.error(error);message.textContent=`Eroare: ${error.message}`;}
     }
 
     form.addEventListener('submit',async event=>{event.preventDefault();message.textContent='Se salvează…';const submit=event.submitter||form.querySelector('button[type="submit"]');try{await AdminUi.withPending(submit,'Se salvează…',async()=>{let imageUrl=currentImageUrl;if(imageInput.files[0])imageUrl=await DataService.uploadTeamImage(imageInput.files[0]);const payload={name:nameInput.value,roleEn:roleEn.value,roleRo:roleRo.value||roleEn.value,roleDe:roleDe.value||roleEn.value,bioEn:bioEn.value,bioRo:bioRo.value||bioEn.value,bioDe:bioDe.value||bioEn.value,imageUrl,sortOrder:Number(orderInput.value)||0};if(idInput.value)await DataService.updateTeamMember(idInput.value,payload);else await DataService.createTeamMember(payload);resetForm();message.textContent='Profil salvat.';await loadTeam();});}catch(error){console.error(error);message.textContent=`Salvarea a eșuat: ${error.message}`;}});
@@ -83,7 +82,7 @@
     document.getElementById('login-form').addEventListener('submit',async event=>{event.preventDefault();const errorBox=document.getElementById('login-error');errorBox.style.display='none';try{const result=await AuthService.signIn(document.getElementById('login-email').value,document.getElementById('login-password').value);if(result.user)showPanel(result.user);}catch(error){errorBox.textContent=error.message;errorBox.style.display='block';}});
     document.getElementById('logout-btn').addEventListener('click',async()=>{await AuthService.signOut();location.href='admin.html';});
     AuthService.onAuthStateChange((event,session)=>{if((event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED')&&session?.user)showPanel(session.user);else if(event==='SIGNED_OUT'){activeUserId=null;adminHeader.style.display='none';adminContent.style.display='none';loginModal.style.display='flex';}});
-    (async()=>{let n=0;while(!window.ZinaConfig?.isGoogle()&&typeof window.supabase==='undefined'&&n<50){await new Promise(resolve=>setTimeout(resolve,100));n++;}const user=await AuthService.getCurrentUser();if(user)showPanel(user);else loginModal.style.display='flex';})();
+    (async()=>{const user=await AuthService.getCurrentUser();if(user)showPanel(user);else loginModal.style.display='flex';})();
   </script>
 </body>
 </html>
