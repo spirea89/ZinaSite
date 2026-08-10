@@ -31,7 +31,7 @@ test('footer contacts render safe links and share one homepage request', async (
         requestCount += 1;
         return { content: { contacts: {
           email: 'office@example.org',
-          whatsappUrl: 'https://chat.whatsapp.com/example_group',
+          whatsappUrl: 'https://www.whatsapp.com/channel/example_channel',
           facebookUrl: 'https://www.facebook.com/example',
           linkedinUrl: 'https://www.linkedin.com/company/example',
           zvrNumber: '1234567890'
@@ -46,6 +46,7 @@ test('footer contacts render safe links and share one homepage request', async (
   assert.deepEqual(contactContainer.children.map(link => link.textContent), ['Email', 'WhatsApp', 'Facebook', 'LinkedIn', 'ZVR: 1234567890']);
   assert.equal(contactContainer.children[0].href, 'mailto:office@example.org');
   assert.equal(contactContainer.children[1].rel, 'noopener noreferrer');
+  assert.equal(contactContainer.children[1].href, 'https://www.whatsapp.com/channel/example_channel');
   assert.equal(contactContainer.hidden, false);
 
   window.ZinaFooterContacts.render({ email: 'bad address', whatsappUrl: 'javascript:alert(1)', facebookUrl: 'https://example.org', linkedinUrl: 'http://linkedin.com/company/example' });
