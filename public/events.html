@@ -39,20 +39,11 @@
         <h1 data-i18n="eventsTitle">Evenimente</h1>
         <p class="section-description" data-i18n="eventsDescription">Vezi evenimentele trecute și viitoare ale comunității românilor din Viena</p>
       </div>
-      <div class="calendar-container">
-        <div class="calendar-controls">
-          <button id="prev-month" class="button ghost">←</button>
-          <h3 id="current-month-year"></h3>
-          <button id="next-month" class="button ghost">→</button>
-        </div>
-        <div id="calendar" class="calendar"></div>
-      </div>
-      <div id="events-list" class="events-list"></div>
+      <div id="events-list" class="events-list" aria-live="polite"></div>
       <p id="events-empty" class="empty-state">
         <span class="empty-icon">📅</span>
         <span data-i18n="noEvents">Nu există evenimente publicate încă.</span>
       </p>
-      <div id="pagination-wrap" class="pagination-wrap" style="display: none;"></div>
     </section>
   </main>
 
@@ -67,15 +58,6 @@
   <script src="data-service.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-
-    const PAGE_SIZE = 9;
-    let allEvents = [];
-    let currentDate = new Date();
-
-    function getPageFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return Math.max(1, parseInt(params.get('page'), 10) || 1);
-    }
 
     function formatDate(date) {
       return date.toLocaleDateString(I18n.locale, {
@@ -92,95 +74,12 @@
       });
     }
 
-    function getDaysInMonth(date) {
-      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    }
-
-    function getFirstDayOfMonth(date) {
-      return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    }
-
-    function isSameDay(date1, date2) {
-      return date1.getFullYear() === date2.getFullYear() &&
-             date1.getMonth() === date2.getMonth() &&
-             date1.getDate() === date2.getDate();
-    }
-
-    function isPast(date) {
+    function isPastEvent(date) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const d = new Date(date);
       d.setHours(0, 0, 0, 0);
       return d < today;
-    }
-
-    function getEventsForDate(date) {
-      if (!allEvents || allEvents.length === 0) return [];
-      return allEvents.filter(e => {
-        if (!e.startDate) return false;
-        const eventDate = new Date(e.startDate);
-        return !isNaN(eventDate.getTime()) && isSameDay(eventDate, date);
-      });
-    }
-
-    function renderCalendar() {
-      const calendar = document.getElementById('calendar');
-      const monthYear = document.getElementById('current-month-year');
-      monthYear.textContent = currentDate.toLocaleDateString(I18n.locale, { month: 'long', year: 'numeric' });
-      calendar.innerHTML = '';
-
-      const weekdays = Array.from({ length: 7 }, (_, index) => new Date(2024, 0, index + 1).toLocaleDateString(I18n.locale, { weekday: 'short' }));
-      const header = document.createElement('div');
-      header.className = 'calendar-header';
-      weekdays.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'calendar-day-header';
-        dayHeader.textContent = day;
-        header.appendChild(dayHeader);
-      });
-      calendar.appendChild(header);
-
-      const grid = document.createElement('div');
-      grid.className = 'calendar-grid';
-      const daysInMonth = getDaysInMonth(currentDate);
-      const firstDay = getFirstDayOfMonth(currentDate);
-      const firstDayIndex = firstDay === 0 ? 6 : firstDay - 1;
-      const today = new Date();
-
-      for (let i = 0; i < firstDayIndex; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.className = 'calendar-day empty';
-        grid.appendChild(emptyCell);
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-        const dayEvents = getEventsForDate(date);
-        const dayCell = document.createElement('div');
-        dayCell.className = 'calendar-day';
-        if (isSameDay(date, today)) dayCell.classList.add('today');
-        if (isPast(date)) dayCell.classList.add('past');
-        const dayNumber = document.createElement('div');
-        dayNumber.className = 'day-number';
-        dayNumber.textContent = day;
-        dayCell.appendChild(dayNumber);
-        if (dayEvents.length > 0) {
-          const eventsIndicator = document.createElement('div');
-          eventsIndicator.className = 'events-indicator';
-          eventsIndicator.textContent = dayEvents.length;
-          eventsIndicator.title = dayEvents.map(e => e.title).join(', ');
-          dayCell.appendChild(eventsIndicator);
-          dayCell.classList.add('has-events');
-        }
-        dayCell.addEventListener('click', () => {
-          if (dayEvents.length > 0) {
-            const eventsList = document.getElementById('events-list');
-            eventsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        });
-        grid.appendChild(dayCell);
-      }
-      calendar.appendChild(grid);
     }
 
     function createEventCard(event, isPastEvent) {
@@ -226,52 +125,59 @@
       return card;
     }
 
-    function renderPagination(total, page) {
-      const wrap = document.getElementById('pagination-wrap');
-      const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-      if (totalPages <= 1) {
-        wrap.style.display = 'none';
-        return;
+    function renderEventGroup(title, events, past) {
+      const group = document.createElement('section');
+      group.className = `events-section-group ${past ? 'past-events-group' : 'upcoming-events-group'}`;
+      const heading = document.createElement('h2');
+      heading.textContent = title;
+      group.appendChild(heading);
+
+      const cards = document.createElement('div');
+      cards.className = 'events-group-list';
+      if (!events.length) {
+        const message = document.createElement('p');
+        message.className = 'events-group-empty';
+        message.textContent = I18n.t('noEvents');
+        cards.appendChild(message);
+      } else {
+        events.forEach(event => cards.appendChild(createEventCard(event, past)));
       }
-      wrap.style.display = 'flex';
-      let html = '<nav class="pagination" aria-label="Paginare">';
-      if (page > 1) {
-        const prevUrl = page === 2 ? 'events.html' : `events.html?page=${page - 1}`;
-        html += `<a href="${prevUrl}" class="prev">${I18n.t('previous')}</a>`;
-      }
-      html += '<span class="pagination-info">Pagina ' + page + ' din ' + totalPages + '</span>';
-      if (page < totalPages) {
-        html += `<a href="events.html?page=${page + 1}" class="next">${I18n.t('next')}</a>`;
-      }
-      html += '</nav>';
-      wrap.innerHTML = html;
+      group.appendChild(cards);
+      return group;
     }
 
-    async function loadEventsPage(page) {
+    async function loadEvents() {
       const eventsList = document.getElementById('events-list');
       const emptyState = document.getElementById('events-empty');
-      const paginationWrap = document.getElementById('pagination-wrap');
 
-      eventsList.innerHTML = '';
-      eventsList.style.display = 'none';
+      eventsList.innerHTML = `<p class="empty-state events-loading"><span class="empty-icon">⏳</span><span>${I18n.t('loading')}</span></p>`;
+      eventsList.style.display = 'block';
       emptyState.style.display = 'none';
-      paginationWrap.style.display = 'none';
 
       try {
-        const { items, total } = await DataService.getEventsPage('published', page, PAGE_SIZE);
-        if (!items.length) {
+        const events = await DataService.getEvents('published');
+        const validEvents = events.filter(event => event.startDate && !Number.isNaN(new Date(event.startDate).getTime()));
+        if (!validEvents.length) {
+          eventsList.innerHTML = '';
+          eventsList.style.display = 'none';
           emptyState.style.display = 'flex';
           return;
         }
+
+        const upcoming = validEvents
+          .filter(event => !isPastEvent(event.startDate))
+          .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        const past = validEvents
+          .filter(event => isPastEvent(event.startDate))
+          .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+
         eventsList.style.display = 'block';
-        const now = new Date();
-        items.forEach(event => {
-          const isPastEvent = new Date(event.startDate) < now;
-          eventsList.appendChild(createEventCard(event, isPastEvent));
-        });
-        renderPagination(total, page);
+        eventsList.appendChild(renderEventGroup(I18n.t('upcoming'), upcoming, false));
+        eventsList.appendChild(renderEventGroup(I18n.t('past'), past, true));
       } catch (error) {
         console.error('Failed to load events', error);
+        eventsList.innerHTML = '';
+        eventsList.style.display = 'none';
         emptyState.style.display = 'flex';
         emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea evenimentelor.</span>';
       }
@@ -282,25 +188,8 @@
         setTimeout(init, 100);
         return;
       }
-      try {
-        allEvents = (await DataService.getEvents('published')).map(I18n.localizeEvent);
-        if (allEvents && allEvents.length) allEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-      } catch (e) {
-        console.warn('Could not load all events for calendar', e);
-      }
-      renderCalendar();
-      const page = getPageFromUrl();
-      await loadEventsPage(page);
+      await loadEvents();
     }
-
-    document.getElementById('prev-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() - 1);
-      renderCalendar();
-    });
-    document.getElementById('next-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-      renderCalendar();
-    });
 
     init();
 
