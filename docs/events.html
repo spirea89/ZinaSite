@@ -171,6 +171,7 @@
           .filter(event => isPastEvent(event.startDate))
           .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
 
+        eventsList.innerHTML = '';
         eventsList.style.display = 'block';
         eventsList.appendChild(renderEventGroup(I18n.t('upcoming'), upcoming, false));
         eventsList.appendChild(renderEventGroup(I18n.t('past'), past, true));

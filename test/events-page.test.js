@@ -15,5 +15,6 @@ for (const siteDirectory of ['public', 'docs']) {
     assert.match(html, /I18n\.t\('upcoming'\)/);
     assert.match(html, /I18n\.t\('past'\)/);
     assert.match(html, /d < today/);
+    assert.match(html, /eventsList\.innerHTML = '';\s*eventsList\.style\.display = 'block';/);
   });
 }
