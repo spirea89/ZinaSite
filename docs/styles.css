@@ -2200,6 +2200,81 @@ textarea:focus-visible {
   }
 }
 
+/* Compact public navigation on phones and small tablets */
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    min-height: 68px;
+    padding: 0.55rem 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .logo-img {
+    width: min(210px, 62vw);
+    max-width: 62vw;
+    height: auto;
+  }
+
+  .nav-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--primary-blue);
+    cursor: pointer;
+  }
+
+  .nav-toggle span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 180ms ease, opacity 180ms ease;
+  }
+
+  .menu-open .nav-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .menu-open .nav-toggle span:nth-child(2) { opacity: 0; }
+  .menu-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .navbar .nav-links {
+    display: none;
+    width: 100%;
+    max-width: none;
+    padding: 0.75rem 0 0.4rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .navbar.menu-open .nav-links {
+    display: flex;
+  }
+
+  .navbar .nav-link,
+  .navbar .nav-link:first-child,
+  .navbar .admin-link {
+    display: block;
+    padding: 0.7rem 0.25rem;
+    font-size: 0.95rem;
+  }
+
+  .navbar .language-switcher {
+    align-self: flex-start;
+    margin: 0.35rem 0;
+  }
+}
+
 /* The public admin entry remains in its known position without visual emphasis. */
 .nav-link.admin-link,
 .nav-link.admin-link:hover,
