@@ -26,3 +26,9 @@ test('mobile navigation is collapsed until the burger menu is opened', () => {
   assert.match(css, /\.navbar\.menu-open \.nav-links\s*{\s*display:\s*flex/);
   assert.match(css, /\.nav-toggle\s*{[\s\S]*display:\s*inline-flex/);
 });
+
+test('homepage mission anchor clears the fixed navigation', () => {
+  const css = fs.readFileSync(path.join(publicDir, 'styles.css'), 'utf8');
+  assert.match(css, /#mission\s*{\s*scroll-margin-top:\s*8\.5rem/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*#mission\s*{\s*scroll-margin-top:\s*6\.25rem/);
+});
