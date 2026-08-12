@@ -278,7 +278,7 @@ function validateLanguageSettings_(input) {
 
 function validateHomepageContacts_(input) {
   const value = assertObject_(input, 'content.contacts');
-  rejectUnknownFields_(value, ['email', 'whatsappUrl', 'facebookUrl', 'linkedinUrl', 'zvrNumber']);
+  rejectUnknownFields_(value, ['email', 'whatsappUrl', 'facebookUrl', 'linkedinUrl', 'youtubeUrl', 'zvrNumber']);
   const email = plainTextValue_(value.email, 'content.contacts.email', { max: 320 });
   if (email && !/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(email)) {
     throw apiError_('VALIDATION_ERROR', 'content.contacts.email must be a valid email address.');
@@ -286,12 +286,14 @@ function validateHomepageContacts_(input) {
   const whatsappUrl = urlValue_(value.whatsappUrl, 'content.contacts.whatsappUrl');
   const facebookUrl = urlValue_(value.facebookUrl, 'content.contacts.facebookUrl');
   const linkedinUrl = urlValue_(value.linkedinUrl, 'content.contacts.linkedinUrl');
+  const youtubeUrl = urlValue_(value.youtubeUrl, 'content.contacts.youtubeUrl');
   const zvrNumber = plainTextValue_(value.zvrNumber, 'content.contacts.zvrNumber', { max: 10 });
   if (whatsappUrl && !/^https:\/\/(?:(?:chat\.whatsapp\.com\/[A-Za-z0-9_-]+)|(?:(?:www\.)?whatsapp\.com\/channel\/[A-Za-z0-9_-]+))(?:[/?#][^\s]*)?$/.test(whatsappUrl)) throw apiError_('INVALID_URL', 'content.contacts.whatsappUrl must be a WhatsApp group or channel URL.');
   if (facebookUrl && !/^https:\/\/(?:www\.)?facebook\.com\/(?:[^\s]+)$/.test(facebookUrl)) throw apiError_('INVALID_URL', 'content.contacts.facebookUrl must be a Facebook URL.');
   if (linkedinUrl && !/^https:\/\/(?:www\.)?linkedin\.com\/(?:[^\s]+)$/.test(linkedinUrl)) throw apiError_('INVALID_URL', 'content.contacts.linkedinUrl must be a LinkedIn URL.');
+  if (youtubeUrl && !/^https:\/\/(?:(?:(?:www|m)\.)?youtube\.com|youtu\.be)\/(?:[^\s]+)$/.test(youtubeUrl)) throw apiError_('INVALID_URL', 'content.contacts.youtubeUrl must be a YouTube URL.');
   if (zvrNumber && !/^[0-9]{1,10}$/.test(zvrNumber)) throw apiError_('VALIDATION_ERROR', 'content.contacts.zvrNumber must contain 1 to 10 digits.');
-  return { email: email, whatsappUrl: whatsappUrl, facebookUrl: facebookUrl, linkedinUrl: linkedinUrl, zvrNumber: zvrNumber };
+  return { email: email, whatsappUrl: whatsappUrl, facebookUrl: facebookUrl, linkedinUrl: linkedinUrl, youtubeUrl: youtubeUrl, zvrNumber: zvrNumber };
 }
 
 function validateHomepageContentNode_(value, name, depth) {
