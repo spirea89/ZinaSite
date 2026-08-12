@@ -2333,3 +2333,14 @@ textarea:focus-visible {
   .homepage-image-editor { grid-template-columns: 1fr; }
   .homepage-fields-grid label:has(textarea) { grid-column: auto; }
 }
+
+/* Keep in-page headings visible below the fixed navigation. */
+#mission {
+  scroll-margin-top: 8.5rem;
+}
+
+@media (max-width: 768px) {
+  #mission {
+    scroll-margin-top: 6.25rem;
+  }
+}
