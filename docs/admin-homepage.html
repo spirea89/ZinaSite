@@ -104,6 +104,7 @@
           <label class="stack"><span>Grup sau canal WhatsApp</span><input id="contact-whatsapp" type="url" maxlength="2048" placeholder="https://www.whatsapp.com/channel/..."></label>
           <label class="stack"><span>Facebook</span><input id="contact-facebook" type="url" maxlength="2048" placeholder="https://www.facebook.com/..."></label>
           <label class="stack"><span>LinkedIn</span><input id="contact-linkedin" type="url" maxlength="2048" placeholder="https://www.linkedin.com/company/..."></label>
+          <label class="stack"><span>YouTube</span><input id="contact-youtube" type="url" maxlength="2048" placeholder="https://www.youtube.com/@..."></label>
           <label class="stack"><span>Număr ZVR</span><input id="contact-zvr" type="text" maxlength="10" inputmode="numeric" pattern="[0-9]{1,10}" placeholder="1234567890"></label>
         </div>
       </section>
@@ -172,6 +173,7 @@
     const contactWhatsappInput = document.getElementById('contact-whatsapp');
     const contactFacebookInput = document.getElementById('contact-facebook');
     const contactLinkedinInput = document.getElementById('contact-linkedin');
+    const contactYoutubeInput = document.getElementById('contact-youtube');
     const contactZvrInput = document.getElementById('contact-zvr');
     const languageDeInput = document.getElementById('language-de');
     const languageEnInput = document.getElementById('language-en');
@@ -182,7 +184,7 @@
       en: I18n.homepageContent('en'),
       de: I18n.homepageContent('de')
     };
-    let homepageContacts = { email: '', whatsappUrl: '', facebookUrl: '', linkedinUrl: '', zvrNumber: '' };
+    let homepageContacts = { email: '', whatsappUrl: '', facebookUrl: '', linkedinUrl: '', youtubeUrl: '', zvrNumber: '' };
     let languageSettings = { ro: true, de: true, en: false };
 
     function displayContacts(contacts) {
@@ -191,6 +193,7 @@
       contactWhatsappInput.value = homepageContacts.whatsappUrl;
       contactFacebookInput.value = homepageContacts.facebookUrl;
       contactLinkedinInput.value = homepageContacts.linkedinUrl;
+      contactYoutubeInput.value = homepageContacts.youtubeUrl;
       contactZvrInput.value = homepageContacts.zvrNumber;
     }
 
@@ -200,6 +203,7 @@
         whatsappUrl: contactWhatsappInput.value.trim(),
         facebookUrl: contactFacebookInput.value.trim(),
         linkedinUrl: contactLinkedinInput.value.trim(),
+        youtubeUrl: contactYoutubeInput.value.trim(),
         zvrNumber: contactZvrInput.value.trim()
       };
     }
