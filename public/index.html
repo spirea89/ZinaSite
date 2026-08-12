@@ -52,7 +52,9 @@
         </div>
       </div>
       <figure class="hero-visual">
-        <img id="homepage-hero-image" class="hero-image-loading" decoding="async" fetchpriority="high" alt="Oameni de toate vârstele reuniți în jurul mesei, într-o curte românească primitoare">
+        <div class="hero-image-viewport">
+          <img id="homepage-hero-image" class="hero-image-loading" decoding="async" fetchpriority="high" alt="Oameni de toate vârstele reuniți în jurul mesei, într-o curte românească primitoare">
+        </div>
         <figcaption data-home-field="heroCaption">Acasă nu este doar un loc. Sunt oamenii care te primesc.</figcaption>
       </figure>
     </div>
@@ -146,10 +148,13 @@
       const cachedHeroImage = localStorage.getItem('zina-homepage-hero-image');
       const cachedHeroPosition = localStorage.getItem('zina-homepage-hero-position');
 
-      function displayHeroPosition(position) {
+      function displayHeroPosition(position, zoomValue) {
         const x = Math.min(100, Math.max(0, Number(position?.x) || 0));
         const y = Math.min(100, Math.max(0, Number(position?.y) || 0));
+        const zoom = Math.min(160, Math.max(100, Number(zoomValue) || 100));
         heroImage.style.objectPosition = `${x}% ${y}%`;
+        heroImage.style.transform = `scale(${zoom / 100})`;
+        heroImage.style.transformOrigin = `${x}% ${y}%`;
       }
 
       function displayHeroImage(url) {
@@ -164,7 +169,10 @@
       }
 
       if (cachedHeroPosition) {
-        try { displayHeroPosition(JSON.parse(cachedHeroPosition)); } catch (_) { localStorage.removeItem('zina-homepage-hero-position'); }
+        try {
+          const cachedCrop = JSON.parse(cachedHeroPosition);
+          displayHeroPosition(cachedCrop, cachedCrop.zoom);
+        } catch (_) { localStorage.removeItem('zina-homepage-hero-position'); }
       }
       if (cachedHeroImage) displayHeroImage(cachedHeroImage);
       try {
@@ -181,8 +189,9 @@
         });
         const confirmedHeroImage = homepage?.heroImageUrl || defaultHeroImage;
         const confirmedHeroPosition = homepage?.heroImagePosition || { x: 64, y: 50 };
-        displayHeroPosition(confirmedHeroPosition);
-        localStorage.setItem('zina-homepage-hero-position', JSON.stringify(confirmedHeroPosition));
+        const confirmedHeroZoom = homepage?.content?.heroImageZoom || 100;
+        displayHeroPosition(confirmedHeroPosition, confirmedHeroZoom);
+        localStorage.setItem('zina-homepage-hero-position', JSON.stringify({ ...confirmedHeroPosition, zoom: confirmedHeroZoom }));
         if (homepage?.heroImageUrl) localStorage.setItem('zina-homepage-hero-image', homepage.heroImageUrl);
         else localStorage.removeItem('zina-homepage-hero-image');
         if (heroImage.getAttribute('src') !== confirmedHeroImage) displayHeroImage(confirmedHeroImage);
