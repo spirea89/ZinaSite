@@ -57,6 +57,17 @@ test('admin editors use Romanian as primary and retain hidden English fields', (
   }
 });
 
+test('homepage image editor persists zoom and applies vertical crop positioning', () => {
+  const admin = fs.readFileSync(path.join(root, 'public', 'admin-homepage.html'), 'utf8');
+  const homepage = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'public', 'styles.css'), 'utf8');
+  assert.match(admin, /id="hero-zoom"/);
+  assert.match(admin, /heroImageZoom/);
+  assert.match(homepage, /confirmedHeroZoom/);
+  assert.match(homepage, /transformOrigin = `\$\{x\}% \$\{y\}%`/);
+  assert.match(css, /\.hero-image-viewport\s*{[\s\S]*overflow:\s*hidden/);
+});
+
 test('changed pages contain syntactically valid inline scripts and unique element IDs', () => {
   for (const name of ['index.html', 'articles.html', 'article.html', 'admin-homepage.html', 'admin-articles.html', 'admin-events.html', 'admin-team.html']) {
     const html = fs.readFileSync(path.join(root, 'public', name), 'utf8');
