@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Articole pentru comunitatea română din Viena - ZusammenInAustria (Zina)">
-  <title>Articole - ZusammenInAustria (Zina)</title>
+  <meta name="description" content="Proiecte pentru comunitatea română din Viena - ZusammenInAustria (Zina)">
+  <title>Proiecte - ZusammenInAustria (Zina)</title>
   <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +25,7 @@
       <div class="nav-links">
        <a href="index.html#mission" class="nav-link" data-i18n="about">Despre noi</a>
         <a href="team.html" class="nav-link" data-i18n="team">Team</a>
-        <a href="articles.html" class="nav-link" data-i18n="articles">Articole</a>
+        <a href="articles.html" class="nav-link" data-i18n="articles">Proiecte</a>
         <a href="events.html" class="nav-link" data-i18n="events">Evenimente</a>
         <a href="resources.html" class="nav-link" data-i18n="resources">Resurse</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
@@ -36,14 +36,14 @@
   <main class="content page-content">
     <section class="articles-section">
       <div class="section-header">
-        <h1 data-i18n="articlesTitle">Articole</h1>
-        <p class="section-description" data-i18n="articlesDescription">Știri, sfaturi și resurse pentru comunitatea română din Viena</p>
+        <h1 data-i18n="articlesTitle">Proiecte</h1>
+        <p class="section-description" data-i18n="articlesDescription">Inițiative și proiecte pentru comunitatea română din Viena</p>
       </div>
       <div id="category-filters" class="category-filters"></div>
       <div id="articles-container" class="articles-grid"></div>
       <p id="empty-state" class="empty-state">
         <span class="empty-icon">📝</span>
-        <span data-i18n="noArticles">Nu există articole publicate încă.</span>
+        <span data-i18n="noArticles">Nu există proiecte publicate încă.</span>
       </p>
       <div id="pagination-wrap" class="pagination-wrap" style="display: none;"></div>
     </section>
@@ -173,7 +173,7 @@
         console.error('Failed to load articles', error);
         container.innerHTML = '';
         emptyState.style.display = 'flex';
-        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea articolelor.</span>';
+        emptyState.innerHTML = '<span class="empty-icon">⚠️</span><span>Eroare la încărcarea proiectelor.</span>';
       }
     }
 
