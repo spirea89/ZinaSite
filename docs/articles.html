@@ -8,6 +8,8 @@
   <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260812-mobile-nav">
   <script src="zina-runtime-config.js"></script>
@@ -67,6 +69,7 @@
     let currentPage = 1;
     let totalItems = 0;
     let allArticles = [];
+    let allCategories = [];
     let activeCategory = 'all';
 
     function getPageFromUrl() {
@@ -178,11 +181,10 @@
       }
     }
 
-    async function renderCategoryFilters() {
+    function renderCategoryFilters() {
       const wrap = document.getElementById('category-filters');
-      const categories = await DataService.getCategories();
       wrap.innerHTML = '';
-      [{ slug: 'all', name_ro: I18n.t('allCategories'), name_en: I18n.t('allCategories'), name_de: I18n.t('allCategories') }, ...categories].forEach(category => {
+      [{ slug: 'all', name_ro: I18n.t('allCategories'), name_en: I18n.t('allCategories'), name_de: I18n.t('allCategories') }, ...allCategories].forEach(category => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `category-filter${category.slug === activeCategory ? ' active' : ''}`;
@@ -196,10 +198,20 @@
       });
     }
 
+    async function initializeProjects() {
+      const results = await Promise.all([DataService.getCategories(), DataService.getArticles('published')]);
+      allCategories = results[0];
+      allArticles = results[1];
+      renderCategoryFilters();
+      await loadPage(currentPage);
+    }
+
     currentPage = getPageFromUrl();
     if (typeof DataService !== 'undefined') {
-      renderCategoryFilters();
-      loadPage(currentPage);
+      initializeProjects().catch(error => {
+        console.error('Failed to initialize projects', error);
+        loadPage(currentPage);
+      });
     } else {
       window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => loadPage(currentPage), 100);
