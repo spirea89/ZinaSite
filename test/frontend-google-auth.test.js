@@ -53,6 +53,53 @@ test('Google ID token is stored only for the current tab and cleared on logout',
   assert.equal(localStorageTouched, false);
 });
 
+test('logout revokes the current Google grant so another account can be selected', async () => {
+  let credentialCallback;
+  let revokedSubject = null;
+  let cancelCalled = false;
+  const sessionValues = new Map();
+  const target = { replaceChildren() {}, setAttribute() {}, removeAttribute() {} };
+  const form = { style: {}, insertAdjacentElement(_position, element) { elements['google-signin-container'] = element; } };
+  const elements = { 'login-form': form };
+  const document = {
+    head: { appendChild(script) { script.onload(); } },
+    createElement(tag) { return tag === 'script' ? {} : { id: '', setAttribute() {}, replaceChildren() {}, append() {} }; },
+    getElementById(id) { return elements[id] || (id === 'google-signin-container' ? target : null); }
+  };
+  const payload = Buffer.from(JSON.stringify({ sub: 'synthetic-google-subject' })).toString('base64url');
+  const token = `header.${payload}.signature`;
+  const window = {
+    ZinaConfig: { isGoogle: () => true, get: () => ({ googleOAuthClientId: 'test.apps.googleusercontent.com', protectedAppsScriptApiUrl: 'https://example.invalid/exec' }) },
+    fetch: async () => ({ json: async () => ({ ok: true, data: [], error: null, version: 'v1' }) }),
+    google: { accounts: { id: {
+      initialize(options) { credentialCallback = options.callback; },
+      renderButton() {},
+      disableAutoSelect() {},
+      cancel() { cancelCalled = true; },
+      revoke(subject, callback) { revokedSubject = subject; callback({ successful: true }); }
+    } } },
+    atob(value) { return Buffer.from(value, 'base64').toString('binary'); },
+    sessionStorage: {
+      getItem(key) { return sessionValues.get(key) || null; },
+      setItem(key, value) { sessionValues.set(key, value); },
+      removeItem(key) { sessionValues.delete(key); }
+    },
+    setTimeout,
+    clearTimeout
+  };
+  const context = vm.createContext({ window, document, Date, Set, Promise, Error, Object, Number, JSON });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'public', 'google-auth-provider.js'), 'utf8'), context);
+
+  await window.GoogleAuthProvider.getSession();
+  await credentialCallback({ credential: token });
+  await window.GoogleAuthProvider.signOut();
+
+  assert.equal(revokedSubject, 'synthetic-google-subject');
+  assert.equal(cancelCalled, true);
+  assert.equal(sessionValues.size, 0);
+  assert.equal(await window.GoogleAuthProvider.getSession(), null);
+});
+
 test('the current-tab session is restored after admin page navigation', async () => {
   let initializedOptions;
   let promptCalled = false;

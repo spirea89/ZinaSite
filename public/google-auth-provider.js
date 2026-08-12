@@ -92,12 +92,50 @@
     listeners.forEach(listener => listener(event, session));
   }
 
+  function tokenSubject(token) {
+    try {
+      if (typeof token !== 'string' || typeof root.atob !== 'function') return null;
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+      const padded = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
+      const subject = JSON.parse(root.atob(padded))?.sub;
+      return typeof subject === 'string' && subject ? subject : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function revokeGoogleGrant(subject) {
+    if (!subject || typeof root.google?.accounts?.id?.revoke !== 'function') return;
+    await new Promise(resolve => {
+      let completed = false;
+      const finish = () => {
+        if (completed) return;
+        completed = true;
+        resolve();
+      };
+      const timeout = typeof root.setTimeout === 'function' ? root.setTimeout(finish, 1500) : null;
+      try {
+        root.google.accounts.id.revoke(subject, () => {
+          if (timeout !== null && typeof root.clearTimeout === 'function') root.clearTimeout(timeout);
+          finish();
+        });
+      } catch (_) {
+        if (timeout !== null && typeof root.clearTimeout === 'function') root.clearTimeout(timeout);
+        finish();
+      }
+    });
+  }
+
   function forget(event = 'SIGNED_OUT') {
     idToken = null;
     acquiredAt = 0;
     currentUser = null;
     clearStoredSession();
-    if (root.google?.accounts?.id) root.google.accounts.id.disableAutoSelect();
+    if (root.google?.accounts?.id) {
+      if (typeof root.google.accounts.id.cancel === 'function') root.google.accounts.id.cancel();
+      root.google.accounts.id.disableAutoSelect();
+    }
     emit(event);
   }
 
@@ -191,7 +229,9 @@
       return { user: currentUser, session: { user: currentUser } };
     },
     async signOut() {
+      const subject = tokenSubject(idToken);
       forget('SIGNED_OUT');
+      await revokeGoogleGrant(subject);
       await mountLogin();
       return true;
     },

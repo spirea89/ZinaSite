@@ -1724,6 +1724,38 @@ textarea {
   align-self: flex-start;
 }
 
+.embedded-game-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.embedded-game-header {
+  min-height: 64px;
+  padding: 0.65rem clamp(1rem, 3vw, 2rem);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--white);
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+  z-index: 1;
+}
+
+.embedded-game-main {
+  flex: 1;
+  min-height: 0;
+}
+
+.embedded-game-frame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 64px);
+  border: 0;
+  background: var(--cream);
+}
+
 .cta-card .muted {
   flex: 1;
   margin-bottom: 1rem;
