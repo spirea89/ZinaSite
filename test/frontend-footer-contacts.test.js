@@ -8,6 +8,7 @@ const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'footer-cont
 
 test('footer contacts render safe links and share one homepage request', async () => {
   let requestCount = 0;
+  let languageSettings = null;
   let contactContainer = null;
   const footer = {
     appendChild(element) { contactContainer = element; },
@@ -26,10 +27,11 @@ test('footer contacts render safe links and share one homepage request', async (
   };
   const window = {
     document,
+    I18n: { setLanguageSettings(value) { languageSettings = value; } },
     DataService: {
       async getHomepageContent() {
         requestCount += 1;
-        return { content: { contacts: {
+        return { content: { languageSettings: { ro: true, de: true, en: false }, contacts: {
           email: 'office@example.org',
           whatsappUrl: 'https://www.whatsapp.com/channel/example_channel',
           facebookUrl: 'https://www.facebook.com/example',
@@ -43,6 +45,7 @@ test('footer contacts render safe links and share one homepage request', async (
 
   await window.ZinaFooterContacts.load();
   assert.equal(requestCount, 1);
+  assert.deepEqual(languageSettings, { ro: true, de: true, en: false });
   assert.deepEqual(contactContainer.children.map(link => link.textContent), ['Email', 'WhatsApp', 'Facebook', 'LinkedIn', 'ZVR: 1234567890']);
   assert.equal(contactContainer.children[0].href, 'mailto:office@example.org');
   assert.equal(contactContainer.children[1].rel, 'noopener noreferrer');
