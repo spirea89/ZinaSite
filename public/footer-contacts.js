@@ -68,6 +68,7 @@
   async function load() {
     try {
       const homepage = await getHomepage();
+      if (root.I18n?.setLanguageSettings) root.I18n.setLanguageSettings(homepage?.content?.languageSettings);
       render(homepage?.content?.contacts);
       return homepage;
     } catch (error) {
