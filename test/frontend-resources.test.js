@@ -9,8 +9,15 @@ test('resources page presents Language Roulette as a family game', () => {
   const html = fs.readFileSync(path.join(publicDir, 'resources.html'), 'utf8');
   assert.match(html, /data-i18n="familyGames"/);
   assert.match(html, /data-i18n="languageRoulette"/);
-  assert.match(html, /https:\/\/spirea89\.github\.io\/RoataNoroculuiDE\//);
-  assert.match(html, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(html, /href="language-roulette\.html"/);
+  assert.doesNotMatch(html, /target="_blank"/);
+});
+
+test('Language Roulette opens inside a ZiNa-hosted wrapper', () => {
+  const html = fs.readFileSync(path.join(publicDir, 'language-roulette.html'), 'utf8');
+  assert.match(html, /<iframe[\s\S]*https:\/\/spirea89\.github\.io\/RoataNoroculuiDE\//);
+  assert.match(html, /href="resources\.html"/);
+  assert.match(html, /title="Language Roulette"/);
 });
 
 test('all public navigation menus include Resources', () => {
