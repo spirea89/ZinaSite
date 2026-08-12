@@ -7,6 +7,8 @@
   };
   let homepage = null;
   const uncertainOperations = new Map();
+  const PUBLIC_CACHE_PREFIX = 'zina-public-api-v1:';
+  const PUBLIC_CACHE_TTL_MS = 60 * 1000;
 
   class ZinaApiError extends Error {
     constructor(code, message, options = {}) {
@@ -70,12 +72,45 @@
     return envelope;
   }
 
+  function publicCacheKey(action, parameters) {
+    return PUBLIC_CACHE_PREFIX + action + ':' + canonical(parameters || {});
+  }
+
+  function readPublicCache(key) {
+    try {
+      const stored = JSON.parse(root.sessionStorage?.getItem(key) || 'null');
+      if (!stored || !Number.isFinite(stored.savedAt) || Date.now() - stored.savedAt >= PUBLIC_CACHE_TTL_MS) return null;
+      return stored.data;
+    } catch (_) { return null; }
+  }
+
+  function writePublicCache(key, data) {
+    try { root.sessionStorage?.setItem(key, JSON.stringify({ savedAt: Date.now(), data })); } catch (_) {}
+  }
+
+  function clearPublicCache() {
+    try {
+      const storage = root.sessionStorage;
+      if (!storage) return;
+      const keys = [];
+      for (let index = 0; index < storage.length; index++) {
+        const key = storage.key(index);
+        if (key?.startsWith(PUBLIC_CACHE_PREFIX)) keys.push(key);
+      }
+      keys.forEach(key => storage.removeItem(key));
+    } catch (_) {}
+  }
+
   async function publicCall(action, parameters = {}) {
+    const cacheKey = publicCacheKey(action, parameters);
+    const cached = readPublicCache(cacheKey);
+    if (cached !== null) return cached;
     const url = new URL(config().publicAppsScriptApiUrl);
     url.searchParams.set('action', action);
     Object.entries(parameters).forEach(([key, value]) => value !== undefined && url.searchParams.set(key, String(value)));
     const envelope = await readEnvelope(await fetch(url.toString(), { method: 'GET', cache: 'no-store', referrerPolicy: 'no-referrer' }));
     if (!envelope.ok) throw new ZinaApiError(envelope.error?.code || 'REQUEST_FAILED', envelope.error?.message || 'The CMS request failed.');
+    writePublicCache(cacheKey, envelope.data);
     return envelope.data;
   }
 
@@ -107,6 +142,7 @@
     }
     if (envelope.ok) {
       if (operation) uncertainOperations.delete(operation.key);
+      if (/^(create|update|delete|set|upload|replace)/.test(action)) clearPublicCache();
       return envelope.data;
     }
     const code = envelope.error?.code || 'REQUEST_FAILED';
@@ -233,7 +269,7 @@
     async uploadMedia(file, options) { const prepared = await mediaPayload(file, options), payload = prepared.payload; const op = operation('uploadMedia', '', { usage: payload.usage, entityType: payload.entityType, entityId: payload.entityId, originalFilename: payload.originalFilename, declaredMimeType: payload.declaredMimeType, size: prepared.size }); const value = await protectedCall('uploadMedia', { payload, idempotencyKey: op.idempotencyKey }, op); records.media.set(value.id, value); return value; },
     async replaceMedia(id, file, options) { const prepared = await mediaPayload(file, options), payload = prepared.payload; const value = await protectedCall('replaceMedia', { id, payload, expectedUpdatedAt: timestamp(records.media, id) }); records.media.set(id, value); return value; },
     async deleteMedia(id) { const payload = { expectedUpdatedAt: timestamp(records.media, id) }; const op = operation('deleteMedia', id, payload); const value = await protectedCall('deleteMedia', { id, expectedUpdatedAt: payload.expectedUpdatedAt, idempotencyKey: op.idempotencyKey }, op); records.media.set(id, value); return value; },
-    _test: { newIdempotencyKey, canonical, records, uncertainOperations, ZinaApiError, readFileAsBase64, optimizeImageFile }
+    _test: { newIdempotencyKey, canonical, records, uncertainOperations, ZinaApiError, readFileAsBase64, optimizeImageFile, clearPublicCache }
   };
 
   root.GoogleAppsScriptProvider = Object.freeze(api);

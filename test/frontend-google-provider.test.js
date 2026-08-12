@@ -13,6 +13,7 @@ function failure(code, message = 'safe') { return { ok: false, data: null, error
 function makeContext(handler) {
   const calls = [];
   const authEvents = [];
+  const sessionValues = new Map();
   const window = {
     __ZINA_RUNTIME_CONFIG: {
       backendProvider: 'google-apps-script',
@@ -21,6 +22,13 @@ function makeContext(handler) {
       googleOAuthClientId: '123456-test-client.apps.googleusercontent.com'
     },
     crypto: webcrypto,
+    sessionStorage: {
+      get length() { return sessionValues.size; },
+      key(index) { return Array.from(sessionValues.keys())[index] ?? null; },
+      getItem(key) { return sessionValues.get(key) ?? null; },
+      setItem(key, value) { sessionValues.set(key, String(value)); },
+      removeItem(key) { sessionValues.delete(key); }
+    },
     AuthService: {
       getIdToken: async () => 'memory-only-test-token',
       handleRejectedToken: code => authEvents.push(code)
@@ -144,6 +152,13 @@ test('public reads use GET and return only the backend published list', async ()
   const articles = await api.getArticles();
   assert.deepEqual(articles.map(item => item.id), ['published']);
   assert.match(calls[0].url, /action=listPublishedArticles/);
+});
+
+test('published lists use a short current-tab cache', async () => {
+  const { api, calls } = makeContext(() => envelope({ items: [{ id: 'event' }], total: 1, page: 1, limit: 100 }));
+  assert.equal((await api.getEvents()).map(item => item.id).join(','), 'event');
+  assert.equal((await api.getEvents()).map(item => item.id).join(','), 'event');
+  assert.equal(calls.length, 1);
 });
 
 test('provider exposes the complete 21-action Apps Script contract', async () => {
