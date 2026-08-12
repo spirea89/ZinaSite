@@ -23,7 +23,7 @@
       </a>
       <div class="nav-links">
         <a href="admin.html" class="nav-link">Panou admin</a>
-        <a href="admin-articles.html" class="nav-link">Articole</a>
+        <a href="admin-articles.html" class="nav-link">Proiecte</a>
         <a href="admin-events.html" class="nav-link">Evenimente</a>
         <a href="admin-team.html" class="nav-link">Team</a>
         <a href="index.html" class="nav-link">Vezi site-ul</a>
@@ -62,8 +62,13 @@
   <main class="content" id="admin-content" style="display: none;">
     <form id="homepage-form" class="stack homepage-admin-form">
       <section class="panel homepage-language-panel">
-        <h2>Conținut multilingv</h2>
-        <p class="muted">English is the default text. Select the globe beside any field to maintain its Romanian and German translations.</p>
+        <h2>Limbi active</h2>
+        <p class="muted">Româna este limba principală și rămâne activă. Limbile dezactivate sunt ascunse pe site și în editoare, dar traducerile existente nu sunt șterse.</p>
+        <div class="actions">
+          <label><input id="language-ro" type="checkbox" checked disabled> Română (principală)</label>
+          <label><input id="language-de" type="checkbox" checked> Deutsch</label>
+          <label><input id="language-en" type="checkbox"> English</label>
+        </div>
       </section>
       <section class="panel">
         <h2>Imagine principală</h2>
@@ -121,7 +126,7 @@
   <script src="admin-ui.js"></script>
   <script>
     const DEFAULT_HOMEPAGE = {
-      navAbout: 'Despre noi', navArticles: 'Articole', navEvents: 'Evenimente',
+      navAbout: 'Despre noi', navArticles: 'Proiecte', navEvents: 'Evenimente',
       heroEyebrow: 'Rădăcini românești · Împreună în Viena', heroTitle: 'Aici poți să te simți', heroTitleAccent: 'acasă.',
       heroLead: 'Un loc sigur și primitor pentru românii din Viena. Ne întâlnim, ne ajutăm și păstrăm aproape lucrurile care ne leagă de casă.',
       heroPrimaryButton: 'Vino la următoarea întâlnire', heroSecondaryButton: 'Descoperă comunitatea',
@@ -132,20 +137,20 @@
       pillar1Label: 'Evenimente culturale', pillar1Title: 'Ne adunăm în jurul mesei', pillar1Text: 'Întâlniri, sărbători și seri comunitare în care tradițiile prind din nou viață.',
       pillar2Label: 'Oameni aproape', pillar2Title: 'Nu trebuie să fii singur', pillar2Text: 'Prietenii, mentorat și legături sincere pentru fiecare început nou în Viena.',
       pillar3Label: 'Sprijin de încredere', pillar3Title: 'Găsim drumul împreună', pillar3Text: 'Informații locale și resurse utile, explicate cu răbdare pentru familii, studenți și nou-veniți.',
-      discoverTitle: 'Descoperă mai mult', discoverDescription: 'Articole pentru comunitate și evenimente în Viena',
-      articlesCardTitle: 'Articole', articlesCardText: 'Știri, sfaturi și resurse pentru românii din Viena', articlesCardLink: 'Vezi articole →',
+      discoverTitle: 'Descoperă mai mult', discoverDescription: 'Proiecte pentru comunitate și evenimente în Viena',
+      articlesCardTitle: 'Proiecte', articlesCardText: 'Inițiative și proiecte pentru românii din Viena', articlesCardLink: 'Vezi proiectele →',
       eventsCardTitle: 'Evenimente', eventsCardText: 'Întâlniri, sărbători și evenimente ale comunității', eventsCardLink: 'Vezi evenimente →',
       footerMain: 'ZusammenInAustria (Zina) • Viena, Austria', footerSubtitle: 'Comunitatea românilor din Viena'
     };
 
     const FIELD_GROUPS = [
-      ['Navigație', [['navAbout','Despre noi'],['navArticles','Articole'],['navEvents','Evenimente']]],
+      ['Navigație', [['navAbout','Despre noi'],['navArticles','Proiecte'],['navEvents','Evenimente']]],
       ['Zona principală', [['heroEyebrow','Text deasupra titlului'],['heroTitle','Titlu'],['heroTitleAccent','Cuvânt evidențiat'],['heroLead','Introducere','textarea'],['heroPrimaryButton','Buton principal'],['heroSecondaryButton','Buton secundar'],['welcomeTitle','Titlu de bun venit'],['welcomeText','Mesaj de bun venit','textarea'],['heroCaption','Text sub imagine','textarea']]],
       ['Misiune', [['missionKicker','Supratitlu'],['missionTitleLine1','Titlu — rândul 1'],['missionTitleLine2','Titlu — rândul 2'],['missionDescription','Descriere','textarea']]],
       ['Cardul 1', [['pillar1Label','Etichetă'],['pillar1Title','Titlu'],['pillar1Text','Text','textarea']]],
       ['Cardul 2', [['pillar2Label','Etichetă'],['pillar2Title','Titlu'],['pillar2Text','Text','textarea']]],
       ['Cardul 3', [['pillar3Label','Etichetă'],['pillar3Title','Titlu'],['pillar3Text','Text','textarea']]],
-      ['Descoperă', [['discoverTitle','Titlu secțiune'],['discoverDescription','Descriere'],['articlesCardTitle','Titlu articole'],['articlesCardText','Text articole','textarea'],['articlesCardLink','Link articole'],['eventsCardTitle','Titlu evenimente'],['eventsCardText','Text evenimente','textarea'],['eventsCardLink','Link evenimente']]],
+      ['Descoperă', [['discoverTitle','Titlu secțiune'],['discoverDescription','Descriere'],['articlesCardTitle','Titlu proiecte'],['articlesCardText','Text proiecte','textarea'],['articlesCardLink','Link proiecte'],['eventsCardTitle','Titlu evenimente'],['eventsCardText','Text evenimente','textarea'],['eventsCardLink','Link evenimente']]],
       ['Subsol', [['footerMain','Text principal'],['footerSubtitle','Text secundar']]]
     ];
 
@@ -168,6 +173,8 @@
     const contactFacebookInput = document.getElementById('contact-facebook');
     const contactLinkedinInput = document.getElementById('contact-linkedin');
     const contactZvrInput = document.getElementById('contact-zvr');
+    const languageDeInput = document.getElementById('language-de');
+    const languageEnInput = document.getElementById('language-en');
     let currentHeroImageUrl = null;
     let activeAdminUserId = null;
     let homepageByLocale = {
@@ -176,6 +183,7 @@
       de: I18n.homepageContent('de')
     };
     let homepageContacts = { email: '', whatsappUrl: '', facebookUrl: '', linkedinUrl: '', zvrNumber: '' };
+    let languageSettings = { ro: true, de: true, en: false };
 
     function displayContacts(contacts) {
       homepageContacts = { ...homepageContacts, ...(contacts || {}) };
@@ -213,10 +221,10 @@
 
     function createFieldControl(type, field, locale, value) {
       const input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
-      if (type === 'textarea') input.rows = locale === 'en' ? 3 : 2;
+      if (type === 'textarea') input.rows = locale === 'ro' ? 3 : 2;
       else input.type = 'text';
       input.value = value || '';
-      input.required = locale === 'en';
+      input.required = locale === 'ro';
       input.dataset.locale = locale;
       input.dataset.field = field;
       return input;
@@ -239,26 +247,27 @@
           caption.textContent = label;
           const row = document.createElement('div');
           row.className = 'translation-input-row';
-          const englishInput = createFieldControl(type, key, 'en', valuesByLocale.en[key]);
-          englishInput.setAttribute('aria-label', `${label} — English`);
+          const romanianInput = createFieldControl(type, key, 'ro', valuesByLocale.ro[key]);
+          romanianInput.setAttribute('aria-label', `${label} — Română`);
           const translations = document.createElement('details');
           translations.className = 'translation-globe';
           const summary = document.createElement('summary');
           summary.textContent = '🌐';
-          summary.title = 'Romanian and German translations';
+          summary.title = 'Traduceri';
           summary.setAttribute('aria-label', `Translations for ${label}`);
           const popup = document.createElement('div');
           popup.className = 'translation-popup';
-          [['ro', 'Română'], ['de', 'Deutsch']].forEach(([locale, language]) => {
+          [['de', 'Deutsch'], ['en', 'English']].forEach(([locale, language]) => {
             const translationLabel = document.createElement('label');
             translationLabel.className = 'stack';
+            translationLabel.dataset.language = locale;
             const languageName = document.createElement('span');
             languageName.textContent = language;
             translationLabel.append(languageName, createFieldControl(type, key, locale, valuesByLocale[locale][key]));
             popup.appendChild(translationLabel);
           });
           translations.append(summary, popup);
-          row.append(englishInput, translations);
+          row.append(romanianInput, translations);
           wrapper.append(caption, row);
           grid.appendChild(wrapper);
         });
@@ -283,14 +292,18 @@
       try {
         const saved = await DataService.getHomepageContent();
         const stored = saved?.content || {};
+        languageSettings = { ro: true, de: stored.languageSettings?.de !== false, en: stored.languageSettings?.en === true };
+        languageDeInput.checked = languageSettings.de;
+        languageEnInput.checked = languageSettings.en;
         const isMultilingual = stored.ro || stored.en || stored.de;
         homepageByLocale = {
-          ro: { ...DEFAULT_HOMEPAGE, ...(isMultilingual ? stored.ro : stored) },
-          en: { ...I18n.homepageContent('en'), ...(isMultilingual ? stored.en : {}) },
-          de: { ...I18n.homepageContent('de'), ...(isMultilingual ? stored.de : {}) }
+          ro: { ...DEFAULT_HOMEPAGE, ...I18n.normalizeHomepageContent(isMultilingual ? stored.ro : stored, 'ro') },
+          en: { ...I18n.homepageContent('en'), ...I18n.normalizeHomepageContent(isMultilingual ? stored.en : {}, 'en') },
+          de: { ...I18n.homepageContent('de'), ...I18n.normalizeHomepageContent(isMultilingual ? stored.de : {}, 'de') }
         };
         displayContacts(stored.contacts);
         renderFields(homepageByLocale);
+        applyLanguageVisibility();
         currentHeroImageUrl = saved?.heroImageUrl || null;
         imagePreview.src = currentHeroImageUrl || 'logos/hero-acasa-romania.jpg';
         positionXInput.value = saved?.heroImagePosition?.x ?? 64;
@@ -303,6 +316,16 @@
         message.className = 'homepage-message error-message';
       }
     }
+
+    function applyLanguageVisibility() {
+      languageSettings = { ro: true, de: languageDeInput.checked, en: languageEnInput.checked };
+      fieldsContainer.querySelectorAll('[data-language]').forEach(element => {
+        element.hidden = !languageSettings[element.dataset.language];
+      });
+    }
+
+    languageDeInput.addEventListener('change', applyLanguageVisibility);
+    languageEnInput.addEventListener('change', applyLanguageVisibility);
 
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
@@ -328,7 +351,7 @@
           captureCurrentFields();
           captureContacts();
           const heroImagePosition = { x: Number(positionXInput.value), y: Number(positionYInput.value) };
-          await DataService.updateHomepageContent({ ...homepageByLocale, contacts: homepageContacts }, heroImageUrl, heroImagePosition);
+          await DataService.updateHomepageContent({ ...homepageByLocale, contacts: homepageContacts, languageSettings }, heroImageUrl, heroImagePosition);
           currentHeroImageUrl = heroImageUrl;
           if (heroImageUrl) localStorage.setItem('zina-homepage-hero-image', heroImageUrl);
           localStorage.setItem('zina-homepage-hero-position', JSON.stringify(heroImagePosition));

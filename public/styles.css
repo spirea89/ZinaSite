@@ -806,6 +806,10 @@ h3 {
   background: var(--primary-blue);
   color: white;
 }
+
+[data-language][hidden] {
+  display: none !important;
+}
 .category-filters {
   display: flex;
   flex-wrap: wrap;

@@ -252,6 +252,9 @@ function validateHomepage_(input) {
   if (Object.prototype.hasOwnProperty.call(sanitizedContent, 'contacts')) {
     sanitizedContent.contacts = validateHomepageContacts_(sanitizedContent.contacts);
   }
+  if (Object.prototype.hasOwnProperty.call(sanitizedContent, 'languageSettings')) {
+    sanitizedContent.languageSettings = validateLanguageSettings_(sanitizedContent.languageSettings);
+  }
   const serialized = JSON.stringify(sanitizedContent);
   if (serialized.length > 200000) throw apiError_('VALIDATION_ERROR', 'content is too large.');
   const position = assertObject_(value.heroImagePosition, 'heroImagePosition');
@@ -263,6 +266,14 @@ function validateHomepage_(input) {
     heroImagePositionX: numberValue_(position.x, 'heroImagePosition.x', 0, 100),
     heroImagePositionY: numberValue_(position.y, 'heroImagePosition.y', 0, 100)
   };
+}
+
+function validateLanguageSettings_(input) {
+  const value = assertObject_(input, 'content.languageSettings');
+  rejectUnknownFields_(value, ['ro', 'de', 'en']);
+  if (value.ro !== true) throw apiError_('VALIDATION_ERROR', 'Romanian must remain enabled.');
+  if (typeof value.de !== 'boolean' || typeof value.en !== 'boolean') throw apiError_('VALIDATION_ERROR', 'Language settings must be boolean values.');
+  return { ro: true, de: value.de, en: value.en };
 }
 
 function validateHomepageContacts_(input) {

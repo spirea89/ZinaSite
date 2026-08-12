@@ -24,7 +24,7 @@
       <div class="nav-links">
         <a href="admin.html" class="nav-link">Panou admin</a>
         <a href="admin-homepage.html" class="nav-link">Pagina principală</a>
-        <a href="admin-articles.html" class="nav-link">Articole</a>
+        <a href="admin-articles.html" class="nav-link">Proiecte</a>
         <a href="admin-team.html" class="nav-link">Team</a>
         <a href="index.html" class="nav-link">Înapoi la site</a>
       </div>
@@ -74,18 +74,18 @@
         <h2>Creează sau actualizează eveniment</h2>
         <form id="event-form" class="stack">
           <input type="hidden" id="event-id">
-          <div class="stack translatable-admin-field"><span>Title (English — default)</span><div class="translation-input-row">
-            <input id="event-title-en" type="text" required placeholder="Event title">
-            <details class="translation-globe"><summary title="Romanian and German translations">🌐</summary><div class="translation-popup">
-              <label class="stack"><span>Română</span><input id="event-title" type="text"></label>
-              <label class="stack"><span>Deutsch</span><input id="event-title-de" type="text"></label>
+          <div class="stack translatable-admin-field"><span>Titlu (Română — principală)</span><div class="translation-input-row">
+            <input id="event-title" type="text" required placeholder="Titlul evenimentului">
+            <details class="translation-globe"><summary title="Traduceri">🌐</summary><div class="translation-popup">
+              <label class="stack" data-language="de"><span>Deutsch</span><input id="event-title-de" type="text"></label>
+              <label class="stack" data-language="en"><span>English</span><input id="event-title-en" type="text"></label>
             </div></details>
           </div></div>
-          <div class="stack translatable-admin-field"><span>Description (English — default)</span><div class="translation-input-row">
-            <textarea id="event-description-en" rows="4" placeholder="Event description"></textarea>
-            <details class="translation-globe"><summary title="Romanian and German translations">🌐</summary><div class="translation-popup translation-popup-wide">
-              <label class="stack"><span>Română</span><textarea id="event-description" rows="5"></textarea></label>
-              <label class="stack"><span>Deutsch</span><textarea id="event-description-de" rows="5"></textarea></label>
+          <div class="stack translatable-admin-field"><span>Descriere (Română — principală)</span><div class="translation-input-row">
+            <textarea id="event-description" rows="5" placeholder="Descrierea evenimentului"></textarea>
+            <details class="translation-globe"><summary title="Traduceri">🌐</summary><div class="translation-popup translation-popup-wide">
+              <label class="stack" data-language="de"><span>Deutsch</span><textarea id="event-description-de" rows="5"></textarea></label>
+              <label class="stack" data-language="en"><span>English</span><textarea id="event-description-en" rows="5"></textarea></label>
             </div></details>
           </div></div>
           <label class="stack">
@@ -130,13 +130,14 @@
 
   <footer class="footer">
     <div class="footer-content">
-      <p><a href="admin.html" style="color: inherit;">Panou admin</a> · <a href="admin-articles.html" style="color: inherit;">Articole</a></p>
+      <p><a href="admin.html" style="color: inherit;">Panou admin</a> · <a href="admin-articles.html" style="color: inherit;">Proiecte</a></p>
     </div>
   </footer>
 
   <script src="auth-service.js"></script>
   <script src="data-service.js"></script>
   <script src="admin-ui.js"></script>
+  <script src="admin-language-settings.js"></script>
   <script>
     const loginModal = document.getElementById('login-modal');
     const loginForm = document.getElementById('login-form');
@@ -150,12 +151,12 @@
 
     const eventForm = document.getElementById('event-form');
     const eventIdInput = document.getElementById('event-id');
-    const eventTitleInput = document.getElementById('event-title-en');
-    const eventDescriptionInput = document.getElementById('event-description-en');
+    const eventTitleInput = document.getElementById('event-title');
+    const eventDescriptionInput = document.getElementById('event-description');
     const eventTitleRoInput = document.getElementById('event-title');
     const eventDescriptionRoInput = document.getElementById('event-description');
-    const eventTitleEnInput = eventTitleInput;
-    const eventDescriptionEnInput = eventDescriptionInput;
+    const eventTitleEnInput = document.getElementById('event-title-en');
+    const eventDescriptionEnInput = document.getElementById('event-description-en');
     const eventTitleDeInput = document.getElementById('event-title-de');
     const eventDescriptionDeInput = document.getElementById('event-description-de');
     const eventStartDateInput = document.getElementById('event-start-date');
@@ -181,6 +182,7 @@
           adminContent.style.display = 'block';
           userInfo.textContent = `Conectat: ${currentUser.email}`;
           loadEvents();
+          ZinaLanguageSettings.load();
         } else {
           loginModal.style.display = 'flex';
           adminHeader.style.display = 'none';
@@ -200,6 +202,7 @@
       adminContent.style.display = 'block';
       if (currentUser) userInfo.textContent = `Conectat: ${currentUser.email}`;
       loadEvents();
+      ZinaLanguageSettings.load();
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -249,7 +252,7 @@
         const card = document.createElement('article');
         card.className = 'card';
         const title = document.createElement('h3');
-        title.textContent = event.titleEn || event.title;
+        title.textContent = event.title || event.titleEn;
         const meta = document.createElement('p');
         meta.className = 'muted';
         const statusText = event.status === 'published' ? 'Publicat' : 'Ciornă';
@@ -257,7 +260,7 @@
         meta.textContent = `${statusText} • ${startDate.toLocaleDateString('ro-RO', { dateStyle: 'medium' })} la ${startDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}`;
         const body = document.createElement('div');
         body.className = 'article-preview';
-        body.textContent = event.descriptionEn || event.description || 'No description';
+        body.textContent = event.description || event.descriptionEn || 'Fără descriere';
         const buttons = document.createElement('div');
         buttons.className = 'actions space-between';
         const edit = document.createElement('button');
@@ -265,10 +268,10 @@
         edit.textContent = 'Editează';
         edit.onclick = () => {
           eventIdInput.value = event.id;
-          eventTitleInput.value = event.titleEn || event.title;
-          eventDescriptionInput.value = event.descriptionEn || event.description || '';
-          eventTitleRoInput.value = event.title || '';
-          eventDescriptionRoInput.value = event.description || '';
+          eventTitleInput.value = event.title || '';
+          eventDescriptionInput.value = event.description || '';
+          eventTitleEnInput.value = event.titleEn || '';
+          eventDescriptionEnInput.value = event.descriptionEn || '';
           eventTitleDeInput.value = event.titleDe || '';
           eventDescriptionDeInput.value = event.descriptionDe || '';
           const startDate = new Date(event.startDate);

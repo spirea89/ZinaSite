@@ -16,7 +16,7 @@
 <body>
   <nav class="navbar"><div class="nav-container">
     <a href="index.html" class="nav-logo"><img src="logos/ZinA%20Logos-03-navbar.png" alt="ZinA" class="logo-img"></a>
-    <div class="nav-links"><a href="admin.html" class="nav-link">Panou admin</a><a href="admin-homepage.html" class="nav-link">Pagina principală</a><a href="admin-articles.html" class="nav-link">Articole</a><a href="admin-events.html" class="nav-link">Evenimente</a><a href="team.html" class="nav-link">Vezi echipa</a></div>
+    <div class="nav-links"><a href="admin.html" class="nav-link">Panou admin</a><a href="admin-homepage.html" class="nav-link">Pagina principală</a><a href="admin-articles.html" class="nav-link">Proiecte</a><a href="admin-events.html" class="nav-link">Evenimente</a><a href="team.html" class="nav-link">Vezi echipa</a></div>
   </div></nav>
 
   <div id="login-modal" class="modal" style="display:none"><div class="modal-content">
@@ -35,14 +35,14 @@
         <h2>Profil fondator</h2>
         <form id="team-form" class="stack">
           <input id="team-id" type="hidden">
-          <label class="stack"><span>Name</span><input id="team-name" required></label>
-          <div class="stack translatable-admin-field"><span>Role (English — default)</span><div class="translation-input-row">
-            <input id="team-role-en" required>
-            <details class="translation-globe"><summary title="Romanian and German translations">🌐</summary><div class="translation-popup"><label class="stack"><span>Română</span><input id="team-role-ro"></label><label class="stack"><span>Deutsch</span><input id="team-role-de"></label></div></details>
+          <label class="stack"><span>Nume</span><input id="team-name" required></label>
+          <div class="stack translatable-admin-field"><span>Rol (Română — principală)</span><div class="translation-input-row">
+            <input id="team-role-ro" required>
+            <details class="translation-globe"><summary title="Traduceri">🌐</summary><div class="translation-popup"><label class="stack" data-language="de"><span>Deutsch</span><input id="team-role-de"></label><label class="stack" data-language="en"><span>English</span><input id="team-role-en"></label></div></details>
           </div></div>
-          <div class="stack translatable-admin-field"><span>Biography (English — default)</span><div class="translation-input-row">
-            <textarea id="team-bio-en" rows="7" required></textarea>
-            <details class="translation-globe"><summary title="Romanian and German translations">🌐</summary><div class="translation-popup translation-popup-wide"><label class="stack"><span>Română</span><textarea id="team-bio-ro" rows="7"></textarea></label><label class="stack"><span>Deutsch</span><textarea id="team-bio-de" rows="7"></textarea></label></div></details>
+          <div class="stack translatable-admin-field"><span>Biografie (Română — principală)</span><div class="translation-input-row">
+            <textarea id="team-bio-ro" rows="7" required></textarea>
+            <details class="translation-globe"><summary title="Traduceri">🌐</summary><div class="translation-popup translation-popup-wide"><label class="stack" data-language="de"><span>Deutsch</span><textarea id="team-bio-de" rows="7"></textarea></label><label class="stack" data-language="en"><span>English</span><textarea id="team-bio-en" rows="7"></textarea></label></div></details>
           </div></div>
           <label class="stack"><span>Display order</span><input id="team-order" type="number" min="0" value="0"></label>
           <label class="stack"><span>Founder photo</span><span class="muted"><strong>Recommended: 1200 × 1200 px</strong>, JPG/PNG/WebP, maximum 5 MB.</span><input id="team-image" type="file" accept="image/jpeg,image/png,image/webp"></label>
@@ -56,13 +56,13 @@
   </main>
   <footer class="footer"><div class="footer-content"><p>Panou de administrare ZinA</p></div></footer>
 
-  <script src="auth-service.js"></script><script src="data-service.js"></script><script src="admin-ui.js"></script>
+  <script src="auth-service.js"></script><script src="data-service.js"></script><script src="admin-ui.js"></script><script src="admin-language-settings.js"></script>
   <script>
     const loginModal=document.getElementById('login-modal'),adminHeader=document.getElementById('admin-header'),adminContent=document.getElementById('admin-content');
     const form=document.getElementById('team-form'),idInput=document.getElementById('team-id'),nameInput=document.getElementById('team-name'),roleEn=document.getElementById('team-role-en'),roleRo=document.getElementById('team-role-ro'),roleDe=document.getElementById('team-role-de'),bioEn=document.getElementById('team-bio-en'),bioRo=document.getElementById('team-bio-ro'),bioDe=document.getElementById('team-bio-de'),orderInput=document.getElementById('team-order'),imageInput=document.getElementById('team-image'),preview=document.getElementById('team-image-preview'),message=document.getElementById('team-message');
     let currentImageUrl=null,activeUserId=null;
 
-    function showPanel(user){loginModal.style.display='none';adminHeader.style.display='block';adminContent.style.display='block';document.getElementById('user-info').textContent=`Conectat: ${user.email}`;if(activeUserId!==user.id){activeUserId=user.id;loadTeam();}}
+    function showPanel(user){loginModal.style.display='none';adminHeader.style.display='block';adminContent.style.display='block';document.getElementById('user-info').textContent=`Conectat: ${user.email}`;if(activeUserId!==user.id){activeUserId=user.id;loadTeam();ZinaLanguageSettings.load();}}
     function resetForm(){form.reset();idInput.value='';orderInput.value='0';currentImageUrl=null;preview.removeAttribute('src');preview.style.display='none';message.textContent='';}
     imageInput.addEventListener('change',()=>{const file=imageInput.files[0];if(file){preview.src=URL.createObjectURL(file);preview.style.display='block';}});
 
@@ -71,13 +71,13 @@
       try{const members=await DataService.getTeamMembers();empty.style.display=members.length?'none':'flex';members.forEach(member=>{
         const card=document.createElement('article');card.className='card';
         if(member.imageUrl){const img=document.createElement('img');img.src=member.imageUrl;img.alt=member.name;img.className='team-admin-preview';card.appendChild(img);}
-        const title=document.createElement('h3');title.textContent=member.name;const role=document.createElement('p');role.className='muted';role.textContent=member.roleEn;const bio=document.createElement('p');bio.className='article-preview';bio.textContent=member.bioEn;const actions=document.createElement('div');actions.className='actions';
+        const title=document.createElement('h3');title.textContent=member.name;const role=document.createElement('p');role.className='muted';role.textContent=member.roleRo||member.roleEn;const bio=document.createElement('p');bio.className='article-preview';bio.textContent=member.bioRo||member.bioEn;const actions=document.createElement('div');actions.className='actions';
         const edit=document.createElement('button');edit.className='button ghost';edit.textContent='Editează';edit.onclick=()=>{idInput.value=member.id;nameInput.value=member.name;roleEn.value=member.roleEn;roleRo.value=member.roleRo;roleDe.value=member.roleDe;bioEn.value=member.bioEn;bioRo.value=member.bioRo;bioDe.value=member.bioDe;orderInput.value=member.sortOrder;currentImageUrl=member.imageUrl;if(member.imageUrl){preview.src=member.imageUrl;preview.style.display='block';}nameInput.focus();window.scrollTo({top:0,behavior:'smooth'});};
         const del=document.createElement('button');del.className='button danger';del.textContent='Șterge';del.onclick=async()=>{if(confirm('Ștergi acest profil?')){await AdminUi.withPending(del,'Se șterge…',async()=>{await DataService.deleteTeamMember(member.id);await loadTeam();});}};actions.append(edit,del);card.append(title,role,bio,actions);list.appendChild(card);
       });}catch(error){console.error(error);message.textContent=`Eroare: ${error.message}`;}
     }
 
-    form.addEventListener('submit',async event=>{event.preventDefault();message.textContent='Se salvează…';const submit=event.submitter||form.querySelector('button[type="submit"]');try{await AdminUi.withPending(submit,'Se salvează…',async()=>{let imageUrl=currentImageUrl;if(imageInput.files[0])imageUrl=await DataService.uploadTeamImage(imageInput.files[0]);const payload={name:nameInput.value,roleEn:roleEn.value,roleRo:roleRo.value||roleEn.value,roleDe:roleDe.value||roleEn.value,bioEn:bioEn.value,bioRo:bioRo.value||bioEn.value,bioDe:bioDe.value||bioEn.value,imageUrl,sortOrder:Number(orderInput.value)||0};if(idInput.value)await DataService.updateTeamMember(idInput.value,payload);else await DataService.createTeamMember(payload);resetForm();message.textContent='Profil salvat.';await loadTeam();});}catch(error){console.error(error);message.textContent=`Salvarea a eșuat: ${error.message}`;}});
+    form.addEventListener('submit',async event=>{event.preventDefault();message.textContent='Se salvează…';const submit=event.submitter||form.querySelector('button[type="submit"]');try{await AdminUi.withPending(submit,'Se salvează…',async()=>{let imageUrl=currentImageUrl;if(imageInput.files[0])imageUrl=await DataService.uploadTeamImage(imageInput.files[0]);const payload={name:nameInput.value,roleEn:roleEn.value||roleRo.value,roleRo:roleRo.value,roleDe:roleDe.value||roleRo.value,bioEn:bioEn.value||bioRo.value,bioRo:bioRo.value,bioDe:bioDe.value||bioRo.value,imageUrl,sortOrder:Number(orderInput.value)||0};if(idInput.value)await DataService.updateTeamMember(idInput.value,payload);else await DataService.createTeamMember(payload);resetForm();message.textContent='Profil salvat.';await loadTeam();});}catch(error){console.error(error);message.textContent=`Salvarea a eșuat: ${error.message}`;}});
     document.getElementById('team-reset').addEventListener('click',resetForm);
     document.getElementById('login-form').addEventListener('submit',async event=>{event.preventDefault();const errorBox=document.getElementById('login-error');errorBox.style.display='none';try{const result=await AuthService.signIn(document.getElementById('login-email').value,document.getElementById('login-password').value);if(result.user)showPanel(result.user);}catch(error){errorBox.textContent=error.message;errorBox.style.display='block';}});
     document.getElementById('logout-btn').addEventListener('click',async()=>{await AuthService.signOut();location.href='admin.html';});

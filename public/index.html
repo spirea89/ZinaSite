@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Comunitatea românilor din Viena - articole, evenimente și resurse pentru românii care locuiesc în Viena">
+  <meta name="description" content="Comunitatea românilor din Viena - proiecte, evenimente și resurse pentru românii care locuiesc în Viena">
   <title>ZusammenInAustria (Zina) - Comunitatea Românilor din Viena</title>
   <link rel="icon" type="image/png" href="logos/ZinA%20Logos-04.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +25,7 @@
       <div class="nav-links">
        <a href="#mission" class="nav-link" data-home-field="navAbout">Despre noi</a>
         <a href="team.html" class="nav-link" data-i18n="team">Team</a>
-        <a href="articles.html" class="nav-link" data-home-field="navArticles">Articole</a>
+        <a href="articles.html" class="nav-link" data-home-field="navArticles">Proiecte</a>
         <a href="events.html" class="nav-link" data-home-field="navEvents">Evenimente</a>
         <a href="resources.html" class="nav-link" data-i18n="resources">Resurse</a>
         <a href="admin.html" class="nav-link admin-link">Admin</a>
@@ -94,14 +94,14 @@
     <section class="panel cta-section">
       <div class="section-header">
         <h2 data-home-field="discoverTitle">Descoperă mai mult</h2>
-        <p class="section-description" data-home-field="discoverDescription">Articole pentru comunitate și evenimente în Viena</p>
+        <p class="section-description" data-home-field="discoverDescription">Proiecte pentru comunitate și evenimente în Viena</p>
       </div>
       <div class="cta-grid">
         <a href="articles.html" class="cta-card">
           <span class="cta-icon">📝</span>
-          <h3 data-home-field="articlesCardTitle">Articole</h3>
-          <p class="muted" data-home-field="articlesCardText">Știri, sfaturi și resurse pentru românii din Viena</p>
-          <span class="cta-link" data-home-field="articlesCardLink">Vezi articole →</span>
+          <h3 data-home-field="articlesCardTitle">Proiecte</h3>
+          <p class="muted" data-home-field="articlesCardText">Inițiative și proiecte pentru românii din Viena</p>
+          <span class="cta-link" data-home-field="articlesCardLink">Vezi proiectele →</span>
         </a>
         <a href="events.html" class="cta-card">
           <span class="cta-icon">📅</span>
@@ -170,9 +170,9 @@
         const homepage = await ZinaFooterContacts.getHomepage();
         const stored = homepage?.content || {};
         const isMultilingual = stored.ro || stored.en || stored.de;
-        const localizedContent = isMultilingual
+        const localizedContent = I18n.normalizeHomepageContent(isMultilingual
           ? (stored[I18n.locale] || {})
-          : (I18n.locale === 'ro' ? stored : {});
+          : (I18n.locale === 'ro' ? stored : {}), I18n.locale);
         if (I18n.locale !== 'ro') I18n.applyHomepage();
         Object.entries(localizedContent).forEach(([field, value]) => {
           const element = document.querySelector(`[data-home-field="${field}"]`);

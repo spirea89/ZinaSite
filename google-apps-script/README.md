@@ -136,6 +136,8 @@ Titles, category labels, event locations, team fields, Drive identifiers, and ho
 
 Public organization contacts are stored inside the existing `HomepageContent.content.contacts` JSON object; no additional worksheet columns are required. Supported optional fields are `email`, `whatsappUrl`, `facebookUrl`, `linkedinUrl`, and `zvrNumber`. Apps Script validates the email address, requires HTTPS URLs, accepts WhatsApp group invitation and Channel links, restricts other social links to their expected providers, and accepts a ZVR number containing 1 to 10 digits before saving.
 
+Public language availability is stored in `HomepageContent.content.languageSettings` as the exact boolean fields `ro`, `de`, and `en`. Romanian is the primary language and must remain enabled. Disabling German or English hides that language in the public selector and admin translation controls without deleting its existing Sheet values. This setting requires no worksheet schema change. The user-facing Articles section is labelled Projects/Proiecte/Projekte; internal Apps Script action names and worksheet names remain unchanged for compatibility.
+
 Every protected request must contain a fresh Google ID token. An `origin` value supplied by a browser is not accepted and would not be a security boundary. Verified Google identity plus the active `Admins` allowlist is the authorization boundary.
 
 Responses consistently contain `ok`, `data`, `error`, and `version`. Errors do not expose stack traces, tokens, configuration values, administrator lists, or spreadsheet internals.
