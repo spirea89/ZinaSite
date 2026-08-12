@@ -74,7 +74,9 @@
         <h2>Imagine principală</h2>
         <p class="muted"><strong>Dimensiune recomandată: 1600 × 1000 px (raport 16:10).</strong><br>Încarcă JPG, PNG sau WebP, maximum 5 MB și minimum 1400 px lățime.</p>
         <div class="homepage-image-editor">
-          <img id="hero-image-preview" src="logos/hero-acasa-romania.jpg" alt="Previzualizare imagine principală">
+          <div class="homepage-image-preview-frame">
+            <img id="hero-image-preview" src="logos/hero-acasa-romania.jpg" alt="Previzualizare imagine principală">
+          </div>
           <div class="stack homepage-image-controls">
             <label class="stack">
               <span>Alege o imagine nouă</span>
@@ -90,6 +92,11 @@
               <span>Poziție verticală: <strong id="hero-position-y-value">50%</strong></span>
               <input id="hero-position-y" type="range" min="0" max="100" value="50" aria-label="Poziție imagine sus jos">
               <span class="range-labels"><span>↑ Sus</span><span>Jos ↓</span></span>
+            </label>
+            <label class="stack">
+              <span>Zoom: <strong id="hero-zoom-value">100%</strong></span>
+              <input id="hero-zoom" type="range" min="100" max="160" value="100" aria-label="Zoom imagine">
+              <span class="range-labels"><span>Normal</span><span>Mărit</span></span>
             </label>
             <button id="hero-position-reset" type="button" class="button ghost">Centrează imaginea</button>
           </div>
@@ -169,6 +176,8 @@
     const positionYInput = document.getElementById('hero-position-y');
     const positionXValue = document.getElementById('hero-position-x-value');
     const positionYValue = document.getElementById('hero-position-y-value');
+    const zoomInput = document.getElementById('hero-zoom');
+    const zoomValue = document.getElementById('hero-zoom-value');
     const contactEmailInput = document.getElementById('contact-email');
     const contactWhatsappInput = document.getElementById('contact-whatsapp');
     const contactFacebookInput = document.getElementById('contact-facebook');
@@ -211,9 +220,13 @@
     function updateImagePositionPreview() {
       const x = Number(positionXInput.value);
       const y = Number(positionYInput.value);
+      const zoom = Number(zoomInput.value);
       imagePreview.style.objectPosition = `${x}% ${y}%`;
+      imagePreview.style.transform = `scale(${zoom / 100})`;
+      imagePreview.style.transformOrigin = `${x}% ${y}%`;
       positionXValue.textContent = `${x}%`;
       positionYValue.textContent = `${y}%`;
+      zoomValue.textContent = `${zoom}%`;
     }
 
     function captureCurrentFields() {
@@ -312,6 +325,7 @@
         imagePreview.src = currentHeroImageUrl || 'logos/hero-acasa-romania.jpg';
         positionXInput.value = saved?.heroImagePosition?.x ?? 64;
         positionYInput.value = saved?.heroImagePosition?.y ?? 50;
+        zoomInput.value = Number(stored.heroImageZoom) >= 100 && Number(stored.heroImageZoom) <= 160 ? Number(stored.heroImageZoom) : 100;
         updateImagePositionPreview();
         message.textContent = saved ? '' : 'Conținutul implicit este afișat. Prima salvare va crea setările paginii.';
       } catch (error) {
@@ -337,9 +351,11 @@
     });
     positionXInput.addEventListener('input', updateImagePositionPreview);
     positionYInput.addEventListener('input', updateImagePositionPreview);
+    zoomInput.addEventListener('input', updateImagePositionPreview);
     document.getElementById('hero-position-reset').addEventListener('click', () => {
       positionXInput.value = '50';
       positionYInput.value = '50';
+      zoomInput.value = '100';
       updateImagePositionPreview();
     });
 
@@ -355,10 +371,11 @@
           captureCurrentFields();
           captureContacts();
           const heroImagePosition = { x: Number(positionXInput.value), y: Number(positionYInput.value) };
-          await DataService.updateHomepageContent({ ...homepageByLocale, contacts: homepageContacts, languageSettings }, heroImageUrl, heroImagePosition);
+          const heroImageZoom = Number(zoomInput.value);
+          await DataService.updateHomepageContent({ ...homepageByLocale, contacts: homepageContacts, languageSettings, heroImageZoom }, heroImageUrl, heroImagePosition);
           currentHeroImageUrl = heroImageUrl;
           if (heroImageUrl) localStorage.setItem('zina-homepage-hero-image', heroImageUrl);
-          localStorage.setItem('zina-homepage-hero-position', JSON.stringify(heroImagePosition));
+          localStorage.setItem('zina-homepage-hero-position', JSON.stringify({ ...heroImagePosition, zoom: heroImageZoom }));
           fileInput.value = '';
           message.textContent = 'Pagina principală a fost salvată. Modificările sunt vizibile imediat.';
           message.classList.add('success-message');
