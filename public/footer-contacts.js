@@ -55,6 +55,7 @@
     addLink(container, 'WhatsApp', safeProviderUrl(values.whatsappUrl, ['chat.whatsapp.com', 'whatsapp.com', 'www.whatsapp.com']));
     addLink(container, 'Facebook', safeProviderUrl(values.facebookUrl, ['facebook.com', 'www.facebook.com']));
     addLink(container, 'LinkedIn', safeProviderUrl(values.linkedinUrl, ['linkedin.com', 'www.linkedin.com']));
+    addLink(container, 'YouTube', safeProviderUrl(values.youtubeUrl, ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']));
     const zvrNumber = /^[0-9]{1,10}$/.test(String(values.zvrNumber || '')) ? String(values.zvrNumber) : '';
     addText(container, zvrNumber ? `ZVR: ${zvrNumber}` : '');
     container.hidden = !container.children.length;
